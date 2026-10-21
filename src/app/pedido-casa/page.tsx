@@ -3,35 +3,81 @@
 import { useEffect, useState } from "react";
 import {
   collection, query, where, getDocs, addDoc, serverTimestamp, orderBy, limit,
+  doc, getDoc, setDoc,
 } from "firebase/firestore";
-import { db } from "@/lib/firebase";
+import {
+  onAuthStateChanged, signInWithPopup, signOut, GoogleAuthProvider, User,
+} from "firebase/auth";
+import { auth, db } from "@/lib/firebase";
 import type { Producto, Categoria, DetallePedido } from "@/types";
 
 type TipoPedido = "MESA" | "PARA_LLEVAR" | "DOMICILIO";
+type Vista = "menu" | "login" | "checkout";
+
+const RESTAURANT_ID = "restaurante1";
 
 export default function PedidoCasaPage() {
   const [productos, setProductos] = useState<Producto[]>([]);
   const [categorias, setCategorias] = useState<Categoria[]>([]);
   const [loading, setLoading] = useState(true);
   const [carrito, setCarrito] = useState<Map<string, number>>(new Map());
-  const [checkout, setCheckout] = useState(false);
+  const [vista, setVista] = useState<Vista>("menu");
+  const [user, setUser] = useState<User | null>(null);
+  const [authLoading, setAuthLoading] = useState(true);
   const [enviando, setEnviando] = useState(false);
   const [exito, setExito] = useState(false);
   const [error, setError] = useState("");
   const [numeroPedido, setNumeroPedido] = useState(0);
 
-  const [tipo, setTipo] = useState<TipoPedido>("MESA");
-  const [mesaNumero, setMesaNumero] = useState("");
   const [nombre, setNombre] = useState("");
   const [telefono, setTelefono] = useState("");
-  const [direccion, setDireccion] = useState("");
+  const [direccionGuardada, setDireccionGuardada] = useState("");
+  const [usarDirGuardada, setUsarDirGuardada] = useState(true);
+  const [direccionNueva, setDireccionNueva] = useState("");
+
+  const [tipo, setTipo] = useState<TipoPedido>("MESA");
+  const [mesaNumero, setMesaNumero] = useState("");
   const [hora, setHora] = useState("");
+  const [ingresando, setIngresando] = useState(false);
+
+  useEffect(() => {
+    const unsub = onAuthStateChanged(auth, (u) => {
+      setUser(u);
+      setAuthLoading(false);
+    });
+    return () => unsub();
+  }, []);
+
+  useEffect(() => {
+    if (!user) return;
+    let cancelado = false;
+    (async () => {
+      try {
+        const snap = await getDoc(
+          doc(db, "restaurantes", RESTAURANT_ID, "clientes", user.uid)
+        );
+        if (cancelado || !snap.exists()) return;
+        const d = snap.data();
+        setNombre((prev) => prev || d.nombre || "");
+        setTelefono((prev) => prev || d.telefono || "");
+        if (d.direccion) {
+          setDireccionGuardada(d.direccion);
+          setUsarDirGuardada(true);
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    })();
+    return () => {
+      cancelado = true;
+    };
+  }, [user]);
 
   useEffect(() => {
     async function cargarDatos() {
       try {
         const catQuery = query(
-          collection(db, "restaurantes", "restaurante1", "categorias"),
+          collection(db, "restaurantes", RESTAURANT_ID, "categorias"),
           where("estado", "==", "activa")
         );
         const catSnap = await getDocs(catQuery);
@@ -40,12 +86,11 @@ export default function PedidoCasaPage() {
         setCategorias(cats);
 
         const prodQuery = query(
-          collection(db, "restaurantes", "restaurante1", "productos"),
+          collection(db, "restaurantes", RESTAURANT_ID, "productos"),
           where("estado", "==", "activo")
         );
         const prodSnap = await getDocs(prodQuery);
-        const prods = prodSnap.docs.map((d) => ({ id: d.id, ...d.data() }) as Producto);
-        setProductos(prods);
+        setProductos(prodSnap.docs.map((d) => ({ id: d.id, ...d.data() }) as Producto));
       } catch (err) {
         console.error(err);
       } finally {
@@ -54,6 +99,47 @@ export default function PedidoCasaPage() {
     }
     cargarDatos();
   }, []);
+
+  const iniciarCheckout = () => {
+    if (authLoading) return;
+    if (!user) {
+      setVista("login");
+      return;
+    }
+    setVista("checkout");
+  };
+
+  const entrarConGoogle = async () => {
+    setIngresando(true);
+    setError("");
+    try {
+      const provider = new GoogleAuthProvider();
+      await signInWithPopup(auth, provider);
+      setVista("checkout");
+    } catch (err) {
+      console.error(err);
+      const codigo = (err as { code?: string }).code || "";
+      if (codigo === "auth/popup-blocked") {
+        setError("Se bloqueó la ventana. Permite las ventanas emergentes y vuelve a intentar.");
+      } else if (codigo === "auth/operation-not-allowed") {
+        setError("Activa el proveedor Google en Firebase Console → Authentication → Sign-in method.");
+      } else if (codigo === "auth/popup-closed-by-user") {
+        setError("Cerraste la ventana de Google. Intenta de nuevo.");
+      } else {
+        setError("No se pudo iniciar sesión. Intenta de nuevo.");
+      }
+    } finally {
+      setIngresando(false);
+    }
+  };
+
+  const salir = async () => {
+    await signOut(auth);
+    setNombre("");
+    setTelefono("");
+    setDireccionGuardada("");
+    setVista("menu");
+  };
 
   const agregar = (id: string) => {
     setCarrito((p) => { const n = new Map(p); n.set(id, (n.get(id) || 0) + 1); return n; });
@@ -75,17 +161,28 @@ export default function PedidoCasaPage() {
 
   const cantTotal = Array.from(carrito.values()).reduce((a, b) => a + b, 0);
 
+  const direccionFinal =
+    tipo === "DOMICILIO"
+      ? usarDirGuardada && direccionGuardada
+        ? direccionGuardada
+        : direccionNueva
+      : direccionGuardada;
+
   const confirmar = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!user) {
+      setVista("login");
+      return;
+    }
     if (!nombre || !telefono) return;
-    if (tipo === "DOMICILIO" && !direccion) return;
+    if (tipo === "DOMICILIO" && !direccionFinal) return;
     if (tipo === "PARA_LLEVAR" && !hora) return;
     if (tipo === "MESA" && !mesaNumero) return;
 
     setEnviando(true);
     setError("");
     try {
-      const ref = collection(db, "restaurantes", "restaurante1", "pedidos");
+      const ref = collection(db, "restaurantes", RESTAURANT_ID, "pedidos");
       const lastQ = query(ref, orderBy("numeroPedido", "desc"), limit(1));
       const lastS = await getDocs(lastQ);
       const next = lastS.empty ? 1 : (lastS.docs[0].data().numeroPedido || 0) + 1;
@@ -97,8 +194,8 @@ export default function PedidoCasaPage() {
         })
         .filter(Boolean) as DetallePedido[];
 
-      await addDoc(ref, {
-        restaurantId: "restaurante1",
+      const docRef = await addDoc(ref, {
+        restaurantId: RESTAURANT_ID,
         numeroPedido: next,
         mesaId: tipo === "MESA" ? mesaNumero : "",
         mesaNumero: tipo === "MESA" ? mesaNumero : "",
@@ -107,8 +204,32 @@ export default function PedidoCasaPage() {
         total,
         fechaCreacion: serverTimestamp(),
         detalles,
-        infoCliente: { nombre, telefono, direccion, hora },
+        uid: user.uid,
+        clienteEmail: user.email || "",
+        infoCliente: { nombre, telefono, direccion: direccionFinal, hora },
       });
+
+      await setDoc(
+        doc(db, "restaurantes", RESTAURANT_ID, "clientes", user.uid),
+        {
+          uid: user.uid,
+          email: user.email || "",
+          nombre,
+          telefono,
+          direccion: direccionGuardada || (tipo === "DOMICILIO" ? direccionNueva : ""),
+          actualizado: serverTimestamp(),
+        },
+        { merge: true }
+      );
+
+      try {
+        localStorage.setItem(
+          "miPedido",
+          JSON.stringify({ id: docRef.id, numero: next })
+        );
+      } catch {
+        // almacenamiento no disponible
+      }
 
       setNumeroPedido(next);
       setExito(true);
@@ -142,10 +263,55 @@ export default function PedidoCasaPage() {
           <p className="text-green-600 font-medium mb-6">Estado: Recibido</p>
           <a
             href="/pedido"
-            className="block w-full bg-gradient-to-r from-red-500 to-orange-500 text-white py-3 rounded-xl font-bold shadow"
+            className="block w-full bg-gradient-to-r from-red-500 to-orange-500 text-white py-3 rounded-xl font-bold shadow mb-3"
           >
-            Consultar mi pedido
+            Ver estado de mi pedido
           </a>
+          <button
+            onClick={() => { setExito(false); setCarrito(new Map()); setVista("menu"); }}
+            className="w-full bg-gray-100 text-gray-700 py-3 rounded-xl font-bold"
+          >
+            Volver al menú
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (vista === "login") {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-red-50 via-orange-50 to-yellow-50 flex items-center justify-center p-4">
+        <div className="bg-white rounded-2xl p-8 shadow-xl max-w-sm w-full text-center">
+          <div className="text-4xl mb-3">🍽️</div>
+          <h2 className="text-xl font-bold text-gray-800 mb-2">Inicia sesión para pedir</h2>
+          <p className="text-gray-500 text-sm mb-6">
+            Con tu cuenta de Google guardamos tu pedido, tu dirección y puedes ver el
+            estado y el historial de tus pedidos.
+          </p>
+          <button
+            onClick={entrarConGoogle}
+            disabled={ingresando}
+            className="w-full border-2 border-gray-200 bg-white text-gray-700 py-3 rounded-xl font-bold hover:bg-gray-50 disabled:opacity-50 flex items-center justify-center gap-3 shadow-sm mb-4"
+          >
+            <svg className="w-5 h-5" viewBox="0 0 48 48">
+              <path fill="#FFC107" d="M43.611 20.083H42V20H24v8h11.303c-1.649 4.657-6.08 8-11.303 8-6.627 0-12-5.373-12-12s5.373-12 12-12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.268 4 24 4 12.955 4 4 12.955 4 24s8.955 20 20 20 20-8.955 20-20c0-1.341-.138-2.65-.389-3.917z"/>
+              <path fill="#FF3D00" d="M6.306 14.691l6.571 4.819C14.655 15.108 18.961 12 24 12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.268 4 24 4 16.318 4 9.656 8.337 6.306 14.691z"/>
+              <path fill="#4CAF50" d="M24 44c5.166 0 9.86-1.977 13.409-5.192l-6.19-5.238A11.91 11.91 0 0 1 24 36c-5.202 0-9.619-3.317-11.283-7.946l-6.522 5.025C9.505 39.556 16.227 44 24 44z"/>
+              <path fill="#1976D2" d="M43.611 20.083H42V20H24v8h11.303a12.04 12.04 0 0 1-4.087 5.571l6.19 5.238C36.971 39.205 44 34 44 24c0-1.341-.138-2.65-.389-3.917z"/>
+            </svg>
+            {ingresando ? "Ingresando..." : "Continuar con Google"}
+          </button>
+          {error && <p className="text-red-500 text-sm mb-3">{error}</p>}
+          <button
+            onClick={() => { setVista("menu"); setError(""); }}
+            className="text-red-600 font-bold text-sm"
+          >
+            ← Volver al menú
+          </button>
+          <div className="border-t mt-4 pt-4">
+            <p className="text-gray-400 text-xs mb-2">¿Solo quieres consultar un pedido?</p>
+            <a href="/pedido" className="text-red-600 font-bold text-sm">Consultar pedido sin cuenta</a>
+          </div>
         </div>
       </div>
     );
@@ -156,23 +322,37 @@ export default function PedidoCasaPage() {
       <header className="bg-gradient-to-r from-red-600 to-orange-500 text-white p-4 sticky top-0 z-10 shadow-lg">
         <div className="max-w-2xl mx-auto flex items-center justify-between">
           <h1 className="text-lg font-bold">🍽️ Nuestro Menú</h1>
-          {cantTotal > 0 && (
-            <button
-              onClick={() => setCheckout(true)}
-              className="bg-white/20 backdrop-blur px-4 py-2 rounded-lg text-sm font-bold"
-            >
-              Carrito ({cantTotal}) ${total.toFixed(2)}
-            </button>
-          )}
+          <div className="flex items-center gap-2">
+            {user && (
+              <span className="text-xs bg-white/20 backdrop-blur px-2 py-1 rounded-lg hidden sm:inline">
+                {user.email}
+              </span>
+            )}
+            {cantTotal > 0 && vista === "menu" && (
+              <button
+                onClick={iniciarCheckout}
+                className="bg-white/20 backdrop-blur px-4 py-2 rounded-lg text-sm font-bold"
+              >
+                Carrito ({cantTotal}) ${total.toFixed(2)}
+              </button>
+            )}
+          </div>
         </div>
       </header>
 
       <main className="max-w-2xl mx-auto p-4">
-        {checkout ? (
+        {vista === "checkout" ? (
           <div>
-            <button onClick={() => setCheckout(false)} className="text-red-600 font-bold mb-4">
-              ← Volver al menú
-            </button>
+            <div className="flex items-center justify-between mb-4">
+              <button onClick={() => setVista("menu")} className="text-red-600 font-bold">
+                ← Volver al menú
+              </button>
+              {user && (
+                <button onClick={salir} className="text-gray-400 text-sm">
+                  No eres {user.displayName?.split(" ")[0] || "tú"}? Salir
+                </button>
+              )}
+            </div>
             <form onSubmit={confirmar} className="space-y-4">
               <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
                 <h2 className="font-bold text-gray-800 mb-3">¿Cómo quieres tu pedido?</h2>
@@ -204,14 +384,46 @@ export default function PedidoCasaPage() {
                   />
                 )}
                 {tipo === "DOMICILIO" && (
-                  <textarea
-                    value={direccion}
-                    onChange={(e) => setDireccion(e.target.value)}
-                    placeholder="Dirección completa *"
-                    rows={2}
-                    className="w-full mt-3 px-4 py-3 border-2 border-gray-200 rounded-xl outline-none resize-none"
-                    style={{ color: "#1f2937" }}
-                  />
+                  <div className="mt-3 space-y-2">
+                    {direccionGuardada && (
+                      <div className="space-y-2">
+                        <label className="flex items-start gap-2 bg-gray-50 p-3 rounded-xl border-2 border-gray-200 cursor-pointer">
+                          <input
+                            type="radio"
+                            name="dir"
+                            checked={usarDirGuardada}
+                            onChange={() => setUsarDirGuardada(true)}
+                            className="mt-1"
+                          />
+                          <span className="text-sm text-gray-700">
+                            <span className="font-bold">Mi dirección guardada:</span>
+                            <br />
+                            {direccionGuardada}
+                          </span>
+                        </label>
+                        <label className="flex items-start gap-2 bg-gray-50 p-3 rounded-xl border-2 border-gray-200 cursor-pointer">
+                          <input
+                            type="radio"
+                            name="dir"
+                            checked={!usarDirGuardada}
+                            onChange={() => setUsarDirGuardada(false)}
+                            className="mt-1"
+                          />
+                          <span className="text-sm text-gray-700 font-bold">Enviar a otra dirección</span>
+                        </label>
+                      </div>
+                    )}
+                    {!usarDirGuardada || !direccionGuardada ? (
+                      <textarea
+                        value={direccionNueva}
+                        onChange={(e) => setDireccionNueva(e.target.value)}
+                        placeholder="Dirección completa *"
+                        rows={2}
+                        className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl outline-none resize-none"
+                        style={{ color: "#1f2937" }}
+                      />
+                    ) : null}
+                  </div>
                 )}
                 {tipo === "PARA_LLEVAR" && (
                   <input
@@ -327,7 +539,7 @@ export default function PedidoCasaPage() {
         )}
       </main>
 
-      {cantTotal > 0 && !checkout && (
+      {cantTotal > 0 && vista === "menu" && (
         <div className="fixed bottom-0 left-0 right-0 p-4 bg-white border-t shadow-lg">
           <div className="max-w-2xl mx-auto flex items-center justify-between">
             <div>
@@ -335,10 +547,10 @@ export default function PedidoCasaPage() {
               <p className="text-red-600 font-bold text-lg">${total.toFixed(2)}</p>
             </div>
             <button
-              onClick={() => setCheckout(true)}
+              onClick={iniciarCheckout}
               className="bg-gradient-to-r from-red-500 to-orange-500 text-white px-6 py-3 rounded-xl font-bold shadow"
             >
-              Hacer Pedido
+              {user ? "Hacer Pedido" : "Iniciar sesión y pedir"}
             </button>
           </div>
         </div>

@@ -29,11 +29,6 @@ export default function CategoriasPage() {
     return () => unsubAuth();
   }, [router]);
 
-  useEffect(() => {
-    if (!user) return;
-    cargarCategorias();
-  }, [user]);
-
   const cargarCategorias = async () => {
     try {
       const snap = await getDocs(
@@ -48,6 +43,12 @@ export default function CategoriasPage() {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    if (!user) return;
+    const t = setTimeout(cargarCategorias, 0);
+    return () => clearTimeout(t);
+  }, [user]);
 
   const crearCategoria = async (e: React.FormEvent) => {
     e.preventDefault();

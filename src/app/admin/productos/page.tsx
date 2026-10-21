@@ -12,8 +12,8 @@ import {
   query,
   orderBy,
 } from "firebase/firestore";
-import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
-import { auth, db, storage } from "@/lib/firebase";
+import { auth, db } from "@/lib/firebase";
+import { fileToDataUrl } from "@/lib/image";
 import type { Producto, Categoria } from "@/types";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -53,11 +53,6 @@ export default function ProductosPage() {
     return () => unsubAuth();
   }, [router]);
 
-  useEffect(() => {
-    if (!user) return;
-    cargarDatos();
-  }, [user]);
-
   const cargarDatos = async () => {
     try {
       const catSnap = await getDocs(
@@ -76,6 +71,12 @@ export default function ProductosPage() {
     }
   };
 
+  useEffect(() => {
+    if (!user) return;
+    const t = setTimeout(cargarDatos, 0);
+    return () => clearTimeout(t);
+  }, [user]);
+
   const guardarProducto = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!nombre || !precio || !categoriaId) return;
@@ -85,21 +86,12 @@ export default function ProductosPage() {
     try {
       let imagenFinal = imagenUrl || editando?.imagen || "";
 
-      if (imagen && !imagenUrl && storage) {
+      if (imagen && !imagenUrl) {
         try {
-          const storageRef = ref(
-            storage,
-            `productos/${Date.now()}_${imagen.name}`
-          );
-          const uploadPromise = uploadBytes(storageRef, imagen);
-          const timeout = new Promise((_, reject) =>
-            setTimeout(() => reject(new Error("timeout")), 5000)
-          );
-          await Promise.race([uploadPromise, timeout]);
-          imagenFinal = await getDownloadURL(storageRef);
+          imagenFinal = await fileToDataUrl(imagen);
         } catch (imgErr) {
-          console.error("Error subiendo imagen:", imgErr);
-          setError("No se pudo subir la imagen. Usa una URL de imagen en su lugar.");
+          console.error("Error procesando imagen:", imgErr);
+          setError("No se pudo procesar la imagen. Usa una URL de imagen en su lugar.");
         }
       }
 

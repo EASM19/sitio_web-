@@ -58,10 +58,28 @@ export interface Pedido {
   total: number;
   fechaCreacion: Date;
   detalles: DetallePedido[];
+  uid?: string;
+  clienteEmail?: string;
   infoCliente?: {
     nombre: string;
     telefono: string;
     direccion?: string;
     hora?: string;
   };
+}
+
+export interface Mensaje {
+  id: string;
+  emisor: "cliente" | "admin";
+  nombre: string;
+  texto: string;
+  fechaCreacion: Date | null;
+}
+
+export interface ClientePerfil {
+  uid: string;
+  email: string;
+  nombre: string;
+  telefono: string;
+  direccion: string;
 }

@@ -1,10 +1,14 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { onAuthStateChanged, signOut, User } from "firebase/auth";
-import { collection, query, orderBy, onSnapshot, doc, updateDoc } from "firebase/firestore";
+import {
+  collection, query, orderBy, onSnapshot, doc, updateDoc, addDoc, serverTimestamp,
+} from "firebase/firestore";
 import { auth, db } from "@/lib/firebase";
-import type { Pedido, EstadoPedido } from "@/types";
+import type { Pedido, EstadoPedido, Mensaje } from "@/types";
+import { sonarAlerta } from "@/lib/sound";
+import { pedirPermisoNotificaciones, notificar } from "@/lib/notif";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 
@@ -35,6 +39,11 @@ export default function PedidosPage() {
   const [user, setUser] = useState<User | null>(null);
   const [pedidos, setPedidos] = useState<Pedido[]>([]);
   const [loading, setLoading] = useState(true);
+  const [chatPedido, setChatPedido] = useState<Pedido | null>(null);
+  const [mensajes, setMensajes] = useState<Mensaje[]>([]);
+  const [textoMsg, setTextoMsg] = useState("");
+  const [enviandoMsg, setEnviandoMsg] = useState(false);
+  const idsConocidos = useRef<Set<string> | null>(null);
   const router = useRouter();
 
   const RESTAURANT_ID = "restaurante1";
@@ -54,6 +63,8 @@ export default function PedidosPage() {
   useEffect(() => {
     if (!user) return;
 
+    pedirPermisoNotificaciones();
+
     const q = query(
       collection(db, "restaurantes", RESTAURANT_ID, "pedidos"),
       orderBy("fechaCreacion", "desc")
@@ -65,12 +76,69 @@ export default function PedidosPage() {
         ...d.data(),
         fechaCreacion: d.data().fechaCreacion?.toDate() || new Date(),
       })) as Pedido[];
+
+      const ids = new Set(pedidosData.map((p) => p.id));
+      if (idsConocidos.current === null) {
+        idsConocidos.current = ids;
+      } else {
+        for (const p of pedidosData) {
+          if (!idsConocidos.current.has(p.id)) {
+            sonarAlerta();
+            notificar(
+              `🔔 Nuevo pedido #${p.numeroPedido}`,
+              `${p.detalles.map((d) => `${d.cantidad}x ${d.nombre}`).join(", ")} — $${p.total.toFixed(2)}`
+            );
+            idsConocidos.current.add(p.id);
+          }
+        }
+      }
+
       setPedidos(pedidosData);
       setLoading(false);
     });
 
     return () => unsub();
   }, [user]);
+
+  useEffect(() => {
+    if (!chatPedido) return;
+    const q = query(
+      collection(db, "restaurantes", RESTAURANT_ID, "pedidos", chatPedido.id, "mensajes"),
+      orderBy("fechaCreacion", "asc")
+    );
+    const unsub = onSnapshot(q, (snap) => {
+      setMensajes(
+        snap.docs.map((m) => ({
+          id: m.id,
+          ...m.data(),
+          fechaCreacion: m.data().fechaCreacion?.toDate() || null,
+        })) as Mensaje[]
+      );
+    });
+    return () => unsub();
+  }, [chatPedido]);
+
+  const enviarMensaje = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!textoMsg.trim() || !chatPedido || enviandoMsg) return;
+    setEnviandoMsg(true);
+    try {
+      await addDoc(
+        collection(db, "restaurantes", RESTAURANT_ID, "pedidos", chatPedido.id, "mensajes"),
+        {
+          emisor: "admin",
+          nombre: user?.displayName || user?.email || "Restaurante",
+          texto: textoMsg.trim(),
+          fechaCreacion: serverTimestamp(),
+        }
+      );
+      setTextoMsg("");
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setEnviandoMsg(false);
+    }
+  };
 
   const cambiarEstado = async (pedido: Pedido, nuevoEstado: EstadoPedido) => {
     const pedidoRef = doc(db, "restaurantes", RESTAURANT_ID, "pedidos", pedido.id);
@@ -160,19 +228,31 @@ export default function PedidosPage() {
                             <span className="font-bold text-red-600">
                               ${pedido.total.toFixed(2)}
                             </span>
-                            {estado !== "ENTREGADO" && (
+                            <div className="flex gap-2">
                               <button
                                 onClick={() => {
-                                  const idx = ESTADOS.indexOf(estado);
-                                  if (idx < ESTADOS.length - 1) {
-                                    cambiarEstado(pedido, ESTADOS[idx + 1]);
-                                  }
+                                  setMensajes([]);
+                                  setChatPedido(pedido);
                                 }}
-                                className="bg-gradient-to-r from-red-500 to-orange-500 text-white px-4 py-1.5 rounded-lg text-sm font-bold hover:from-red-600 hover:to-orange-600 transition shadow"
+                                className="bg-gray-100 text-gray-600 px-3 py-1.5 rounded-lg text-sm font-bold hover:bg-gray-200"
+                                title="Chat con el cliente"
                               >
-                                {ESTADOS[ESTADOS.indexOf(estado) + 1]}
+                                💬 Chat
                               </button>
-                            )}
+                              {estado !== "ENTREGADO" && (
+                                <button
+                                  onClick={() => {
+                                    const idx = ESTADOS.indexOf(estado);
+                                    if (idx < ESTADOS.length - 1) {
+                                      cambiarEstado(pedido, ESTADOS[idx + 1]);
+                                    }
+                                  }}
+                                  className="bg-gradient-to-r from-red-500 to-orange-500 text-white px-4 py-1.5 rounded-lg text-sm font-bold hover:from-red-600 hover:to-orange-600 transition shadow"
+                                >
+                                  {ESTADOS[ESTADOS.indexOf(estado) + 1]}
+                                </button>
+                              )}
+                            </div>
                           </div>
                         </div>
                       ))
@@ -184,6 +264,80 @@ export default function PedidosPage() {
           </div>
         )}
       </main>
+
+      {chatPedido && (
+        <div
+          className="fixed inset-0 bg-black/40 z-20 flex items-end sm:items-center justify-center p-4"
+          onClick={() => setChatPedido(null)}
+        >
+          <div
+            className="bg-white rounded-2xl w-full max-w-md max-h-[80vh] flex flex-col shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex justify-between items-center p-4 border-b">
+              <div>
+                <h3 className="font-bold text-gray-800">
+                  💬 Chat · Pedido #{chatPedido.numeroPedido}
+                </h3>
+                <p className="text-xs text-gray-500">
+                  {chatPedido.infoCliente?.nombre || chatPedido.clienteEmail || "Cliente"}
+                </p>
+              </div>
+              <button
+                onClick={() => setChatPedido(null)}
+                className="text-gray-400 hover:text-gray-600 text-xl font-bold"
+              >
+                ✕
+              </button>
+            </div>
+            <div className="flex-1 overflow-y-auto p-4 space-y-2">
+              {mensajes.length === 0 && (
+                <p className="text-gray-400 text-sm text-center py-4">
+                  Aún no hay mensajes. Escríbele al cliente si necesitas información.
+                </p>
+              )}
+              {mensajes.map((m) => (
+                <div
+                  key={m.id}
+                  className={`flex ${m.emisor === "admin" ? "justify-end" : "justify-start"}`}
+                >
+                  <div
+                    className={`max-w-[80%] px-3 py-2 rounded-xl text-sm ${
+                      m.emisor === "admin"
+                        ? "bg-red-500 text-white"
+                        : "bg-gray-100 text-gray-800"
+                    }`}
+                  >
+                    <p>{m.texto}</p>
+                    <p className={`text-[10px] mt-1 ${m.emisor === "admin" ? "text-red-100" : "text-gray-400"}`}>
+                      {m.nombre}
+                      {m.fechaCreacion &&
+                        ` · ${m.fechaCreacion.toLocaleTimeString("es-MX", { hour: "2-digit", minute: "2-digit" })}`}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <form onSubmit={enviarMensaje} className="p-3 border-t flex gap-2">
+              <input
+                type="text"
+                value={textoMsg}
+                onChange={(e) => setTextoMsg(e.target.value)}
+                placeholder="Responder al cliente..."
+                className="flex-1 px-3 py-2 border-2 border-gray-200 rounded-xl text-sm outline-none"
+                style={{ color: "#1f2937" }}
+              />
+              <button
+                type="submit"
+                disabled={enviandoMsg || !textoMsg.trim()}
+                className="bg-gradient-to-r from-red-500 to-orange-500 text-white px-4 py-2 rounded-xl text-sm font-bold disabled:opacity-50"
+              >
+                Enviar
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

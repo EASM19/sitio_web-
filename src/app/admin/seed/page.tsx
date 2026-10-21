@@ -1,9 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { collection, addDoc, getDocs, query, orderBy } from "firebase/firestore";
+import { collection, addDoc, getDocs } from "firebase/firestore";
 import { db } from "@/lib/firebase";
-import Link from "next/link";
 
 const RESTAURANT_ID = "restaurante1";
 

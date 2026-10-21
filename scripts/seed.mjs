@@ -70,7 +70,6 @@ async function main() {
 
   const catRef = collection(db, "restaurantes", RESTAURANT_ID, "categorias");
   const existentes = await getDocs(catRef);
-  const nombresExistentes = existentes.docs.map((d) => d.data().nombre.toLowerCase());
 
   const catIds = {};
   for (const cat of CATEGORIAS) {
