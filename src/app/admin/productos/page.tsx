@@ -85,17 +85,21 @@ export default function ProductosPage() {
     try {
       let imagenFinal = imagenUrl || editando?.imagen || "";
 
-      if (imagen) {
+      if (imagen && !imagenUrl) {
         try {
           const storageRef = ref(
             storage,
             `productos/${Date.now()}_${imagen.name}`
           );
-          await uploadBytes(storageRef, imagen);
+          const uploadPromise = uploadBytes(storageRef, imagen);
+          const timeout = new Promise((_, reject) =>
+            setTimeout(() => reject(new Error("timeout")), 5000)
+          );
+          await Promise.race([uploadPromise, timeout]);
           imagenFinal = await getDownloadURL(storageRef);
         } catch (imgErr) {
           console.error("Error subiendo imagen:", imgErr);
-          setError("No se pudo subir la imagen, se usará la URL si la tienes");
+          setError("No se pudo subir la imagen. Usa una URL de imagen en su lugar.");
         }
       }
 
