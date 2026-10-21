@@ -14,10 +14,13 @@ export default function MesasPage() {
   const router = useRouter();
 
   useEffect(() => {
-    const ip = window.location.hostname;
-    const puerto = window.location.port || "3000";
-    const base = ip === "localhost" ? `http://192.168.56.1:${puerto}` : `${window.location.origin}`;
-    setQrUrl(`${base}/pedido-casa`);
+    const host = window.location.hostname;
+    if (host.includes("vercel.app")) {
+      setQrUrl(`${window.location.origin}/pedido-casa`);
+    } else {
+      const puerto = window.location.port || "3000";
+      setQrUrl(`http://192.168.56.1:${puerto}/pedido-casa`);
+    }
     const unsub = onAuthStateChanged(auth, (u) => {
       if (!u) router.push("/admin/login");
       else setUser(u);
