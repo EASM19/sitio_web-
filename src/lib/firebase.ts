@@ -16,5 +16,13 @@ const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0
 
 export const db = getFirestore(app);
 export const auth = getAuth(app);
-export const storage = getStorage(app);
+
+let storageInstance: ReturnType<typeof getStorage> | null = null;
+try {
+  storageInstance = getStorage(app);
+} catch {
+  storageInstance = null;
+}
+
+export const storage = storageInstance;
 export default app;

@@ -85,7 +85,7 @@ export default function ProductosPage() {
     try {
       let imagenFinal = imagenUrl || editando?.imagen || "";
 
-      if (imagen && !imagenUrl) {
+      if (imagen && !imagenUrl && storage) {
         try {
           const storageRef = ref(
             storage,
