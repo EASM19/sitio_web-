@@ -1,16 +1,46 @@
 let audioCtx: AudioContext | null = null;
 
-export function sonarAlerta() {
+function getCtx(): AudioContext | null {
   try {
     const AC =
       window.AudioContext ||
       (window as unknown as { webkitAudioContext?: typeof AudioContext })
         .webkitAudioContext;
-    if (!AC) return;
+    if (!AC) return null;
     if (!audioCtx) audioCtx = new AC();
     if (audioCtx.state === "suspended") audioCtx.resume();
+    return audioCtx;
+  } catch {
+    return null;
+  }
+}
 
-    const ctx = audioCtx;
+export function desbloquearAudio() {
+  const ctx = getCtx();
+  if (!ctx) return;
+  try {
+    const now = ctx.currentTime;
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = "sine";
+    osc.frequency.value = 880;
+    gain.gain.setValueAtTime(0.001, now);
+    gain.gain.exponentialRampToValueAtTime(0.12, now + 0.02);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start(now);
+    osc.stop(now + 0.2);
+  } catch {
+    // silencio
+  }
+}
+
+export function sonarAlerta() {
+  try {
+    const ctx = getCtx();
+    if (!ctx) return;
+
     const now = ctx.currentTime;
     [880, 1318.5].forEach((freq, i) => {
       const osc = ctx.createOscillator();

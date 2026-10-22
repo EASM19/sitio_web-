@@ -3,14 +3,14 @@
 import { useEffect, useRef, useState } from "react";
 import {
   collection, query, where, getDocs, orderBy, onSnapshot, doc, addDoc,
-  serverTimestamp,
+  serverTimestamp, updateDoc, increment,
 } from "firebase/firestore";
 import {
   onAuthStateChanged, signInWithPopup, GoogleAuthProvider, signOut, User,
 } from "firebase/auth";
 import { auth, db } from "@/lib/firebase";
 import type { Pedido, Mensaje } from "@/types";
-import { sonarAlerta } from "@/lib/sound";
+import { sonarAlerta, desbloquearAudio } from "@/lib/sound";
 import { pedirPermisoNotificaciones, notificar } from "@/lib/notif";
 import { suscribirsePush, obtenerSuscripciones, enviarNotificacionPush } from "@/lib/push";
 
@@ -46,18 +46,37 @@ export default function PedidoPage() {
   const estadosPrevios = useRef<Map<string, string>>(new Map());
   const primerSnapshot = useRef(true);
   const pedidoSelIdRef = useRef<string | null>(null);
+  const msgsConocidos = useRef<Set<string> | null>(null);
+  const [alertasActivas, setAlertasActivas] = useState(false);
+
+  const activarAlertas = async () => {
+    const permiso = await pedirPermisoNotificaciones();
+    desbloquearAudio();
+    if (user) await suscribirsePush("cliente", user.uid);
+    setAlertasActivas(permiso === "granted");
+  };
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, (u) => {
       setUser(u);
       setAuthLoading(false);
       if (u) {
-        pedirPermisoNotificaciones();
+        pedirPermisoNotificaciones().then((p) => setAlertasActivas(p === "granted"));
         suscribirsePush("cliente", u.uid);
       }
     });
     return () => unsub();
   }, []);
+
+  useEffect(() => {
+    if (!user || !seleccionadoId || !pedidoSel) return;
+    if ((pedidoSel.chatNoLeidoCliente || 0) > 0) {
+      updateDoc(doc(db, "restaurantes", RESTAURANT_ID, "pedidos", seleccionadoId), {
+        chatNoLeidoCliente: 0,
+      });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user, seleccionadoId, pedidoSel?.chatNoLeidoCliente]);
 
   useEffect(() => {
     if (!user) return;
@@ -112,6 +131,7 @@ export default function PedidoPage() {
 
   useEffect(() => {
     pedidoSelIdRef.current = seleccionadoId;
+    msgsConocidos.current = null;
     if (!seleccionadoId) return;
 
     const pedidoUnsub = onSnapshot(
@@ -133,13 +153,27 @@ export default function PedidoPage() {
         orderBy("fechaCreacion", "asc")
       ),
       (snap) => {
-        setMensajes(
-          snap.docs.map((m) => ({
-            id: m.id,
-            ...m.data(),
-            fechaCreacion: m.data().fechaCreacion?.toDate() || null,
-          })) as Mensaje[]
-        );
+        const lista = snap.docs.map((m) => ({
+          id: m.id,
+          ...m.data(),
+          fechaCreacion: m.data().fechaCreacion?.toDate() || null,
+        })) as Mensaje[];
+
+        if (msgsConocidos.current === null) {
+          msgsConocidos.current = new Set(lista.map((m) => m.id));
+        } else {
+          for (const m of lista) {
+            if (m.emisor === "admin" && !msgsConocidos.current.has(m.id)) {
+              sonarAlerta();
+              notificar(
+                `💬 Mensaje del restaurante`,
+                m.texto.slice(0, 120)
+              );
+            }
+          }
+          lista.forEach((m) => msgsConocidos.current!.add(m.id));
+        }
+        setMensajes(lista);
       }
     );
 
@@ -184,18 +218,23 @@ export default function PedidoPage() {
     if (!textoMsg.trim() || !seleccionadoId || enviandoMsg) return;
     setEnviandoMsg(true);
     try {
-      await addDoc(
+      const texto = textoMsg.trim();
+      const msgRef = await addDoc(
         collection(db, "restaurantes", RESTAURANT_ID, "pedidos", seleccionadoId, "mensajes"),
         {
           emisor: "cliente",
           nombre: user?.displayName || user?.email || "Cliente",
           uid: user?.uid || "",
-          texto: textoMsg.trim(),
+          texto,
           fechaCreacion: serverTimestamp(),
         }
       );
+      await updateDoc(doc(db, "restaurantes", RESTAURANT_ID, "pedidos", seleccionadoId), {
+        chatNoLeidoAdmin: increment(1),
+        ultimoMensaje: { id: msgRef.id, emisor: "cliente", texto },
+      });
       setTextoMsg("");
-      const cuerpo = textoMsg.trim().slice(0, 120);
+      const cuerpo = texto.slice(0, 120);
       obtenerSuscripciones({ tipo: "admin" }).then((subs) =>
         enviarNotificacionPush("💬 Mensaje de un cliente", cuerpo, "/admin/pedidos", subs)
       );
@@ -226,13 +265,24 @@ export default function PedidoPage() {
   return (
     <div className="min-h-screen bg-stone-50 p-4 pb-24">
       <div className="max-w-md mx-auto pt-4 pb-8">
-        <div className="sticky top-2 z-10 flex justify-center mb-4">
+        <div className="sticky top-2 z-10 flex justify-center gap-2 mb-4">
           <a
             href="/pedido-casa"
             className="inline-flex items-center gap-2 bg-white shadow-md px-5 py-2.5 rounded-full text-sm font-bold text-rose-600 border border-rose-100 hover:bg-rose-50"
           >
             🍽️ Ir al menú
           </a>
+          <button
+            onClick={activarAlertas}
+            className={`inline-flex items-center gap-1 shadow-md px-4 py-2.5 rounded-full text-sm font-bold border ${
+              alertasActivas
+                ? "bg-green-50 border-green-200 text-green-700"
+                : "bg-white border-rose-100 text-rose-600 hover:bg-rose-50"
+            }`}
+            title="Activar notificaciones de tu pedido"
+          >
+            {alertasActivas ? "✅ Alertas activas" : "🔔 Alertas"}
+          </button>
         </div>
 
         <div className="text-center mb-6">
@@ -322,6 +372,11 @@ export default function PedidoPage() {
                   >
                     <div>
                       <span className="font-bold text-gray-800">#{p.numeroPedido}</span>
+                      {(p.chatNoLeidoCliente || 0) > 0 && (
+                        <span className="inline-block align-middle ml-1.5 bg-rose-600 text-white text-[10px] font-bold rounded-full min-w-[18px] h-[18px] px-1 text-center leading-[18px]">
+                          {p.chatNoLeidoCliente}
+                        </span>
+                      )}
                       <p className="text-xs text-gray-500">
                         {p.fechaCreacion instanceof Date
                           ? p.fechaCreacion.toLocaleDateString("es-MX", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })
@@ -415,7 +470,14 @@ export default function PedidoPage() {
 
         {pedidoSel && (
           <div className="mt-4 bg-white rounded-xl shadow-sm border border-gray-100 p-4">
-            <h3 className="font-bold text-gray-800 mb-3">💬 Chat con el restaurante</h3>
+            <h3 className="font-bold text-gray-800 mb-3 flex items-center gap-2">
+              💬 Chat con el restaurante
+              {(pedidoSel.chatNoLeidoCliente || 0) > 0 && (
+                <span className="bg-rose-600 text-white text-[10px] font-bold rounded-full min-w-[18px] h-[18px] px-1 flex items-center justify-center">
+                  {pedidoSel.chatNoLeidoCliente}
+                </span>
+              )}
+            </h3>
             {!user ? (
               <div className="text-center">
                 <p className="text-gray-400 text-sm mb-3">

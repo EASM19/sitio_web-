@@ -3,11 +3,11 @@
 import { useEffect, useRef, useState } from "react";
 import { onAuthStateChanged, signOut, User } from "firebase/auth";
 import {
-  collection, query, orderBy, onSnapshot, doc, updateDoc, addDoc, serverTimestamp,
+  collection, query, orderBy, onSnapshot, doc, updateDoc, addDoc, serverTimestamp, increment,
 } from "firebase/firestore";
 import { auth, db } from "@/lib/firebase";
 import type { Pedido, EstadoPedido, Mensaje } from "@/types";
-import { sonarAlerta } from "@/lib/sound";
+import { sonarAlerta, desbloquearAudio } from "@/lib/sound";
 import { pedirPermisoNotificaciones, notificar } from "@/lib/notif";
 import { suscribirsePush, obtenerSuscripciones, enviarNotificacionPush } from "@/lib/push";
 import { useRouter } from "next/navigation";
@@ -45,6 +45,12 @@ export default function PedidosPage() {
   const [textoMsg, setTextoMsg] = useState("");
   const [enviandoMsg, setEnviandoMsg] = useState(false);
   const idsConocidos = useRef<Set<string> | null>(null);
+  const msgsPrevios = useRef<Map<string, string>>(new Map());
+  const [avisos, setAvisos] = useState<
+    { id: string; titulo: string; cuerpo: string; hora: Date; leido: boolean }[]
+  >([]);
+  const [bellAbierto, setBellAbierto] = useState(false);
+  const [alertasActivas, setAlertasActivas] = useState(false);
   const router = useRouter();
 
   const RESTAURANT_ID = "restaurante1";
@@ -61,10 +67,23 @@ export default function PedidosPage() {
     return () => unsubAuth();
   }, [router]);
 
+  const agregarAviso = (titulo: string, cuerpo: string) => {
+    setAvisos((prev) =>
+      [{ id: `${Date.now()}_${Math.random().toString(36).slice(2, 7)}`, titulo, cuerpo, hora: new Date(), leido: false }, ...prev].slice(0, 50)
+    );
+  };
+
+  const activarAlertas = async () => {
+    const permiso = await pedirPermisoNotificaciones();
+    desbloquearAudio();
+    if (user) await suscribirsePush("admin", user.uid);
+    setAlertasActivas(permiso === "granted");
+  };
+
   useEffect(() => {
     if (!user) return;
 
-    pedirPermisoNotificaciones();
+    pedirPermisoNotificaciones().then((p) => setAlertasActivas(p === "granted"));
     suscribirsePush("admin", user.uid);
 
     const q = query(
@@ -82,16 +101,33 @@ export default function PedidosPage() {
       const ids = new Set(pedidosData.map((p) => p.id));
       if (idsConocidos.current === null) {
         idsConocidos.current = ids;
+        pedidosData.forEach((p) => {
+          if (p.ultimoMensaje) {
+            msgsPrevios.current.set(p.id, p.ultimoMensaje.id);
+          }
+        });
       } else {
         for (const p of pedidosData) {
           if (!idsConocidos.current.has(p.id)) {
             sonarAlerta();
             const resumen = `${p.detalles.map((d) => `${d.cantidad}x ${d.nombre}`).join(", ")} — $${p.total.toFixed(2)}`;
             notificar(`🔔 Nuevo pedido #${p.numeroPedido}`, resumen);
+            agregarAviso(`Nuevo pedido #${p.numeroPedido}`, resumen);
             obtenerSuscripciones({ tipo: "admin" }).then((subs) =>
               enviarNotificacionPush(`Nuevo pedido #${p.numeroPedido}`, resumen, "/admin/pedidos", subs)
             );
             idsConocidos.current.add(p.id);
+          }
+
+          if (p.ultimoMensaje && p.ultimoMensaje.emisor === "cliente") {
+            const previo = msgsPrevios.current.get(p.id);
+            if (previo !== undefined && previo !== p.ultimoMensaje.id) {
+              sonarAlerta();
+              const texto = p.ultimoMensaje.texto.slice(0, 120);
+              notificar(`💬 Mensaje del cliente (Pedido #${p.numeroPedido})`, texto);
+              agregarAviso(`Chat · Pedido #${p.numeroPedido}`, texto);
+            }
+            msgsPrevios.current.set(p.id, p.ultimoMensaje.id);
           }
         }
       }
@@ -105,6 +141,11 @@ export default function PedidosPage() {
 
   useEffect(() => {
     if (!chatPedido) return;
+    if ((chatPedido.chatNoLeidoAdmin || 0) > 0) {
+      updateDoc(doc(db, "restaurantes", RESTAURANT_ID, "pedidos", chatPedido.id), {
+        chatNoLeidoAdmin: 0,
+      });
+    }
     const q = query(
       collection(db, "restaurantes", RESTAURANT_ID, "pedidos", chatPedido.id, "mensajes"),
       orderBy("fechaCreacion", "asc")
@@ -126,15 +167,20 @@ export default function PedidosPage() {
     if (!textoMsg.trim() || !chatPedido || enviandoMsg) return;
     setEnviandoMsg(true);
     try {
-      await addDoc(
+      const texto = textoMsg.trim();
+      const msgRef = await addDoc(
         collection(db, "restaurantes", RESTAURANT_ID, "pedidos", chatPedido.id, "mensajes"),
         {
           emisor: "admin",
           nombre: user?.displayName || user?.email || "Restaurante",
-          texto: textoMsg.trim(),
+          texto,
           fechaCreacion: serverTimestamp(),
         }
       );
+      await updateDoc(doc(db, "restaurantes", RESTAURANT_ID, "pedidos", chatPedido.id), {
+        chatNoLeidoCliente: increment(1),
+        ultimoMensaje: { id: msgRef.id, emisor: "admin", texto },
+      });
       setTextoMsg("");
       if (chatPedido.uid) {
         const cuerpo = textoMsg.trim().slice(0, 120);
@@ -199,12 +245,75 @@ export default function PedidosPage() {
             <Link href="/admin/ventas" className="text-gray-500 hover:text-gray-700 font-medium">Ventas</Link>
             <Link href="/admin/mesas" className="text-gray-500 hover:text-gray-700 font-medium">QR</Link>
           </div>
-          <button
-            onClick={handleLogout}
-            className="text-rose-600 hover:text-rose-700 font-medium"
-          >
-            Cerrar sesión
-          </button>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={activarAlertas}
+              className={`text-sm px-3 py-1.5 rounded-lg font-bold border ${
+                alertasActivas
+                  ? "bg-green-50 border-green-200 text-green-700"
+                  : "bg-rose-50 border-rose-200 text-rose-600 hover:bg-rose-100"
+              }`}
+              title="Activar notificaciones y sonido"
+            >
+              {alertasActivas ? "✅ Alertas activas" : "🔔 Activar alertas"}
+            </button>
+            <div className="relative">
+              <button
+                onClick={() => setBellAbierto((v) => !v)}
+                className="relative text-xl px-2 py-1 rounded-lg hover:bg-gray-100"
+                title="Notificaciones"
+              >
+                🔔
+                {avisos.filter((a) => !a.leido).length > 0 && (
+                  <span className="absolute -top-0.5 -right-0.5 bg-rose-600 text-white text-[10px] font-bold rounded-full min-w-[18px] h-[18px] px-1 flex items-center justify-center">
+                    {avisos.filter((a) => !a.leido).length}
+                  </span>
+                )}
+              </button>
+              {bellAbierto && (
+                <>
+                  <div className="fixed inset-0 z-10" onClick={() => setBellAbierto(false)}></div>
+                  <div className="absolute right-0 mt-2 w-80 bg-white rounded-xl shadow-2xl border border-gray-100 z-20 max-h-96 overflow-y-auto">
+                    <div className="p-3 border-b border-gray-100 flex justify-between items-center sticky top-0 bg-white">
+                      <b className="text-sm text-gray-800">Notificaciones</b>
+                      <button
+                        onClick={() => setAvisos((prev) => prev.map((a) => ({ ...a, leido: true })))}
+                        className="text-xs text-rose-600 font-bold"
+                      >
+                        Marcar leídas
+                      </button>
+                    </div>
+                    {avisos.length === 0 ? (
+                      <p className="text-gray-400 text-sm text-center py-6">
+                        Sin notificaciones aún
+                      </p>
+                    ) : (
+                      avisos.map((a) => (
+                        <div
+                          key={a.id}
+                          className={`p-3 border-b border-gray-50 text-sm ${a.leido ? "opacity-60" : "bg-rose-50/50"}`}
+                        >
+                          <div className="flex justify-between gap-2">
+                            <b className="text-gray-800">{a.titulo}</b>
+                            <span className="text-gray-400 text-xs whitespace-nowrap">
+                              {a.hora.toLocaleTimeString("es-MX", { hour: "2-digit", minute: "2-digit" })}
+                            </span>
+                          </div>
+                          <p className="text-gray-600 mt-0.5">{a.cuerpo}</p>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </>
+              )}
+            </div>
+            <button
+              onClick={handleLogout}
+              className="text-rose-600 hover:text-rose-700 font-medium"
+            >
+              Cerrar sesión
+            </button>
+          </div>
         </div>
       </header>
 
@@ -276,9 +385,14 @@ export default function PedidosPage() {
                                         setMensajes([]);
                                         setChatPedido(pedido);
                                       }}
-                                      className="bg-gray-100 text-gray-600 px-3 py-1.5 rounded-lg text-sm font-bold hover:bg-gray-200"
+                                      className="relative bg-gray-100 text-gray-600 px-3 py-1.5 rounded-lg text-sm font-bold hover:bg-gray-200"
                                     >
                                       💬 Chat
+                                      {(pedido.chatNoLeidoAdmin || 0) > 0 && (
+                                        <span className="absolute -top-1.5 -right-1.5 bg-rose-600 text-white text-[10px] font-bold rounded-full min-w-[18px] h-[18px] px-1 flex items-center justify-center shadow">
+                                          {pedido.chatNoLeidoAdmin}
+                                        </span>
+                                      )}
                                     </button>
                                   </div>
                                 </div>
@@ -320,10 +434,15 @@ export default function PedidosPage() {
                                   setMensajes([]);
                                   setChatPedido(pedido);
                                 }}
-                                className="bg-gray-100 text-gray-600 px-3 py-1.5 rounded-lg text-sm font-bold hover:bg-gray-200"
+                                className="relative bg-gray-100 text-gray-600 px-3 py-1.5 rounded-lg text-sm font-bold hover:bg-gray-200"
                                 title="Chat con el cliente"
                               >
                                 💬 Chat
+                                {(pedido.chatNoLeidoAdmin || 0) > 0 && (
+                                  <span className="absolute -top-1.5 -right-1.5 bg-rose-600 text-white text-[10px] font-bold rounded-full min-w-[18px] h-[18px] px-1 flex items-center justify-center shadow">
+                                    {pedido.chatNoLeidoAdmin}
+                                  </span>
+                                )}
                               </button>
                               <button
                                 onClick={() => {
