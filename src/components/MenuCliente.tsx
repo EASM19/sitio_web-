@@ -56,7 +56,7 @@ export default function MenuCliente({
                     <div className="flex-1 min-w-0">
                       <div className="flex items-start justify-between gap-2">
                         <h3 className="font-semibold text-gray-800">{producto.nombre}</h3>
-                        <span className="text-red-600 font-bold whitespace-nowrap">
+                        <span className="text-rose-600 font-bold whitespace-nowrap">
                           ${producto.precio.toFixed(2)}
                         </span>
                       </div>
@@ -76,7 +76,7 @@ export default function MenuCliente({
                         ) : cantidad === 0 ? (
                           <button
                             onClick={() => agregarAlCarrito(producto.id)}
-                            className="bg-red-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-red-700 transition"
+                            className="bg-rose-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-rose-700 transition"
                           >
                             Agregar
                           </button>
@@ -87,7 +87,7 @@ export default function MenuCliente({
                             </span>
                             <button
                               onClick={() => agregarAlCarrito(producto.id)}
-                              className="text-red-600 text-sm font-medium hover:underline"
+                              className="text-rose-600 text-sm font-medium hover:underline"
                             >
                               + Agregar otro
                             </button>

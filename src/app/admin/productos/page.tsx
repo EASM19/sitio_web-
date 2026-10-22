@@ -203,23 +203,23 @@ export default function ProductosPage() {
   if (!user) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-600"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-rose-600"></div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-100">
+    <div className="min-h-screen bg-stone-50">
       <header className="bg-white shadow-sm border-b">
         <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-6">
             <Link href="/admin/pedidos" className="text-gray-500 hover:text-gray-700 font-medium">Pedidos</Link>
-            <Link href="/admin/productos" className="text-red-600 font-bold text-lg">Productos</Link>
+            <Link href="/admin/productos" className="text-rose-600 font-bold text-lg">Productos</Link>
             <Link href="/admin/categorias" className="text-gray-500 hover:text-gray-700 font-medium">Categorías</Link>
             <Link href="/admin/ventas" className="text-gray-500 hover:text-gray-700 font-medium">Ventas</Link>
             <Link href="/admin/mesas" className="text-gray-500 hover:text-gray-700 font-medium">QR</Link>
           </div>
-          <button onClick={handleLogout} className="text-red-600 hover:text-red-700 font-medium">
+          <button onClick={handleLogout} className="text-rose-600 hover:text-rose-700 font-medium">
             Cerrar sesión
           </button>
         </div>
@@ -230,7 +230,7 @@ export default function ProductosPage() {
           <p className="text-gray-600">{productos.length} productos</p>
           <button
             onClick={() => setMostrarForm(true)}
-            className="bg-red-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-red-700"
+            className="bg-rose-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-rose-700"
           >
             Nuevo Producto
           </button>
@@ -359,7 +359,7 @@ export default function ProductosPage() {
                 <button
                   type="submit"
                   disabled={guardando}
-                  className="bg-red-600 text-white px-6 py-2 rounded-lg font-semibold hover:bg-red-700 disabled:opacity-50"
+                  className="bg-rose-600 text-white px-6 py-2 rounded-lg font-semibold hover:bg-rose-700 disabled:opacity-50"
                 >
                   {guardando ? "Guardando..." : "Guardar"}
                 </button>
@@ -370,7 +370,7 @@ export default function ProductosPage() {
                 >
                   Cancelar
                 </button>
-                {error && <p className="text-red-500 text-sm">{error}</p>}
+                {error && <p className="text-rose-500 text-sm">{error}</p>}
               </div>
             </form>
           </div>
@@ -378,7 +378,7 @@ export default function ProductosPage() {
 
         {loading ? (
           <div className="text-center py-12">
-            <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-red-600 mx-auto"></div>
+            <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-rose-600 mx-auto"></div>
           </div>
         ) : (
           <div className="grid gap-3">
@@ -396,7 +396,7 @@ export default function ProductosPage() {
                 )}
                 <div className="flex-1">
                   <h3 className="font-semibold">{producto.nombre}</h3>
-                  <p className="text-red-600 font-bold">${producto.precio.toFixed(2)}</p>
+                  <p className="text-rose-600 font-bold">${producto.precio.toFixed(2)}</p>
                   <p className="text-sm text-gray-500">
                     {categorias.find((c) => c.id === producto.categoriaId)?.nombre}
                   </p>
@@ -407,7 +407,7 @@ export default function ProductosPage() {
                     className={`px-3 py-1 rounded text-sm font-medium ${
                       producto.disponible
                         ? "bg-green-100 text-green-700"
-                        : "bg-red-100 text-red-700"
+                        : "bg-rose-100 text-rose-700"
                     }`}
                   >
                     {producto.disponible ? "Disponible" : "Agotado"}
@@ -420,7 +420,7 @@ export default function ProductosPage() {
                   </button>
                   <button
                     onClick={() => eliminarProducto(producto.id)}
-                    className="bg-red-100 text-red-700 px-3 py-1 rounded text-sm font-medium"
+                    className="bg-rose-100 text-rose-700 px-3 py-1 rounded text-sm font-medium"
                   >
                     Eliminar
                   </button>

@@ -209,19 +209,19 @@ export default function PedidoPage() {
 
   if (authLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-red-50 via-orange-50 to-yellow-50">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-500"></div>
+      <div className="min-h-screen flex items-center justify-center bg-stone-50">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-rose-500"></div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-red-50 via-orange-50 to-yellow-50 p-4 pb-24">
+    <div className="min-h-screen bg-stone-50 p-4 pb-24">
       <div className="max-w-md mx-auto pt-4 pb-8">
         <div className="sticky top-2 z-10 flex justify-center mb-4">
           <a
             href="/pedido-casa"
-            className="inline-flex items-center gap-2 bg-white shadow-md px-5 py-2.5 rounded-full text-sm font-bold text-red-600 border border-red-100 hover:bg-red-50"
+            className="inline-flex items-center gap-2 bg-white shadow-md px-5 py-2.5 rounded-full text-sm font-bold text-rose-600 border border-rose-100 hover:bg-rose-50"
           >
             🍽️ Ir al menú
           </a>
@@ -265,7 +265,7 @@ export default function PedidoPage() {
                 <button
                   type="submit"
                   disabled={buscando}
-                  className="bg-gradient-to-r from-red-500 to-orange-500 text-white px-6 py-3 rounded-xl font-bold disabled:opacity-50 shadow"
+                  className="bg-rose-600 text-white px-6 py-3 rounded-xl font-bold disabled:opacity-50 shadow"
                 >
                   {buscando ? "..." : "Buscar"}
                 </button>
@@ -274,7 +274,7 @@ export default function PedidoPage() {
 
             {noEncontrado && (
               <div className="bg-white rounded-xl p-6 shadow-sm text-center">
-                <p className="text-red-500">Pedido no encontrado</p>
+                <p className="text-rose-500">Pedido no encontrado</p>
               </div>
             )}
           </div>
@@ -292,7 +292,7 @@ export default function PedidoPage() {
                   setPedidoSel(null);
                   setMensajes([]);
                 }}
-                className="text-red-600 text-sm font-medium"
+                className="text-rose-600 text-sm font-medium"
               >
                 Cerrar sesión
               </button>
@@ -309,7 +309,7 @@ export default function PedidoPage() {
                     key={p.id}
                     onClick={() => setSeleccionadoId(p.id)}
                     className={`w-full flex justify-between items-center p-3 text-left hover:bg-gray-50 ${
-                      seleccionadoId === p.id ? "bg-red-50" : ""
+                      seleccionadoId === p.id ? "bg-rose-50" : ""
                     }`}
                   >
                     <div>
@@ -380,7 +380,7 @@ export default function PedidoPage() {
 
             <div className="border-t pt-3 flex justify-between items-center">
               <span className="font-bold text-gray-800">Total</span>
-              <span className="font-bold text-red-600 text-lg">${pedidoSel.total.toFixed(2)}</span>
+              <span className="font-bold text-rose-600 text-lg">${pedidoSel.total.toFixed(2)}</span>
             </div>
 
             <div className="mt-4">
@@ -392,7 +392,7 @@ export default function PedidoPage() {
               </div>
               <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
                 <div
-                  className="h-full bg-gradient-to-r from-red-500 to-orange-500 transition-all"
+                  className="h-full bg-rose-600 transition-all"
                   style={{ width: progreso(pedidoSel.estado) }}
                 ></div>
               </div>
@@ -415,7 +415,7 @@ export default function PedidoPage() {
                 </p>
                 <button
                   onClick={entrarConGoogle}
-                  className="bg-gradient-to-r from-red-500 to-orange-500 text-white px-4 py-2 rounded-xl text-sm font-bold"
+                  className="bg-rose-600 text-white px-4 py-2 rounded-xl text-sm font-bold"
                 >
                   Iniciar sesión con Google
                 </button>
@@ -436,12 +436,12 @@ export default function PedidoPage() {
                       <div
                         className={`max-w-[80%] px-3 py-2 rounded-xl text-sm ${
                           m.emisor === "admin"
-                            ? "bg-red-500 text-white"
+                            ? "bg-rose-500 text-white"
                             : "bg-gray-100 text-gray-800"
                         }`}
                       >
                         <p>{m.texto}</p>
-                        <p className={`text-[10px] mt-1 ${m.emisor === "admin" ? "text-red-100" : "text-gray-400"}`}>
+                        <p className={`text-[10px] mt-1 ${m.emisor === "admin" ? "text-rose-100" : "text-gray-400"}`}>
                           {m.nombre}
                           {m.fechaCreacion &&
                             ` · ${m.fechaCreacion.toLocaleTimeString("es-MX", { hour: "2-digit", minute: "2-digit" })}`}
@@ -462,7 +462,7 @@ export default function PedidoPage() {
                   <button
                     type="submit"
                     disabled={enviandoMsg || !textoMsg.trim()}
-                    className="bg-gradient-to-r from-red-500 to-orange-500 text-white px-4 py-2 rounded-xl text-sm font-bold disabled:opacity-50"
+                    className="bg-rose-600 text-white px-4 py-2 rounded-xl text-sm font-bold disabled:opacity-50"
                   >
                     Enviar
                   </button>

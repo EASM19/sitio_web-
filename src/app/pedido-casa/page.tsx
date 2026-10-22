@@ -243,15 +243,15 @@ export default function PedidoCasaPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-red-50 via-orange-50 to-yellow-50">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-500"></div>
+      <div className="min-h-screen flex items-center justify-center bg-stone-50">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-rose-500"></div>
       </div>
     );
   }
 
   if (exito) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-red-50 via-orange-50 to-yellow-50 flex items-center justify-center p-4">
+      <div className="min-h-screen bg-stone-50 flex items-center justify-center p-4">
         <div className="bg-white rounded-2xl p-8 shadow-xl max-w-sm w-full text-center">
           <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
             <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -263,7 +263,7 @@ export default function PedidoCasaPage() {
           <p className="text-green-600 font-medium mb-6">Estado: Recibido</p>
           <a
             href="/pedido"
-            className="block w-full bg-gradient-to-r from-red-500 to-orange-500 text-white py-3 rounded-xl font-bold shadow mb-3"
+            className="block w-full bg-rose-600 text-white py-3 rounded-xl font-bold shadow mb-3"
           >
             Ver estado de mi pedido
           </a>
@@ -280,7 +280,7 @@ export default function PedidoCasaPage() {
 
   if (vista === "login") {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-red-50 via-orange-50 to-yellow-50 flex items-center justify-center p-4">
+      <div className="min-h-screen bg-stone-50 flex items-center justify-center p-4">
         <div className="bg-white rounded-2xl p-8 shadow-xl max-w-sm w-full text-center">
           <div className="text-4xl mb-3">🍽️</div>
           <h2 className="text-xl font-bold text-gray-800 mb-2">Inicia sesión para pedir</h2>
@@ -301,16 +301,16 @@ export default function PedidoCasaPage() {
             </svg>
             {ingresando ? "Ingresando..." : "Continuar con Google"}
           </button>
-          {error && <p className="text-red-500 text-sm mb-3">{error}</p>}
+          {error && <p className="text-rose-500 text-sm mb-3">{error}</p>}
           <button
             onClick={() => { setVista("menu"); setError(""); }}
-            className="text-red-600 font-bold text-sm"
+            className="text-rose-600 font-bold text-sm"
           >
             ← Volver al menú
           </button>
           <div className="border-t mt-4 pt-4">
             <p className="text-gray-400 text-xs mb-2">¿Solo quieres consultar un pedido?</p>
-            <a href="/pedido" className="text-red-600 font-bold text-sm">Consultar pedido sin cuenta</a>
+            <a href="/pedido" className="text-rose-600 font-bold text-sm">Consultar pedido sin cuenta</a>
           </div>
         </div>
       </div>
@@ -318,8 +318,8 @@ export default function PedidoCasaPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-red-50 via-orange-50 to-yellow-50 pb-24">
-      <header className="bg-gradient-to-r from-red-600 to-orange-500 text-white p-4 sticky top-0 z-10 shadow-lg">
+    <div className="min-h-screen bg-stone-50 pb-24">
+      <header className="bg-stone-900 text-white p-4 sticky top-0 z-10 shadow-lg">
         <div className="max-w-2xl mx-auto flex items-center justify-between">
           <h1 className="text-lg font-bold">🍽️ Nuestro Menú</h1>
           <div className="flex items-center gap-2">
@@ -344,7 +344,7 @@ export default function PedidoCasaPage() {
         {vista === "checkout" ? (
           <div>
             <div className="flex items-center justify-between mb-4">
-              <button onClick={() => setVista("menu")} className="text-red-600 font-bold">
+              <button onClick={() => setVista("menu")} className="text-rose-600 font-bold">
                 ← Volver al menú
               </button>
               {user && (
@@ -364,7 +364,7 @@ export default function PedidoCasaPage() {
                       onClick={() => setTipo(t)}
                       className={`py-3 rounded-xl text-sm font-bold border-2 transition ${
                         tipo === t
-                          ? "border-red-500 bg-red-50 text-red-600"
+                          ? "border-rose-500 bg-rose-50 text-rose-600"
                           : "border-gray-200 text-gray-500"
                       }`}
                     >
@@ -470,15 +470,15 @@ export default function PedidoCasaPage() {
                 })}
                 <div className="border-t mt-2 pt-2 flex justify-between font-bold">
                   <span>Total</span>
-                  <span className="text-red-600">${total.toFixed(2)}</span>
+                  <span className="text-rose-600">${total.toFixed(2)}</span>
                 </div>
               </div>
 
-              {error && <p className="text-red-500 text-sm">{error}</p>}
+              {error && <p className="text-rose-500 text-sm">{error}</p>}
               <button
                 type="submit"
                 disabled={enviando}
-                className="w-full bg-gradient-to-r from-red-500 to-orange-500 text-white py-4 rounded-xl font-bold shadow-lg disabled:opacity-50"
+                className="w-full bg-rose-600 text-white py-4 rounded-xl font-bold shadow-lg disabled:opacity-50"
               >
                 {enviando ? "Enviando..." : "Confirmar Pedido"}
               </button>
@@ -507,13 +507,13 @@ export default function PedidoCasaPage() {
                           <div className="flex-1 min-w-0">
                             <div className="flex justify-between gap-2">
                               <h3 className="font-semibold text-gray-800">{prod.nombre}</h3>
-                              <span className="text-red-600 font-bold">${prod.precio.toFixed(2)}</span>
+                              <span className="text-rose-600 font-bold">${prod.precio.toFixed(2)}</span>
                             </div>
                             {prod.descripcion && <p className="text-sm text-gray-500 mt-1">{prod.descripcion}</p>}
                             {prod.ingredientes && <p className="text-xs text-gray-400 mt-1">{prod.ingredientes}</p>}
                             <div className="mt-2">
                               {cant === 0 ? (
-                                <button onClick={() => agregar(prod.id)} className="bg-gradient-to-r from-red-500 to-orange-500 text-white px-4 py-1.5 rounded-lg text-sm font-bold">
+                                <button onClick={() => agregar(prod.id)} className="bg-rose-600 text-white px-4 py-1.5 rounded-lg text-sm font-bold">
                                   Agregar
                                 </button>
                               ) : (
@@ -544,11 +544,11 @@ export default function PedidoCasaPage() {
           <div className="max-w-2xl mx-auto flex items-center justify-between">
             <div>
               <p className="font-semibold">{cantTotal} productos</p>
-              <p className="text-red-600 font-bold text-lg">${total.toFixed(2)}</p>
+              <p className="text-rose-600 font-bold text-lg">${total.toFixed(2)}</p>
             </div>
             <button
               onClick={iniciarCheckout}
-              className="bg-gradient-to-r from-red-500 to-orange-500 text-white px-6 py-3 rounded-xl font-bold shadow"
+              className="bg-rose-600 text-white px-6 py-3 rounded-xl font-bold shadow"
             >
               {user ? "Hacer Pedido" : "Iniciar sesión y pedir"}
             </button>

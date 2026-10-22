@@ -72,24 +72,24 @@ export default function VentasPage() {
 
   if (!user) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-red-50 via-orange-50 to-yellow-50">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-500"></div>
+      <div className="min-h-screen flex items-center justify-center bg-stone-50">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-rose-500"></div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+    <div className="min-h-screen bg-stone-50">
       <header className="bg-white/80 backdrop-blur border-b border-gray-200 sticky top-0 z-10">
         <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-6">
             <Link href="/admin/pedidos" className="text-gray-500 hover:text-gray-700 font-medium">Pedidos</Link>
             <Link href="/admin/productos" className="text-gray-500 hover:text-gray-700 font-medium">Productos</Link>
             <Link href="/admin/categorias" className="text-gray-500 hover:text-gray-700 font-medium">Categorías</Link>
-            <Link href="/admin/ventas" className="text-red-600 font-bold text-lg">Ventas</Link>
+            <Link href="/admin/ventas" className="text-rose-600 font-bold text-lg">Ventas</Link>
             <Link href="/admin/mesas" className="text-gray-500 hover:text-gray-700 font-medium">QR</Link>
           </div>
-          <button onClick={handleLogout} className="text-red-600 hover:text-red-700 font-medium">
+          <button onClick={handleLogout} className="text-rose-600 hover:text-rose-700 font-medium">
             Cerrar sesión
           </button>
         </div>
@@ -97,7 +97,7 @@ export default function VentasPage() {
 
       <main className="max-w-7xl mx-auto p-4">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-          <div className="bg-gradient-to-r from-red-500 to-orange-500 rounded-xl p-6 text-white shadow-lg">
+          <div className="bg-rose-600 rounded-xl p-6 text-white shadow-lg">
             <p className="text-sm opacity-90">Ventas del día</p>
             <p className="text-3xl font-bold">${totalVentas.toFixed(2)}</p>
           </div>
@@ -113,7 +113,7 @@ export default function VentasPage() {
 
         {loading ? (
           <div className="text-center py-12">
-            <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-red-500 mx-auto"></div>
+            <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-rose-500 mx-auto"></div>
           </div>
         ) : (
           <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
@@ -124,7 +124,7 @@ export default function VentasPage() {
               <div className="space-y-3">
                 {productosTop.map(([nombre, cantidad], idx) => (
                   <div key={nombre} className="flex items-center gap-3">
-                    <span className="w-8 h-8 bg-red-100 rounded-full flex items-center justify-center text-red-600 font-bold text-sm">
+                    <span className="w-8 h-8 bg-rose-100 rounded-full flex items-center justify-center text-rose-600 font-bold text-sm">
                       {idx + 1}
                     </span>
                     <span className="flex-1 font-medium text-gray-800">{nombre}</span>

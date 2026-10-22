@@ -102,7 +102,7 @@ export default function SeedPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-stone-50 flex items-center justify-center p-4">
       <div className="bg-white rounded-2xl p-8 shadow-xl max-w-md w-full text-center">
         <h1 className="text-2xl font-bold text-gray-800 mb-2">Datos de Prueba</h1>
         <p className="text-gray-500 text-sm mb-6">
@@ -111,7 +111,7 @@ export default function SeedPage() {
         <button
           onClick={ejecutarSeed}
           disabled={cargando}
-          className="w-full bg-gradient-to-r from-red-500 to-orange-500 text-white py-3 rounded-xl font-bold hover:from-red-600 hover:to-orange-600 disabled:opacity-50 shadow mb-4"
+          className="w-full bg-rose-600 text-white py-3 rounded-xl font-bold hover:bg-rose-700 disabled:opacity-50 shadow mb-4"
         >
           {cargando ? "Agregando datos..." : "Agregar datos de prueba"}
         </button>

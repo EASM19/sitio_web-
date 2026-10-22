@@ -95,7 +95,7 @@ export default function Carrito({
           <p className="text-green-600 font-medium mb-6">Estado: Recibido</p>
           <button
             onClick={onConfirmado}
-            className="w-full bg-red-600 text-white py-3 rounded-lg font-semibold hover:bg-red-700 transition"
+            className="w-full bg-rose-600 text-white py-3 rounded-lg font-semibold hover:bg-rose-700 transition"
           >
             Hacer otro pedido
           </button>
@@ -123,7 +123,7 @@ export default function Carrito({
                 <div key={producto.id} className="flex items-center justify-between gap-3">
                   <div className="flex-1 min-w-0">
                     <p className="font-medium text-gray-800 truncate">{producto.nombre}</p>
-                    <p className="text-red-600 font-bold">${producto.precio.toFixed(2)}</p>
+                    <p className="text-rose-600 font-bold">${producto.precio.toFixed(2)}</p>
                   </div>
                   <div className="flex items-center gap-2">
                     <button
@@ -149,13 +149,13 @@ export default function Carrito({
         <div className="p-4 border-t">
           <div className="flex justify-between items-center mb-4">
             <span className="text-gray-600">Total</span>
-            <span className="text-xl font-bold text-red-600">${total.toFixed(2)}</span>
+            <span className="text-xl font-bold text-rose-600">${total.toFixed(2)}</span>
           </div>
-          {error && <p className="text-red-500 text-sm mb-3">{error}</p>}
+          {error && <p className="text-rose-500 text-sm mb-3">{error}</p>}
           <button
             onClick={confirmarPedido}
             disabled={items.length === 0 || enviando}
-            className="w-full bg-red-600 text-white py-3 rounded-lg font-semibold hover:bg-red-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full bg-rose-600 text-white py-3 rounded-lg font-semibold hover:bg-rose-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {enviando ? "Enviando..." : "Confirmar Pedido"}
           </button>
