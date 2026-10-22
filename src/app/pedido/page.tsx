@@ -12,6 +12,7 @@ import { auth, db } from "@/lib/firebase";
 import type { Pedido, Mensaje } from "@/types";
 import { sonarAlerta } from "@/lib/sound";
 import { pedirPermisoNotificaciones, notificar } from "@/lib/notif";
+import { suscribirsePush, obtenerSuscripciones, enviarNotificacionPush } from "@/lib/push";
 
 const RESTAURANT_ID = "restaurante1";
 
@@ -50,7 +51,10 @@ export default function PedidoPage() {
     const unsub = onAuthStateChanged(auth, (u) => {
       setUser(u);
       setAuthLoading(false);
-      if (u) pedirPermisoNotificaciones();
+      if (u) {
+        pedirPermisoNotificaciones();
+        suscribirsePush("cliente", u.uid);
+      }
     });
     return () => unsub();
   }, []);
@@ -191,6 +195,10 @@ export default function PedidoPage() {
         }
       );
       setTextoMsg("");
+      const cuerpo = textoMsg.trim().slice(0, 120);
+      obtenerSuscripciones({ tipo: "admin" }).then((subs) =>
+        enviarNotificacionPush("💬 Mensaje de un cliente", cuerpo, "/admin/pedidos", subs)
+      );
     } catch (err) {
       console.error(err);
     } finally {

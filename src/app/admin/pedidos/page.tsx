@@ -9,6 +9,7 @@ import { auth, db } from "@/lib/firebase";
 import type { Pedido, EstadoPedido, Mensaje } from "@/types";
 import { sonarAlerta } from "@/lib/sound";
 import { pedirPermisoNotificaciones, notificar } from "@/lib/notif";
+import { suscribirsePush, obtenerSuscripciones, enviarNotificacionPush } from "@/lib/push";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 
@@ -64,6 +65,7 @@ export default function PedidosPage() {
     if (!user) return;
 
     pedirPermisoNotificaciones();
+    suscribirsePush("admin", user.uid);
 
     const q = query(
       collection(db, "restaurantes", RESTAURANT_ID, "pedidos"),
@@ -84,9 +86,10 @@ export default function PedidosPage() {
         for (const p of pedidosData) {
           if (!idsConocidos.current.has(p.id)) {
             sonarAlerta();
-            notificar(
-              `🔔 Nuevo pedido #${p.numeroPedido}`,
-              `${p.detalles.map((d) => `${d.cantidad}x ${d.nombre}`).join(", ")} — $${p.total.toFixed(2)}`
+            const resumen = `${p.detalles.map((d) => `${d.cantidad}x ${d.nombre}`).join(", ")} — $${p.total.toFixed(2)}`;
+            notificar(`🔔 Nuevo pedido #${p.numeroPedido}`, resumen);
+            obtenerSuscripciones({ tipo: "admin" }).then((subs) =>
+              enviarNotificacionPush(`Nuevo pedido #${p.numeroPedido}`, resumen, "/admin/pedidos", subs)
             );
             idsConocidos.current.add(p.id);
           }
@@ -133,6 +136,17 @@ export default function PedidosPage() {
         }
       );
       setTextoMsg("");
+      if (chatPedido.uid) {
+        const cuerpo = textoMsg.trim().slice(0, 120);
+        obtenerSuscripciones({ uid: chatPedido.uid }).then((subs) =>
+          enviarNotificacionPush(
+            `💬 Mensaje del restaurante (Pedido #${chatPedido.numeroPedido})`,
+            cuerpo,
+            "/pedido",
+            subs
+          )
+        );
+      }
     } catch (err) {
       console.error(err);
     } finally {
@@ -143,6 +157,22 @@ export default function PedidosPage() {
   const cambiarEstado = async (pedido: Pedido, nuevoEstado: EstadoPedido) => {
     const pedidoRef = doc(db, "restaurantes", RESTAURANT_ID, "pedidos", pedido.id);
     await updateDoc(pedidoRef, { estado: nuevoEstado });
+    if (pedido.uid) {
+      const avisos: Record<EstadoPedido, string> = {
+        RECIBIDO: "Tu pedido fue recibido 🧾",
+        PREPARANDO: "Tu pedido ya está en preparación 👨‍🍳",
+        LISTO: "Tu pedido está listo para recoger 🎉",
+        ENTREGADO: "Tu pedido fue entregado. ¡Gracias! ✅",
+      };
+      obtenerSuscripciones({ uid: pedido.uid }).then((subs) =>
+        enviarNotificacionPush(
+          `Pedido #${pedido.numeroPedido}`,
+          avisos[nuevoEstado],
+          "/pedido",
+          subs
+        )
+      );
+    }
   };
 
   const handleLogout = async () => {
@@ -201,6 +231,62 @@ export default function PedidosPage() {
                   <div className="space-y-3">
                     {pedidosEstado.length === 0 ? (
                       <p className="text-sm text-gray-400 italic text-center py-4">Sin pedidos</p>
+                    ) : estado === "ENTREGADO" ? (
+                      (() => {
+                        const porFecha = new Map<string, Pedido[]>();
+                        pedidosEstado.forEach((p) => {
+                          const clave = p.fechaCreacion.toLocaleDateString("es-MX", {
+                            weekday: "long",
+                            day: "numeric",
+                            month: "long",
+                          });
+                          if (!porFecha.has(clave)) porFecha.set(clave, []);
+                          porFecha.get(clave)!.push(p);
+                        });
+                        return Array.from(porFecha.entries()).map(([fecha, lista]) => (
+                          <div key={fecha}>
+                            <p className="text-xs font-bold text-gray-500 uppercase sticky top-0 bg-white/60 backdrop-blur py-1 rounded">
+                              📅 {fecha} · {lista.length} pedido{lista.length !== 1 ? "s" : ""} · ${lista.reduce((s, p) => s + p.total, 0).toFixed(2)}
+                            </p>
+                            <div className="space-y-3 mt-2">
+                              {lista.map((pedido) => (
+                                <div key={pedido.id} className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
+                                  <div className="flex justify-between items-start mb-1">
+                                    <span className="font-bold text-lg text-gray-800">#{pedido.numeroPedido}</span>
+                                    <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-gray-100 text-gray-600">
+                                      {pedido.tipo === "MESA" ? `Mesa ${pedido.mesaNumero}` : pedido.tipo === "PARA_LLEVAR" ? "🛍️ Recoger" : "🏠 Domicilio"}
+                                    </span>
+                                  </div>
+                                  {pedido.infoCliente && (
+                                    <p className="text-xs text-gray-500 mb-2">
+                                      {pedido.infoCliente.nombre} · {pedido.infoCliente.telefono}
+                                    </p>
+                                  )}
+                                  <div className="text-sm space-y-1 mb-3">
+                                    {pedido.detalles.map((detalle, idx) => (
+                                      <div key={idx} className="flex justify-between text-gray-600">
+                                        <span>{detalle.cantidad}x {detalle.nombre}</span>
+                                      </div>
+                                    ))}
+                                  </div>
+                                  <div className="flex justify-between items-center pt-2 border-t border-gray-100">
+                                    <span className="font-bold text-rose-600">${pedido.total.toFixed(2)}</span>
+                                    <button
+                                      onClick={() => {
+                                        setMensajes([]);
+                                        setChatPedido(pedido);
+                                      }}
+                                      className="bg-gray-100 text-gray-600 px-3 py-1.5 rounded-lg text-sm font-bold hover:bg-gray-200"
+                                    >
+                                      💬 Chat
+                                    </button>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        ));
+                      })()
                     ) : (
                       pedidosEstado.map((pedido) => (
                         <div key={pedido.id} className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
@@ -239,19 +325,17 @@ export default function PedidosPage() {
                               >
                                 💬 Chat
                               </button>
-                              {estado !== "ENTREGADO" && (
-                                <button
-                                  onClick={() => {
-                                    const idx = ESTADOS.indexOf(estado);
-                                    if (idx < ESTADOS.length - 1) {
-                                      cambiarEstado(pedido, ESTADOS[idx + 1]);
-                                    }
-                                  }}
-                                  className="bg-rose-600 text-white px-4 py-1.5 rounded-lg text-sm font-bold hover:bg-rose-700 transition shadow"
-                                >
-                                  {ESTADOS[ESTADOS.indexOf(estado) + 1]}
-                                </button>
-                              )}
+                              <button
+                                onClick={() => {
+                                  const idx = ESTADOS.indexOf(estado);
+                                  if (idx < ESTADOS.length - 1) {
+                                    cambiarEstado(pedido, ESTADOS[idx + 1]);
+                                  }
+                                }}
+                                className="bg-rose-600 text-white px-4 py-1.5 rounded-lg text-sm font-bold hover:bg-rose-700 transition shadow"
+                              >
+                                {ESTADOS[ESTADOS.indexOf(estado) + 1]}
+                              </button>
                             </div>
                           </div>
                         </div>
