@@ -81,11 +81,17 @@ export default function PedidoPage() {
       } else {
         lista.forEach((p) => {
           const prev = estadosPrevios.current.get(p.id);
-          if (prev && prev !== "LISTO" && p.estado === "LISTO") {
+          if (prev && prev !== p.estado) {
             sonarAlerta();
+            const avisos: Record<string, string> = {
+              RECIBIDO: "Tu pedido fue recibido por el restaurante 🧾",
+              PREPARANDO: "Tu pedido ya está en preparación 👨‍🍳",
+              LISTO: "Tu pedido está listo para recoger 🎉",
+              ENTREGADO: "Tu pedido fue entregado. ¡Gracias! ✅",
+            };
             notificar(
-              `✅ Tu pedido #${p.numeroPedido} está listo`,
-              "Puedes pasar a recogerlo. Toca para ver los detalles."
+              `🔔 Pedido #${p.numeroPedido}`,
+              avisos[p.estado] || `Estado actualizado: ${p.estado}`
             );
           }
           estadosPrevios.current.set(p.id, p.estado);
@@ -210,8 +216,17 @@ export default function PedidoPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-red-50 via-orange-50 to-yellow-50 p-4">
-      <div className="max-w-md mx-auto pt-8 pb-8">
+    <div className="min-h-screen bg-gradient-to-br from-red-50 via-orange-50 to-yellow-50 p-4 pb-24">
+      <div className="max-w-md mx-auto pt-4 pb-8">
+        <div className="sticky top-2 z-10 flex justify-center mb-4">
+          <a
+            href="/pedido-casa"
+            className="inline-flex items-center gap-2 bg-white shadow-md px-5 py-2.5 rounded-full text-sm font-bold text-red-600 border border-red-100 hover:bg-red-50"
+          >
+            🍽️ Ir al menú
+          </a>
+        </div>
+
         <div className="text-center mb-6">
           <h1 className="text-2xl font-bold text-gray-800">Mis Pedidos</h1>
           <p className="text-gray-500 text-sm">
@@ -345,7 +360,7 @@ export default function PedidoPage() {
                   {pedidoSel.tipo === "MESA"
                     ? `Mesa ${pedidoSel.mesaNumero}`
                     : pedidoSel.tipo === "PARA_LLEVAR"
-                    ? "🛍️ Para llevar"
+                    ? "🛍️ Para recoger"
                     : "🏠 Domicilio"}
                 </p>
               </div>

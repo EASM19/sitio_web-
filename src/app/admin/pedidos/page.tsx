@@ -207,7 +207,7 @@ export default function PedidosPage() {
                           <div className="flex justify-between items-start mb-1">
                             <span className="font-bold text-lg text-gray-800">#{pedido.numeroPedido}</span>
                             <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-gray-100 text-gray-600">
-                              {pedido.tipo === "MESA" ? `Mesa ${pedido.mesaNumero}` : pedido.tipo === "PARA_LLEVAR" ? "🛍️ Llevar" : "🏠 Domicilio"}
+                              {pedido.tipo === "MESA" ? `Mesa ${pedido.mesaNumero}` : pedido.tipo === "PARA_LLEVAR" ? "🛍️ Recoger" : "🏠 Domicilio"}
                             </span>
                           </div>
                           {pedido.infoCliente && (

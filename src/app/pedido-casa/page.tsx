@@ -368,7 +368,7 @@ export default function PedidoCasaPage() {
                           : "border-gray-200 text-gray-500"
                       }`}
                     >
-                      {t === "MESA" ? "🪑 Mesa" : t === "PARA_LLEVAR" ? "🛍️ Llevar" : "🏠 Domicilio"}
+                      {t === "MESA" ? "🪑 Mesa" : t === "PARA_LLEVAR" ? "🛍️ Recoger" : "🏠 Domicilio"}
                     </button>
                   ))}
                 </div>
