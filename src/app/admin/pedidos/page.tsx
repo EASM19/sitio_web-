@@ -88,7 +88,7 @@ export default function PedidosPage() {
 
     const q = query(
       collection(db, "restaurantes", RESTAURANT_ID, "pedidos"),
-      orderBy("fechaCreacion", "desc")
+      orderBy("fechaCreacion", "asc")
     );
 
     const unsub = onSnapshot(q, (snapshot) => {

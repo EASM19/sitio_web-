@@ -1,4 +1,32 @@
 let audioCtx: AudioContext | null = null;
+let listenersInstalados = false;
+
+function desbloquearCtx() {
+  try {
+    const ctx = getCtx();
+    if (ctx && ctx.state === "suspended") {
+      ctx.resume().catch(() => {});
+    }
+  } catch {
+    // silencio
+  }
+}
+
+function instalarListeners() {
+  if (listenersInstalados || typeof window === "undefined") return;
+  listenersInstalados = true;
+  ["pointerdown", "keydown", "touchstart"].forEach((ev) =>
+    window.addEventListener(ev, desbloquearCtx, { passive: true })
+  );
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "visible") desbloquearCtx();
+  });
+  window.addEventListener("focus", desbloquearCtx);
+}
+
+if (typeof window !== "undefined") {
+  instalarListeners();
+}
 
 function getCtx(): AudioContext | null {
   try {
@@ -16,6 +44,7 @@ function getCtx(): AudioContext | null {
 }
 
 export function desbloquearAudio() {
+  instalarListeners();
   const ctx = getCtx();
   if (!ctx) return;
   try {

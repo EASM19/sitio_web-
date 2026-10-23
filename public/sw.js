@@ -10,6 +10,7 @@ self.addEventListener("push", (event) => {
     body: data.cuerpo || "",
     icon: "/icon.svg",
     badge: "/icon.svg",
+    sound: "default",
     data: { url: data.url || "/" },
   };
   event.waitUntil(self.registration.showNotification(titulo, opciones));
