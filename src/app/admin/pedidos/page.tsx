@@ -46,6 +46,7 @@ export default function PedidosPage() {
   const [enviandoMsg, setEnviandoMsg] = useState(false);
   const idsConocidos = useRef<Set<string> | null>(null);
   const msgsPrevios = useRef<Map<string, string>>(new Map());
+  const pendienteChatId = useRef<string | null>(null);
   const [avisos, setAvisos] = useState<
     { id: string; titulo: string; cuerpo: string; hora: Date; leido: boolean }[]
   >([]);
@@ -66,6 +67,12 @@ export default function PedidosPage() {
 
     return () => unsubAuth();
   }, [router]);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const chat = params.get("chat");
+    if (chat) pendienteChatId.current = chat;
+  }, []);
 
   const agregarAviso = (titulo: string, cuerpo: string) => {
     setAvisos((prev) =>
@@ -111,7 +118,7 @@ export default function PedidosPage() {
           if (!idsConocidos.current.has(p.id)) {
             sonarAlerta();
             const resumen = `${p.detalles.map((d) => `${d.cantidad}x ${d.nombre}`).join(", ")} — $${p.total.toFixed(2)}`;
-            notificar(`🔔 Nuevo pedido #${p.numeroPedido}`, resumen);
+            notificar(`🔔 Nuevo pedido #${p.numeroPedido}`, resumen, "/admin/pedidos");
             agregarAviso(`Nuevo pedido #${p.numeroPedido}`, resumen);
             obtenerSuscripciones({ tipo: "admin" }).then((subs) =>
               enviarNotificacionPush(`Nuevo pedido #${p.numeroPedido}`, resumen, "/admin/pedidos", subs)
@@ -124,11 +131,20 @@ export default function PedidosPage() {
             if (previo !== undefined && previo !== p.ultimoMensaje.id) {
               sonarAlerta();
               const texto = p.ultimoMensaje.texto.slice(0, 120);
-              notificar(`💬 Mensaje del cliente (Pedido #${p.numeroPedido})`, texto);
+              notificar(`💬 Mensaje del cliente (Pedido #${p.numeroPedido})`, texto, `/admin/pedidos?chat=${p.id}`);
               agregarAviso(`Chat · Pedido #${p.numeroPedido}`, texto);
             }
             msgsPrevios.current.set(p.id, p.ultimoMensaje.id);
           }
+        }
+      }
+
+      if (pendienteChatId.current) {
+        const obj = pedidosData.find((p) => p.id === pendienteChatId.current);
+        if (obj) {
+          pendienteChatId.current = null;
+          setMensajes([]);
+          setChatPedido(obj);
         }
       }
 
@@ -188,7 +204,7 @@ export default function PedidosPage() {
           enviarNotificacionPush(
             `💬 Mensaje del restaurante (Pedido #${chatPedido.numeroPedido})`,
             cuerpo,
-            "/pedido",
+            `/pedido?chat=${chatPedido.id}`,
             subs
           )
         );
@@ -214,7 +230,7 @@ export default function PedidosPage() {
         enviarNotificacionPush(
           `Pedido #${pedido.numeroPedido}`,
           avisos[nuevoEstado],
-          "/pedido",
+          `/pedido?pedido=${pedido.id}`,
           subs
         )
       );

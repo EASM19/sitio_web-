@@ -25,8 +25,14 @@ self.addEventListener("notificationclick", (event) => {
     self.clients
       .matchAll({ type: "window", includeUncontrolled: true })
       .then((lista) => {
-        for (const cliente of lista) {
-          if ("focus" in cliente) return cliente.focus();
+        const existente = lista.find((c) => "focus" in c);
+        if (existente) {
+          return existente.focus().then((c) => {
+            if (c && "navigate" in c && c.url.startsWith(self.location.origin)) {
+              return c.navigate(destino).then((n) => n || undefined);
+            }
+            return self.clients.openWindow(destino);
+          });
         }
         return self.clients.openWindow(destino);
       })

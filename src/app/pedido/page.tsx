@@ -47,6 +47,7 @@ export default function PedidoPage() {
   const primerSnapshot = useRef(true);
   const pedidoSelIdRef = useRef<string | null>(null);
   const msgsConocidos = useRef<Set<string> | null>(null);
+  const pendiente = useRef<{ sel: string | null; chat: boolean }>({ sel: null, chat: false });
   const [alertasActivas, setAlertasActivas] = useState(false);
 
   const activarAlertas = async () => {
@@ -66,6 +67,18 @@ export default function PedidoPage() {
       }
     });
     return () => unsub();
+  }, []);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const chat = params.get("chat");
+    const pedido = params.get("pedido");
+    if (chat) {
+      pendiente.current.sel = chat;
+      pendiente.current.chat = true;
+    } else if (pedido) {
+      pendiente.current.sel = pedido;
+    }
   }, []);
 
   useEffect(() => {
@@ -94,10 +107,29 @@ export default function PedidoPage() {
         })) as Pedido[];
       lista.sort((a, b) => b.numeroPedido - a.numeroPedido);
 
+      let pendAplicado = false;
+      if (pendiente.current.sel && lista.some((p) => p.id === pendiente.current.sel)) {
+        setMensajes([]);
+        setSeleccionadoId(pendiente.current.sel);
+        if (pendiente.current.chat) {
+          setTimeout(
+            () => document.getElementById("chat-seccion")?.scrollIntoView({ behavior: "smooth", block: "center" }),
+            350
+          );
+        } else {
+          setTimeout(
+            () => document.getElementById("pedido-estado")?.scrollIntoView({ behavior: "smooth", block: "center" }),
+            350
+          );
+        }
+        pendiente.current = { sel: null, chat: false };
+        pendAplicado = true;
+      }
+
       if (primerSnapshot.current) {
         primerSnapshot.current = false;
         lista.forEach((p) => estadosPrevios.current.set(p.id, p.estado));
-        if (lista.length > 0 && !seleccionadoId) {
+        if (!pendAplicado && lista.length > 0 && !seleccionadoId) {
           const activo = lista.find((p) => p.estado !== "ENTREGADO") || lista[0];
           setSeleccionadoId(activo.id);
         }
@@ -114,12 +146,13 @@ export default function PedidoPage() {
             };
             notificar(
               `🔔 Pedido #${p.numeroPedido}`,
-              avisos[p.estado] || `Estado actualizado: ${p.estado}`
+              avisos[p.estado] || `Estado actualizado: ${p.estado}`,
+              `/pedido?pedido=${p.id}`
             );
           }
           estadosPrevios.current.set(p.id, p.estado);
         });
-        if (!seleccionadoId && lista.length > 0) {
+        if (!pendAplicado && !seleccionadoId && lista.length > 0) {
           setSeleccionadoId(lista[0].id);
         }
       }
@@ -167,7 +200,8 @@ export default function PedidoPage() {
               sonarAlerta();
               notificar(
                 `💬 Mensaje del restaurante`,
-                m.texto.slice(0, 120)
+                m.texto.slice(0, 120),
+                `/pedido?chat=${seleccionadoId}`
               );
             }
           }
@@ -236,7 +270,12 @@ export default function PedidoPage() {
       setTextoMsg("");
       const cuerpo = texto.slice(0, 120);
       obtenerSuscripciones({ tipo: "admin" }).then((subs) =>
-        enviarNotificacionPush("💬 Mensaje de un cliente", cuerpo, "/admin/pedidos", subs)
+        enviarNotificacionPush(
+          "💬 Mensaje de un cliente",
+          cuerpo,
+          `/admin/pedidos?chat=${seleccionadoId}`,
+          subs
+        )
       );
     } catch (err) {
       console.error(err);
@@ -415,7 +454,7 @@ export default function PedidoPage() {
         )}
 
         {pedidoSel && (
-          <div className="mt-4 bg-white rounded-xl p-6 shadow-sm border border-gray-100">
+          <div id="pedido-estado" className="mt-4 bg-white rounded-xl p-6 shadow-sm border border-gray-100">
             <div className="flex justify-between items-start mb-4">
               <div>
                 <h2 className="text-xl font-bold text-gray-800">Pedido #{pedidoSel.numeroPedido}</h2>
@@ -469,7 +508,7 @@ export default function PedidoPage() {
         )}
 
         {pedidoSel && (
-          <div className="mt-4 bg-white rounded-xl shadow-sm border border-gray-100 p-4">
+          <div id="chat-seccion" className="mt-4 bg-white rounded-xl shadow-sm border border-gray-100 p-4">
             <h3 className="font-bold text-gray-800 mb-3 flex items-center gap-2">
               💬 Chat con el restaurante
               {(pedidoSel.chatNoLeidoCliente || 0) > 0 && (
