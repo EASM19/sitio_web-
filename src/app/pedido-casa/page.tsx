@@ -9,7 +9,7 @@ import {
   onAuthStateChanged, signInWithPopup, signOut, GoogleAuthProvider, User,
 } from "firebase/auth";
 import { auth, db } from "@/lib/firebase";
-import { suscribirsePush } from "@/lib/push";
+import { suscribirsePush, obtenerSuscripciones, enviarNotificacionPush } from "@/lib/push";
 import type { Producto, Categoria, DetallePedido } from "@/types";
 
 type TipoPedido = "MESA" | "PARA_LLEVAR" | "DOMICILIO";
@@ -242,6 +242,16 @@ export default function PedidoCasaPage() {
       } catch {
         // almacenamiento no disponible
       }
+
+      const resumen = detalles.map((d) => `${d.cantidad}x ${d.nombre}`).join(", ");
+      obtenerSuscripciones({ tipo: "admin" }).then((subs) =>
+        enviarNotificacionPush(
+          `🔔 Nuevo pedido #${next}`,
+          `${resumen} — $${total.toFixed(2)}`,
+          "/admin/pedidos",
+          subs
+        )
+      );
 
       setNumeroPedido(next);
       setExito(true);

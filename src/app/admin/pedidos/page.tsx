@@ -8,7 +8,7 @@ import {
 import { auth, db } from "@/lib/firebase";
 import type { Pedido, EstadoPedido, Mensaje } from "@/types";
 import { sonarAlerta, desbloquearAudio } from "@/lib/sound";
-import { pedirPermisoNotificaciones, notificar } from "@/lib/notif";
+import { pedirPermisoNotificaciones } from "@/lib/notif";
 import { suscribirsePush, obtenerSuscripciones, enviarNotificacionPush } from "@/lib/push";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -36,6 +36,28 @@ const ESTADO_BG: Record<EstadoPedido, string> = {
   ENTREGADO: "bg-gray-500",
 };
 
+const inicioSemana = (d: Date) => {
+  const x = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+  x.setDate(x.getDate() - x.getDay());
+  return x;
+};
+
+const etiquetaSemana = (inicio: Date) => {
+  const fin = new Date(inicio);
+  fin.setDate(fin.getDate() + 6);
+  const mismo =
+    inicio.getMonth() === fin.getMonth() && inicio.getFullYear() === fin.getFullYear();
+  if (mismo) {
+    return `Del ${inicio.getDate()} al ${fin.getDate()} de ${fin.toLocaleDateString("es-MX", {
+      month: "long",
+      year: "numeric",
+    })}`;
+  }
+  const f = (dt: Date) =>
+    dt.toLocaleDateString("es-MX", { day: "numeric", month: "short", year: "2-digit" });
+  return `Del ${f(inicio)} al ${f(fin)}`;
+};
+
 export default function PedidosPage() {
   const [user, setUser] = useState<User | null>(null);
   const [pedidos, setPedidos] = useState<Pedido[]>([]);
@@ -52,6 +74,8 @@ export default function PedidosPage() {
   >([]);
   const [bellAbierto, setBellAbierto] = useState(false);
   const [alertasActivas, setAlertasActivas] = useState(false);
+  const [historialAbierto, setHistorialAbierto] = useState(false);
+  const [semanaSel, setSemanaSel] = useState<number | null>(null);
   const router = useRouter();
 
   const RESTAURANT_ID = "restaurante1";
@@ -118,11 +142,7 @@ export default function PedidosPage() {
           if (!idsConocidos.current.has(p.id)) {
             sonarAlerta();
             const resumen = `${p.detalles.map((d) => `${d.cantidad}x ${d.nombre}`).join(", ")} — $${p.total.toFixed(2)}`;
-            notificar(`🔔 Nuevo pedido #${p.numeroPedido}`, resumen, "/admin/pedidos");
             agregarAviso(`Nuevo pedido #${p.numeroPedido}`, resumen);
-            obtenerSuscripciones({ tipo: "admin" }).then((subs) =>
-              enviarNotificacionPush(`Nuevo pedido #${p.numeroPedido}`, resumen, "/admin/pedidos", subs)
-            );
             idsConocidos.current.add(p.id);
           }
 
@@ -131,7 +151,6 @@ export default function PedidosPage() {
             if (previo !== undefined && previo !== p.ultimoMensaje.id) {
               sonarAlerta();
               const texto = p.ultimoMensaje.texto.slice(0, 120);
-              notificar(`💬 Mensaje del cliente (Pedido #${p.numeroPedido})`, texto, `/admin/pedidos?chat=${p.id}`);
               agregarAviso(`Chat · Pedido #${p.numeroPedido}`, texto);
             }
             msgsPrevios.current.set(p.id, p.ultimoMensaje.id);
@@ -250,6 +269,22 @@ export default function PedidosPage() {
     );
   }
 
+  const inicioActual = inicioSemana(new Date()).getTime();
+  const entregadosSemana = pedidos.filter(
+    (p) => p.estado === "ENTREGADO" && p.fechaCreacion.getTime() >= inicioActual
+  );
+  const entregadosPrevios = pedidos.filter(
+    (p) => p.estado === "ENTREGADO" && p.fechaCreacion.getTime() < inicioActual
+  );
+  const semanasPrevias: [number, Pedido[]][] = Array.from(
+    entregadosPrevios.reduce((m, p) => {
+      const k = inicioSemana(p.fechaCreacion).getTime();
+      if (!m.has(k)) m.set(k, []);
+      m.get(k)!.push(p);
+      return m;
+    }, new Map<number, Pedido[]>()).entries()
+  ).sort((a, b) => b[0] - a[0]);
+
   return (
     <div className="min-h-screen bg-stone-50">
       <header className="bg-white/80 backdrop-blur border-b border-gray-200 sticky top-0 z-10">
@@ -341,7 +376,10 @@ export default function PedidosPage() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             {ESTADOS.map((estado) => {
-              const pedidosEstado = pedidos.filter((p) => p.estado === estado);
+              const pedidosEstado =
+                estado === "ENTREGADO"
+                  ? entregadosSemana
+                  : pedidos.filter((p) => p.estado === estado);
               return (
                 <div key={estado} className={`rounded-xl p-4 border ${ESTADO_COLORS[estado]}`}>
                   <div className="flex items-center gap-2 mb-4">
@@ -353,6 +391,14 @@ export default function PedidosPage() {
                       {pedidosEstado.length}
                     </span>
                   </div>
+                  {estado === "ENTREGADO" && (
+                    <button
+                      onClick={() => setHistorialAbierto(true)}
+                      className="w-full mb-3 text-xs font-bold text-gray-500 bg-white/80 border border-gray-200 rounded-lg py-1.5 hover:bg-white hover:text-gray-700"
+                    >
+                      📚 Historial semanal ({entregadosPrevios.length} de semanas anteriores)
+                    </button>
+                  )}
                   <div className="space-y-3">
                     {pedidosEstado.length === 0 ? (
                       <p className="text-sm text-gray-400 italic text-center py-4">Sin pedidos</p>
@@ -567,6 +613,117 @@ export default function PedidosPage() {
                 Enviar
               </button>
             </form>
+          </div>
+        </div>
+      )}
+
+      {historialAbierto && (
+        <div
+          className="fixed inset-0 bg-black/40 z-30 flex items-end sm:items-center justify-center p-4"
+          onClick={() => setHistorialAbierto(false)}
+        >
+          <div
+            className="bg-white rounded-2xl w-full max-w-lg max-h-[85vh] flex flex-col shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex justify-between items-center p-4 border-b">
+              <div>
+                <h3 className="font-bold text-gray-800">📚 Historial de pedidos entregados</h3>
+                <p className="text-xs text-gray-500">Semanas anteriores (domingo a sábado)</p>
+              </div>
+              <button
+                onClick={() => setHistorialAbierto(false)}
+                className="text-gray-400 hover:text-gray-600 text-xl font-bold"
+              >
+                ✕
+              </button>
+            </div>
+            <div className="flex-1 overflow-y-auto p-4 space-y-3">
+              {semanasPrevias.length === 0 ? (
+                <p className="text-gray-400 text-sm text-center py-6">
+                  Aún no hay semanas anteriores con pedidos entregados
+                </p>
+              ) : (
+                semanasPrevias.map(([k, lista]) => (
+                  <div key={k} className="border border-gray-200 rounded-xl overflow-hidden">
+                    <button
+                      onClick={() => setSemanaSel((s) => (s === k ? null : k))}
+                      className="w-full flex justify-between items-center gap-2 p-3 bg-gray-50 hover:bg-gray-100 text-left"
+                    >
+                      <span className="text-sm font-bold text-gray-700">
+                        📅 {etiquetaSemana(new Date(k))}
+                      </span>
+                      <span className="text-xs font-bold text-gray-500 whitespace-nowrap">
+                        {lista.length} ped · ${lista.reduce((s, p) => s + p.total, 0).toFixed(2)}{" "}
+                        {semanaSel === k ? "▾" : "▸"}
+                      </span>
+                    </button>
+                    {semanaSel === k && (
+                      <div className="p-3 space-y-3 bg-white border-t border-gray-100">
+                        {(() => {
+                          const porFecha = new Map<string, Pedido[]>();
+                          [...lista]
+                            .sort((a, b) => b.fechaCreacion.getTime() - a.fechaCreacion.getTime())
+                            .forEach((p) => {
+                              const clave = p.fechaCreacion.toLocaleDateString("es-MX", {
+                                weekday: "long",
+                                day: "numeric",
+                                month: "long",
+                              });
+                              if (!porFecha.has(clave)) porFecha.set(clave, []);
+                              porFecha.get(clave)!.push(p);
+                            });
+                          return Array.from(porFecha.entries()).map(([fecha, pedidosDia]) => (
+                            <div key={fecha}>
+                              <p className="text-xs font-bold text-gray-500 uppercase">
+                                📅 {fecha} · {pedidosDia.length} ped · $
+                                {pedidosDia.reduce((s, p) => s + p.total, 0).toFixed(2)}
+                              </p>
+                              <div className="space-y-2 mt-1">
+                                {pedidosDia.map((pedido) => (
+                                  <div
+                                    key={pedido.id}
+                                    className="bg-gray-50 rounded-lg p-3 text-sm border border-gray-100"
+                                  >
+                                    <div className="flex justify-between font-bold text-gray-800">
+                                      <span>#{pedido.numeroPedido}</span>
+                                      <span className="text-rose-600">
+                                        ${pedido.total.toFixed(2)}
+                                      </span>
+                                    </div>
+                                    <p className="text-xs text-gray-500">
+                                      {pedido.infoCliente?.nombre ||
+                                        pedido.clienteEmail ||
+                                        "Cliente"}{" "}
+                                      ·{" "}
+                                      {pedido.fechaCreacion.toLocaleTimeString("es-MX", {
+                                        hour: "2-digit",
+                                        minute: "2-digit",
+                                      })}{" "}
+                                      ·{" "}
+                                      {pedido.tipo === "MESA"
+                                        ? `Mesa ${pedido.mesaNumero}`
+                                        : pedido.tipo === "PARA_LLEVAR"
+                                        ? "🛍️ Recoger"
+                                        : "🏠 Domicilio"}
+                                    </p>
+                                    <p className="text-xs text-gray-600">
+                                      {pedido.detalles
+                                        .map((d) => `${d.cantidad}x ${d.nombre}`)
+                                        .join(", ")}
+                                    </p>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          ));
+                        })()}
+                      </div>
+                    )}
+                  </div>
+                ))
+              )}
+            </div>
           </div>
         </div>
       )}

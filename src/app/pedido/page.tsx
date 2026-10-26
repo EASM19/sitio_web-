@@ -11,7 +11,7 @@ import {
 import { auth, db } from "@/lib/firebase";
 import type { Pedido, Mensaje } from "@/types";
 import { sonarAlerta, desbloquearAudio } from "@/lib/sound";
-import { pedirPermisoNotificaciones, notificar } from "@/lib/notif";
+import { pedirPermisoNotificaciones } from "@/lib/notif";
 import { suscribirsePush, obtenerSuscripciones, enviarNotificacionPush } from "@/lib/push";
 
 const RESTAURANT_ID = "restaurante1";
@@ -138,17 +138,6 @@ export default function PedidoPage() {
           const prev = estadosPrevios.current.get(p.id);
           if (prev && prev !== p.estado) {
             sonarAlerta();
-            const avisos: Record<string, string> = {
-              RECIBIDO: "Tu pedido fue recibido por el restaurante 🧾",
-              PREPARANDO: "Tu pedido ya está en preparación 👨‍🍳",
-              LISTO: "Tu pedido está listo para recoger 🎉",
-              ENTREGADO: "Tu pedido fue entregado. ¡Gracias! ✅",
-            };
-            notificar(
-              `🔔 Pedido #${p.numeroPedido}`,
-              avisos[p.estado] || `Estado actualizado: ${p.estado}`,
-              `/pedido?pedido=${p.id}`
-            );
           }
           estadosPrevios.current.set(p.id, p.estado);
         });
@@ -198,11 +187,6 @@ export default function PedidoPage() {
           for (const m of lista) {
             if (m.emisor === "admin" && !msgsConocidos.current.has(m.id)) {
               sonarAlerta();
-              notificar(
-                `💬 Mensaje del restaurante`,
-                m.texto.slice(0, 120),
-                `/pedido?chat=${seleccionadoId}`
-              );
             }
           }
           lista.forEach((m) => msgsConocidos.current!.add(m.id));
