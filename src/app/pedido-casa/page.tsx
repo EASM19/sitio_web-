@@ -9,6 +9,7 @@ import {
   onAuthStateChanged, signInWithPopup, signOut, GoogleAuthProvider, User,
 } from "firebase/auth";
 import { auth, db } from "@/lib/firebase";
+import { suscribirsePush } from "@/lib/push";
 import type { Producto, Categoria, DetallePedido } from "@/types";
 
 type TipoPedido = "MESA" | "PARA_LLEVAR" | "DOMICILIO";
@@ -114,7 +115,8 @@ export default function PedidoCasaPage() {
     setError("");
     try {
       const provider = new GoogleAuthProvider();
-      await signInWithPopup(auth, provider);
+      const cred = await signInWithPopup(auth, provider);
+      suscribirsePush("cliente", cred.user.uid);
       setVista("checkout");
     } catch (err) {
       console.error(err);

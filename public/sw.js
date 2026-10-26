@@ -11,6 +11,8 @@ self.addEventListener("push", (event) => {
     icon: "/icon.svg",
     badge: "/icon.svg",
     sound: "default",
+    tag: data.url || "shopqr",
+    renotify: true,
     data: { url: data.url || "/" },
   };
   event.waitUntil(self.registration.showNotification(titulo, opciones));

@@ -15,6 +15,11 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Restaurante - Menú Digital",
   description: "Sistema de pedidos para restaurante",
+  appleWebApp: {
+    capable: true,
+    title: "ShopQR",
+    statusBarStyle: "default",
+  },
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

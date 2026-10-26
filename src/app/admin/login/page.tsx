@@ -4,6 +4,9 @@ import { useState } from "react";
 import { signInWithEmailAndPassword } from "firebase/auth";
 import { auth } from "@/lib/firebase";
 import { useRouter } from "next/navigation";
+import { pedirPermisoNotificaciones } from "@/lib/notif";
+import { desbloquearAudio } from "@/lib/sound";
+import { suscribirsePush } from "@/lib/push";
 
 export default function AdminLoginPage() {
   const [email, setEmail] = useState("");
@@ -17,7 +20,13 @@ export default function AdminLoginPage() {
     setLoading(true);
     setError("");
     try {
-      await signInWithEmailAndPassword(auth, email, password);
+      const cred = await signInWithEmailAndPassword(auth, email, password);
+      desbloquearAudio();
+      pedirPermisoNotificaciones().then((p) => {
+        if (p === "granted") {
+          suscribirsePush("admin", cred.user.uid);
+        }
+      });
       router.push("/admin/pedidos");
     } catch {
       setError("Correo o contraseña incorrectos");
