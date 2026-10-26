@@ -71,6 +71,7 @@ export interface Pedido {
     nombre: string;
     telefono: string;
     direccion?: string;
+    referencia?: string;
     hora?: string;
   };
 }
@@ -89,4 +90,5 @@ export interface ClientePerfil {
   nombre: string;
   telefono: string;
   direccion: string;
+  referencia?: string;
 }

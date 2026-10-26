@@ -465,6 +465,11 @@ export default function PedidoPage() {
                     ? "🛍️ Para recoger"
                     : "🏠 Domicilio"}
                 </p>
+                {pedidoSel.infoCliente?.referencia && (
+                  <p className="text-xs font-bold text-gray-600 mt-1">
+                    📍 {pedidoSel.infoCliente.referencia}
+                  </p>
+                )}
               </div>
               <span className={`px-3 py-1 rounded-full text-sm font-bold ${getEstadoColor(pedidoSel.estado)}`}>
                 {pedidoSel.estado}

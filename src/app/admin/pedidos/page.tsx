@@ -387,6 +387,11 @@ export default function PedidosPage() {
                                       {pedido.infoCliente.nombre} · {pedido.infoCliente.telefono}
                                     </p>
                                   )}
+                                  {pedido.infoCliente?.referencia && (
+                                    <p className="text-xs font-bold text-gray-600 mb-2">
+                                      📍 {pedido.infoCliente.referencia}
+                                    </p>
+                                  )}
                                   <div className="text-sm space-y-1 mb-3">
                                     {pedido.detalles.map((detalle, idx) => (
                                       <div key={idx} className="flex justify-between text-gray-600">
@@ -431,6 +436,11 @@ export default function PedidosPage() {
                               {pedido.infoCliente.nombre} · {pedido.infoCliente.telefono}
                               {pedido.infoCliente.direccion && ` · ${pedido.infoCliente.direccion}`}
                               {pedido.infoCliente.hora && ` · ${pedido.infoCliente.hora}`}
+                            </p>
+                          )}
+                          {pedido.infoCliente?.referencia && (
+                            <p className="text-xs font-bold text-gray-600 mb-2">
+                              📍 {pedido.infoCliente.referencia}
                             </p>
                           )}
                           <div className="text-sm space-y-1 mb-3">

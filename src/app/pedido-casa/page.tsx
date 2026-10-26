@@ -35,6 +35,7 @@ export default function PedidoCasaPage() {
   const [direccionGuardada, setDireccionGuardada] = useState("");
   const [usarDirGuardada, setUsarDirGuardada] = useState(true);
   const [direccionNueva, setDireccionNueva] = useState("");
+  const [referencia, setReferencia] = useState("");
 
   const [tipo, setTipo] = useState<TipoPedido>("MESA");
   const [mesaNumero, setMesaNumero] = useState("");
@@ -65,6 +66,7 @@ export default function PedidoCasaPage() {
           setDireccionGuardada(d.direccion);
           setUsarDirGuardada(true);
         }
+        setReferencia((prev) => prev || d.referencia || "");
       } catch (err) {
         console.error(err);
       }
@@ -140,6 +142,7 @@ export default function PedidoCasaPage() {
     setNombre("");
     setTelefono("");
     setDireccionGuardada("");
+    setReferencia("");
     setVista("menu");
   };
 
@@ -208,7 +211,13 @@ export default function PedidoCasaPage() {
         detalles,
         uid: user.uid,
         clienteEmail: user.email || "",
-        infoCliente: { nombre, telefono, direccion: direccionFinal, hora },
+        infoCliente: {
+          nombre,
+          telefono,
+          direccion: direccionFinal,
+          referencia: tipo === "DOMICILIO" ? referencia.trim() : "",
+          hora,
+        },
       });
 
       await setDoc(
@@ -219,6 +228,7 @@ export default function PedidoCasaPage() {
           nombre,
           telefono,
           direccion: direccionGuardada || (tipo === "DOMICILIO" ? direccionNueva : ""),
+          ...(tipo === "DOMICILIO" ? { referencia: referencia.trim() } : {}),
           actualizado: serverTimestamp(),
         },
         { merge: true }
@@ -425,6 +435,14 @@ export default function PedidoCasaPage() {
                         style={{ color: "#1f2937" }}
                       />
                     ) : null}
+                    <textarea
+                      value={referencia}
+                      onChange={(e) => setReferencia(e.target.value)}
+                      placeholder="Referencia para ubicarlo (ej: frente al parque, casa azul, portón negro)"
+                      rows={2}
+                      className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl outline-none resize-none"
+                      style={{ color: "#1f2937" }}
+                    />
                   </div>
                 )}
                 {tipo === "PARA_LLEVAR" && (
