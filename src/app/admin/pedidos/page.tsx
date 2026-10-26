@@ -359,7 +359,10 @@ export default function PedidosPage() {
                     ) : estado === "ENTREGADO" ? (
                       (() => {
                         const porFecha = new Map<string, Pedido[]>();
-                        pedidosEstado.forEach((p) => {
+                        const ordenados = [...pedidosEstado].sort(
+                          (a, b) => b.fechaCreacion.getTime() - a.fechaCreacion.getTime()
+                        );
+                        ordenados.forEach((p) => {
                           const clave = p.fechaCreacion.toLocaleDateString("es-MX", {
                             weekday: "long",
                             day: "numeric",
