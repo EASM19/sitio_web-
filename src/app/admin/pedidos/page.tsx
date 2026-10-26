@@ -8,7 +8,7 @@ import {
 import { auth, db } from "@/lib/firebase";
 import type { Pedido, EstadoPedido, Mensaje } from "@/types";
 import { sonarAlerta, desbloquearAudio } from "@/lib/sound";
-import { pedirPermisoNotificaciones } from "@/lib/notif";
+import { pedirPermisoNotificaciones, notificar } from "@/lib/notif";
 import { suscribirsePush, obtenerSuscripciones, enviarNotificacionPush } from "@/lib/push";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -142,6 +142,7 @@ export default function PedidosPage() {
           if (!idsConocidos.current.has(p.id)) {
             sonarAlerta();
             const resumen = `${p.detalles.map((d) => `${d.cantidad}x ${d.nombre}`).join(", ")} — $${p.total.toFixed(2)}`;
+            notificar(`🔔 Nuevo pedido #${p.numeroPedido}`, resumen, "/admin/pedidos");
             agregarAviso(`Nuevo pedido #${p.numeroPedido}`, resumen);
             idsConocidos.current.add(p.id);
           }
@@ -151,6 +152,11 @@ export default function PedidosPage() {
             if (previo !== undefined && previo !== p.ultimoMensaje.id) {
               sonarAlerta();
               const texto = p.ultimoMensaje.texto.slice(0, 120);
+              notificar(
+                `💬 Mensaje del cliente (Pedido #${p.numeroPedido})`,
+                texto,
+                `/admin/pedidos?chat=${p.id}`
+              );
               agregarAviso(`Chat · Pedido #${p.numeroPedido}`, texto);
             }
             msgsPrevios.current.set(p.id, p.ultimoMensaje.id);
