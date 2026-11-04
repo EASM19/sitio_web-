@@ -1,8 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { onAuthStateChanged, User } from "firebase/auth";
 import { collection, addDoc, getDocs } from "firebase/firestore";
-import { db } from "@/lib/firebase";
+import { auth, db } from "@/lib/firebase";
+import { useRouter } from "next/navigation";
+import { useSesionActiva } from "@/hooks/useSesionActiva";
 
 const RESTAURANT_ID = "restaurante1";
 
@@ -41,8 +44,27 @@ const PRODUCTOS: Record<string, { nombre: string; descripcion: string; precio: n
 };
 
 export default function SeedPage() {
+  const [user, setUser] = useState<User | null>(null);
   const [cargando, setCargando] = useState(false);
   const [mensaje, setMensaje] = useState("");
+  const router = useRouter();
+  useSesionActiva(user);
+
+  useEffect(() => {
+    const unsub = onAuthStateChanged(auth, (u) => {
+      if (!u) router.push("/admin/login");
+      else setUser(u);
+    });
+    return () => unsub();
+  }, [router]);
+
+  if (!user) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-stone-50">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-rose-500"></div>
+      </div>
+    );
+  }
 
   const ejecutarSeed = async () => {
     setCargando(true);

@@ -12,6 +12,7 @@ import { pedirPermisoNotificaciones, notificar } from "@/lib/notif";
 import { suscribirsePush, obtenerSuscripciones, enviarNotificacionPush } from "@/lib/push";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { useSesionActiva } from "@/hooks/useSesionActiva";
 
 const ESTADOS: EstadoPedido[] = ["RECIBIDO", "PREPARANDO", "LISTO", "ENTREGADO"];
 
@@ -77,6 +78,7 @@ export default function PedidosPage() {
   const [historialAbierto, setHistorialAbierto] = useState(false);
   const [semanaSel, setSemanaSel] = useState<number | null>(null);
   const router = useRouter();
+  useSesionActiva(user);
 
   const RESTAURANT_ID = "restaurante1";
 

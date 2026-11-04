@@ -17,6 +17,7 @@ import { fileToDataUrl } from "@/lib/image";
 import type { Producto, Categoria } from "@/types";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { useSesionActiva } from "@/hooks/useSesionActiva";
 
 const RESTAURANT_ID = "restaurante1";
 
@@ -41,6 +42,7 @@ export default function ProductosPage() {
   const [mostrarNuevaCat, setMostrarNuevaCat] = useState(false);
   const [creandoCat, setCreandoCat] = useState(false);
   const [error, setError] = useState("");
+  useSesionActiva(user);
 
   useEffect(() => {
     const unsubAuth = onAuthStateChanged(auth, (u) => {

@@ -6,12 +6,14 @@ import { auth } from "@/lib/firebase";
 import { QRCodeSVG } from "qrcode.react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { useSesionActiva } from "@/hooks/useSesionActiva";
 
 export default function MesasPage() {
   const [user, setUser] = useState<User | null>(null);
   const [customUrl, setCustomUrl] = useState("");
   const [qrUrl, setQrUrl] = useState("");
   const router = useRouter();
+  useSesionActiva(user);
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, (u) => {

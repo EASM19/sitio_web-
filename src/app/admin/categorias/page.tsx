@@ -7,6 +7,7 @@ import { auth, db } from "@/lib/firebase";
 import type { Categoria } from "@/types";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { useSesionActiva } from "@/hooks/useSesionActiva";
 
 const RESTAURANT_ID = "restaurante1";
 
@@ -17,6 +18,7 @@ export default function CategoriasPage() {
   const [nuevaCategoria, setNuevaCategoria] = useState("");
   const [creando, setCreando] = useState(false);
   const router = useRouter();
+  useSesionActiva(user);
 
   useEffect(() => {
     const unsubAuth = onAuthStateChanged(auth, (u) => {
