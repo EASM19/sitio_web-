@@ -7,6 +7,7 @@ import { QRCodeSVG } from "qrcode.react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useSesionActiva } from "@/hooks/useSesionActiva";
+import { useAvisosPedido } from "@/hooks/useAvisosPedido";
 
 export default function MesasPage() {
   const [user, setUser] = useState<User | null>(null);
@@ -14,6 +15,7 @@ export default function MesasPage() {
   const [qrUrl, setQrUrl] = useState("");
   const router = useRouter();
   useSesionActiva(user);
+  useAvisosPedido(user);
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, (u) => {

@@ -6,6 +6,7 @@ import { collection, addDoc, getDocs } from "firebase/firestore";
 import { auth, db } from "@/lib/firebase";
 import { useRouter } from "next/navigation";
 import { useSesionActiva } from "@/hooks/useSesionActiva";
+import { useAvisosPedido } from "@/hooks/useAvisosPedido";
 
 const RESTAURANT_ID = "restaurante1";
 
@@ -49,6 +50,7 @@ export default function SeedPage() {
   const [mensaje, setMensaje] = useState("");
   const router = useRouter();
   useSesionActiva(user);
+  useAvisosPedido(user);
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, (u) => {

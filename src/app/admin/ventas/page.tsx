@@ -8,6 +8,7 @@ import type { Pedido } from "@/types";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useSesionActiva } from "@/hooks/useSesionActiva";
+import { useAvisosPedido } from "@/hooks/useAvisosPedido";
 
 const RESTAURANT_ID = "restaurante1";
 
@@ -23,6 +24,7 @@ export default function VentasPage() {
   const [verTodo, setVerTodo] = useState(false);
   const router = useRouter();
   useSesionActiva(user);
+  useAvisosPedido(user);
 
   useEffect(() => {
     const unsubAuth = onAuthStateChanged(auth, (u) => {

@@ -8,6 +8,7 @@ import type { Categoria } from "@/types";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useSesionActiva } from "@/hooks/useSesionActiva";
+import { useAvisosPedido } from "@/hooks/useAvisosPedido";
 
 const RESTAURANT_ID = "restaurante1";
 
@@ -19,6 +20,7 @@ export default function CategoriasPage() {
   const [creando, setCreando] = useState(false);
   const router = useRouter();
   useSesionActiva(user);
+  useAvisosPedido(user);
 
   useEffect(() => {
     const unsubAuth = onAuthStateChanged(auth, (u) => {

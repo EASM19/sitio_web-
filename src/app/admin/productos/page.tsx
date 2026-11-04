@@ -18,6 +18,7 @@ import type { Producto, Categoria } from "@/types";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useSesionActiva } from "@/hooks/useSesionActiva";
+import { useAvisosPedido } from "@/hooks/useAvisosPedido";
 
 const RESTAURANT_ID = "restaurante1";
 
@@ -43,6 +44,7 @@ export default function ProductosPage() {
   const [creandoCat, setCreandoCat] = useState(false);
   const [error, setError] = useState("");
   useSesionActiva(user);
+  useAvisosPedido(user);
 
   useEffect(() => {
     const unsubAuth = onAuthStateChanged(auth, (u) => {
