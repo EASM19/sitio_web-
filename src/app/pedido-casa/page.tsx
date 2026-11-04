@@ -6,7 +6,7 @@ import {
   doc, getDoc, setDoc,
 } from "firebase/firestore";
 import {
-  onAuthStateChanged, signInWithPopup, signOut, GoogleAuthProvider, User,
+  onAuthStateChanged, signInWithPopup, signInWithRedirect, signOut, GoogleAuthProvider, User,
 } from "firebase/auth";
 import { auth, db } from "@/lib/firebase";
 import { suscribirsePush, obtenerSuscripciones, enviarNotificacionPush } from "@/lib/push";
@@ -14,6 +14,11 @@ import type { Producto, Categoria, DetallePedido } from "@/types";
 
 type TipoPedido = "MESA" | "PARA_LLEVAR" | "DOMICILIO";
 type Vista = "menu" | "login" | "checkout";
+
+type PromptInstalar = Event & {
+  prompt: () => Promise<void>;
+  userChoice: Promise<{ outcome: "accepted" | "dismissed" }>;
+};
 
 const RESTAURANT_ID = "restaurante1";
 
@@ -42,10 +47,64 @@ export default function PedidoCasaPage() {
   const [hora, setHora] = useState("");
   const [ingresando, setIngresando] = useState(false);
 
+  const [promptInstalar, setPromptInstalar] = useState<PromptInstalar | null>(null);
+  const [esIOS, setEsIOS] = useState(false);
+  const [appInstalada, setAppInstalada] = useState(false);
+  const [ayudaIOS, setAyudaIOS] = useState(false);
+
+  useEffect(() => {
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker.register("/sw.js").catch(() => {});
+    }
+    const standalone =
+      window.matchMedia("(display-mode: standalone)").matches ||
+      (window.navigator as Navigator & { standalone?: boolean }).standalone === true;
+    setAppInstalada(standalone);
+    setEsIOS(/iphone|ipad|ipod/i.test(navigator.userAgent));
+
+    const onPrompt = (e: Event) => {
+      e.preventDefault();
+      setPromptInstalar(e as PromptInstalar);
+    };
+    const onInstalada = () => {
+      setPromptInstalar(null);
+      setAppInstalada(true);
+    };
+    window.addEventListener("beforeinstallprompt", onPrompt);
+    window.addEventListener("appinstalled", onInstalada);
+    return () => {
+      window.removeEventListener("beforeinstallprompt", onPrompt);
+      window.removeEventListener("appinstalled", onInstalada);
+    };
+  }, []);
+
+  const instalarApp = async () => {
+    if (promptInstalar) {
+      try {
+        await promptInstalar.prompt();
+        const res = await promptInstalar.userChoice;
+        if (res.outcome === "accepted") setPromptInstalar(null);
+      } catch {
+        // ignorado
+      }
+      return;
+    }
+    if (esIOS) setAyudaIOS(true);
+  };
+
+  const mostrarInstalar = !appInstalada && (promptInstalar !== null || esIOS);
+
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, (u) => {
       setUser(u);
       setAuthLoading(false);
+      if (u) {
+        suscribirsePush("cliente", u.uid);
+        if (sessionStorage.getItem("irCheckout") === "1") {
+          sessionStorage.removeItem("irCheckout");
+          setVista("checkout");
+        }
+      }
     });
     return () => unsub();
   }, []);
@@ -124,7 +183,9 @@ export default function PedidoCasaPage() {
       console.error(err);
       const codigo = (err as { code?: string }).code || "";
       if (codigo === "auth/popup-blocked") {
-        setError("Se bloqueó la ventana. Permite las ventanas emergentes y vuelve a intentar.");
+        sessionStorage.setItem("irCheckout", "1");
+        await signInWithRedirect(auth, new GoogleAuthProvider());
+        return;
       } else if (codigo === "auth/operation-not-allowed") {
         setError("Activa el proveedor Google en Firebase Console → Authentication → Sign-in method.");
       } else if (codigo === "auth/popup-closed-by-user") {
@@ -345,6 +406,15 @@ export default function PedidoCasaPage() {
         <div className="max-w-2xl mx-auto flex items-center justify-between">
           <h1 className="text-lg font-bold">🍽️ Nuestro Menú</h1>
           <div className="flex items-center gap-2">
+            {mostrarInstalar && (
+              <button
+                onClick={instalarApp}
+                className="bg-rose-600 px-3 py-1.5 rounded-lg text-xs font-bold shadow"
+                title="Instalar la aplicación"
+              >
+                📲 Instalar
+              </button>
+            )}
             {user && (
               <span className="text-xs bg-white/20 backdrop-blur px-2 py-1 rounded-lg hidden sm:inline">
                 {user.email}
@@ -581,6 +651,41 @@ export default function PedidoCasaPage() {
               className="bg-rose-600 text-white px-6 py-3 rounded-xl font-bold shadow"
             >
               {user ? "Hacer Pedido" : "Iniciar sesión y pedir"}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {ayudaIOS && (
+        <div
+          className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4"
+          onClick={() => setAyudaIOS(false)}
+        >
+          <div
+            className="bg-white rounded-2xl p-6 max-w-sm w-full"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 className="font-bold text-lg text-gray-800 mb-3">📲 Instalar ShopQR</h3>
+            <ol className="text-sm text-gray-600 space-y-2 list-decimal list-inside">
+              <li>
+                Toca el botón <b>Compartir</b> ⬆️ (en Safari)
+              </li>
+              <li>
+                Elige <b>Añadir a pantalla de inicio</b>
+              </li>
+              <li>
+                Toca <b>Añadir</b> en la esquina superior
+              </li>
+            </ol>
+            <p className="text-xs text-gray-400 mt-3">
+              La app quedará en tu pantalla principal con el icono de ShopQR. Al abrirla
+              podrás pedir igual que en la página.
+            </p>
+            <button
+              onClick={() => setAyudaIOS(false)}
+              className="mt-4 w-full bg-rose-600 text-white py-2.5 rounded-xl font-bold"
+            >
+              Entendido
             </button>
           </div>
         </div>

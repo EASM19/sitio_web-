@@ -6,7 +6,7 @@ import {
   serverTimestamp, updateDoc, increment,
 } from "firebase/firestore";
 import {
-  onAuthStateChanged, signInWithPopup, GoogleAuthProvider, signOut, User,
+  onAuthStateChanged, signInWithPopup, signInWithRedirect, GoogleAuthProvider, signOut, User,
 } from "firebase/auth";
 import { auth, db } from "@/lib/firebase";
 import type { Pedido, Mensaje } from "@/types";
@@ -289,6 +289,11 @@ export default function PedidoPage() {
       await signInWithPopup(auth, new GoogleAuthProvider());
       pedirPermisoNotificaciones();
     } catch (err) {
+      const codigo = (err as { code?: string }).code || "";
+      if (codigo === "auth/popup-blocked") {
+        await signInWithRedirect(auth, new GoogleAuthProvider());
+        return;
+      }
       console.error(err);
     }
   };
