@@ -2,20 +2,58 @@
 
 import { useEffect, useState } from "react";
 import { onAuthStateChanged, signOut, User } from "firebase/auth";
-import { auth } from "@/lib/firebase";
+import { auth, db } from "@/lib/firebase";
+import {
+  collection, query, orderBy, onSnapshot, updateDoc, deleteDoc, doc,
+} from "firebase/firestore";
 import { QRCodeSVG } from "qrcode.react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useSesionActiva } from "@/hooks/useSesionActiva";
 import { useAvisosPedido } from "@/hooks/useAvisosPedido";
 
+const RESTAURANT_ID = "restaurante1";
+
+interface Opinion {
+  id: string;
+  texto: string;
+  pedidoId?: string;
+  numeroPedido?: number | null;
+  cliente?: string;
+  leido?: boolean;
+  fechaCreacion?: Date;
+}
+
 export default function MesasPage() {
   const [user, setUser] = useState<User | null>(null);
   const [customUrl, setCustomUrl] = useState("");
   const [qrUrl, setQrUrl] = useState("");
+  const [opiniones, setOpiniones] = useState<Opinion[]>([]);
+  const [verOpiniones, setVerOpiniones] = useState(false);
   const router = useRouter();
   useSesionActiva(user);
   useAvisosPedido(user);
+
+  useEffect(() => {
+    if (!user) return;
+    const unsub = onSnapshot(
+      query(
+        collection(db, "restaurantes", RESTAURANT_ID, "opiniones"),
+        orderBy("fechaCreacion", "desc")
+      ),
+      (snap) => {
+        setOpiniones(
+          snap.docs.map((d) => ({
+            id: d.id,
+            ...d.data(),
+            fechaCreacion: d.data().fechaCreacion?.toDate() || new Date(),
+          })) as Opinion[]
+        );
+      },
+      (err) => console.error(err)
+    );
+    return () => unsub();
+  }, [user]);
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, (u) => {
@@ -110,7 +148,99 @@ export default function MesasPage() {
             <li>El pedido aparece en tu panel de Pedidos</li>
           </ol>
         </div>
+
+        <button
+          onClick={() => setVerOpiniones(true)}
+          className="mt-4 w-full bg-[#2b1d12] text-[#f0e2c4] py-4 rounded-2xl font-bold shadow-lg border-2 border-[#a67c3d] flex items-center justify-center gap-2 hover:bg-[#3a2817] transition"
+        >
+          💬 Mensajes
+          {opiniones.filter((o) => !o.leido).length > 0 && (
+            <span className="bg-amber-500 text-white text-xs font-bold rounded-full min-w-[22px] h-[22px] px-1.5 flex items-center justify-center">
+              {opiniones.filter((o) => !o.leido).length}
+            </span>
+          )}
+          <span className="text-xs font-normal opacity-70">({opiniones.length})</span>
+        </button>
       </main>
+
+      {verOpiniones && (
+        <div className="fixed inset-0 z-50 bg-black/60 flex items-end sm:items-center justify-center p-0 sm:p-4">
+          <div className="bg-[#fffdf6] w-full sm:max-w-lg rounded-t-2xl sm:rounded-2xl border-2 border-[#a67c3d] shadow-2xl max-h-[85vh] flex flex-col">
+            <div className="flex items-center justify-between px-5 py-4 border-b border-amber-200">
+              <h2 className="text-lg font-bold text-[#2b1d12]">
+                💬 Opinion de clientes
+                <span className="ml-2 text-xs font-normal text-gray-500">({opiniones.length})</span>
+              </h2>
+              <button
+                onClick={() => setVerOpiniones(false)}
+                className="text-gray-400 hover:text-gray-700 text-xl leading-none"
+              >
+                ✕
+              </button>
+            </div>
+            <div className="overflow-y-auto p-4 space-y-3">
+              {opiniones.length === 0 && (
+                <p className="text-center text-gray-400 text-sm py-10">
+                  Aún no hay opiniones de clientes
+                </p>
+              )}
+              {opiniones.map((o) => (
+                <div
+                  key={o.id}
+                  className={`bg-white rounded-xl p-4 border shadow-sm ${
+                    o.leido ? "border-gray-100" : "border-amber-400"
+                  }`}
+                >
+                  <div className="flex items-center justify-between gap-2 mb-1">
+                    <span className="font-bold text-sm text-[#2b1d12]">
+                      {o.cliente || "Anónimo"}
+                      {o.numeroPedido ? ` · Pedido #${o.numeroPedido}` : ""}
+                    </span>
+                    {!o.leido && (
+                      <span className="bg-amber-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">
+                        Nuevo
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-sm text-gray-700 whitespace-pre-wrap break-words">{o.texto}</p>
+                  <div className="flex items-center justify-between mt-2">
+                    <span className="text-[11px] text-gray-400">
+                      {o.fechaCreacion?.toLocaleString("es-MX", {
+                        day: "numeric",
+                        month: "short",
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
+                    </span>
+                    <div className="flex gap-2">
+                      {!o.leido && (
+                        <button
+                          onClick={() =>
+                            updateDoc(doc(db, "restaurantes", RESTAURANT_ID, "opiniones", o.id), {
+                              leido: true,
+                            })
+                          }
+                          className="text-xs text-amber-800 font-bold hover:underline"
+                        >
+                          Marcar leído
+                        </button>
+                      )}
+                      <button
+                        onClick={() =>
+                          deleteDoc(doc(db, "restaurantes", RESTAURANT_ID, "opiniones", o.id))
+                        }
+                        className="text-xs text-red-500 font-bold hover:underline"
+                      >
+                        Borrar
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

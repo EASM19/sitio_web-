@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   collection, query, where, getDocs, addDoc, serverTimestamp, orderBy, limit,
   doc, getDoc, setDoc,
@@ -51,6 +51,22 @@ export default function PedidoCasaPage() {
   const [esIOS, setEsIOS] = useState(false);
   const [appInstalada, setAppInstalada] = useState(false);
   const [ayudaIOS, setAyudaIOS] = useState(false);
+  const [splash, setSplash] = useState<"visible" | "saliendo" | "oculto">("visible");
+  const inicioSplash = useRef(0);
+
+  useEffect(() => {
+    inicioSplash.current = Date.now();
+  }, []);
+
+  useEffect(() => {
+    if (splash !== "visible" || loading) return;
+    const espera = Math.max(0, 2400 - (Date.now() - inicioSplash.current));
+    const t = setTimeout(() => {
+      setSplash("saliendo");
+      window.setTimeout(() => setSplash("oculto"), 550);
+    }, espera);
+    return () => clearTimeout(t);
+  }, [loading, splash]);
 
   useEffect(() => {
     if ("serviceWorker" in navigator) {
@@ -326,6 +342,35 @@ export default function PedidoCasaPage() {
       setEnviando(false);
     }
   };
+
+  if (splash !== "oculto") {
+    return (
+      <div
+        className={`fixed inset-0 z-50 bg-black flex items-center justify-center transition-opacity duration-500 ${
+          splash === "saliendo" ? "opacity-0" : "opacity-100"
+        }`}
+      >
+        <div
+          className="relative"
+          style={{ height: "min(96vh, 701px)", aspectRatio: "470 / 701", maxWidth: "100vw" }}
+        >
+          <img
+            src="/logo-menu.png"
+            alt="La Bóveda del Real"
+            className="absolute inset-0 w-full h-full object-cover"
+          />
+          <div className="absolute left-0 right-0 flex justify-center" style={{ top: "66%" }}>
+            <span
+              className="text-sm sm:text-base font-bold tracking-[0.35em] animate-pulse"
+              style={{ color: "#e3c07a", textShadow: "0 1px 6px rgba(0,0,0,0.9)" }}
+            >
+              Entrando...
+            </span>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (loading) {
     return (

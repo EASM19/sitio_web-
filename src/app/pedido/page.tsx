@@ -13,6 +13,7 @@ import type { Pedido, Mensaje } from "@/types";
 import { sonarAlerta, desbloquearAudio } from "@/lib/sound";
 import { pedirPermisoNotificaciones, notificar } from "@/lib/notif";
 import { suscribirsePush, obtenerSuscripciones, enviarNotificacionPush } from "@/lib/push";
+import ModalOpinion from "@/components/ModalOpinion";
 
 const RESTAURANT_ID = "restaurante1";
 
@@ -49,6 +50,23 @@ export default function PedidoPage() {
   const msgsConocidos = useRef<Set<string> | null>(null);
   const pendiente = useRef<{ sel: string | null; chat: boolean }>({ sel: null, chat: false });
   const [alertasActivas, setAlertasActivas] = useState(false);
+  const [opinionPendiente, setOpinionPendiente] = useState(false);
+
+  useEffect(() => {
+    if (!user || !pedidoSel || pedidoSel.estado !== "ENTREGADO") return;
+    try {
+      if (
+        localStorage.getItem(`opinion_enviada_${pedidoSel.id}`) ||
+        localStorage.getItem(`opinion_omitida_${pedidoSel.id}`)
+      ) {
+        return;
+      }
+    } catch {
+      // ignorado
+    }
+    const t = setTimeout(() => setOpinionPendiente(true), 0);
+    return () => clearTimeout(t);
+  }, [user, pedidoSel]);
 
   const activarAlertas = async () => {
     const permiso = await pedirPermisoNotificaciones();
@@ -589,6 +607,15 @@ export default function PedidoPage() {
               </>
             )}
           </div>
+        )}
+
+        {opinionPendiente && pedidoSel && (
+          <ModalOpinion
+            pedidoId={pedidoSel.id}
+            numeroPedido={pedidoSel.numeroPedido}
+            cliente={user?.displayName || user?.email || "Anónimo"}
+            onCerrar={() => setOpinionPendiente(false)}
+          />
         )}
       </div>
     </div>
