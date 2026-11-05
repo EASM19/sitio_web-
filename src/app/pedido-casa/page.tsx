@@ -59,8 +59,11 @@ export default function PedidoCasaPage() {
     const standalone =
       window.matchMedia("(display-mode: standalone)").matches ||
       (window.navigator as Navigator & { standalone?: boolean }).standalone === true;
-    setAppInstalada(standalone);
-    setEsIOS(/iphone|ipad|ipod/i.test(navigator.userAgent));
+    const ios = /iphone|ipad|ipod/i.test(navigator.userAgent);
+    setTimeout(() => {
+      setAppInstalada(standalone);
+      setEsIOS(ios);
+    }, 0);
 
     const onPrompt = (e: Event) => {
       e.preventDefault();
@@ -526,13 +529,18 @@ export default function PedidoCasaPage() {
                   </div>
                 )}
                 {tipo === "PARA_LLEVAR" && (
-                  <input
-                    type="time"
-                    value={hora}
-                    onChange={(e) => setHora(e.target.value)}
-                    className="w-full mt-3 px-4 py-3 border-2 border-gray-200 rounded-xl outline-none"
-                    style={{ color: "#1f2937" }}
-                  />
+                  <div className="mt-3">
+                    <label className="block text-sm font-bold text-gray-700 mb-1">
+                      🕐 ¿A qué hora recoges tu pedido? *
+                    </label>
+                    <input
+                      type="time"
+                      value={hora}
+                      onChange={(e) => setHora(e.target.value)}
+                      className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl outline-none"
+                      style={{ color: "#1f2937" }}
+                    />
+                  </div>
                 )}
               </div>
 
