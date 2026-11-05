@@ -10,6 +10,7 @@ import {
 } from "firebase/auth";
 import { auth, db } from "@/lib/firebase";
 import { suscribirsePush, obtenerSuscripciones, enviarNotificacionPush } from "@/lib/push";
+import RelojHora from "@/components/RelojHora";
 import type { Producto, Categoria, DetallePedido } from "@/types";
 
 type TipoPedido = "MESA" | "PARA_LLEVAR" | "DOMICILIO";
@@ -578,13 +579,7 @@ export default function PedidoCasaPage() {
                     <label className="block text-sm font-bold text-gray-700 mb-1">
                       🕐 ¿A qué hora recoges tu pedido? *
                     </label>
-                    <input
-                      type="time"
-                      value={hora}
-                      onChange={(e) => setHora(e.target.value)}
-                      className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl outline-none"
-                      style={{ color: "#1f2937" }}
-                    />
+                    <RelojHora valor={hora} onChange={setHora} />
                   </div>
                 )}
               </div>
