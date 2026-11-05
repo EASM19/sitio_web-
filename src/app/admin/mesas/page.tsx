@@ -59,10 +59,10 @@ export default function MesasPage() {
     const unsub = onAuthStateChanged(auth, (u) => {
       const host = window.location.hostname;
       if (host.includes("vercel.app")) {
-        setQrUrl(`${window.location.origin}/pedido-casa`);
+        setQrUrl(`${window.location.origin}/menu`);
       } else {
         const puerto = window.location.port || "3000";
-        setQrUrl(`http://192.168.56.1:${puerto}/pedido-casa`);
+        setQrUrl(`http://192.168.56.1:${puerto}/menu`);
       }
       if (!u) router.push("/admin/login");
       else setUser(u);

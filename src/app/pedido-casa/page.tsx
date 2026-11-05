@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import Link from "next/link";
 import {
   collection, query, where, getDocs, addDoc, serverTimestamp, orderBy, limit,
   doc, getDoc, setDoc,
@@ -453,7 +454,16 @@ export default function PedidoCasaPage() {
     <div className="min-h-screen bg-[#f6efdc] pb-24">
       <header className="bg-[#2b1d12] text-[#f0e2c4] p-4 sticky top-0 z-10 shadow-lg border-b-4 border-[#a67c3d]">
         <div className="max-w-2xl mx-auto flex items-center justify-between">
-          <h1 className="text-lg font-bold tracking-wide">La Bóveda del Real</h1>
+          <div className="flex items-center gap-3 min-w-0">
+            <h1 className="text-lg font-bold tracking-wide truncate">La Bóveda del Real</h1>
+            <Link
+              href="/menu"
+              className="text-xs bg-white/15 hover:bg-white/25 px-2 py-1 rounded-lg whitespace-nowrap"
+              title="Ver menú ilustrado"
+            >
+              📖 Menú
+            </Link>
+          </div>
           <div className="flex items-center gap-2">
             {mostrarInstalar && (
               <button
