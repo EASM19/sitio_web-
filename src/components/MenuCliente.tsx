@@ -31,7 +31,7 @@ export default function MenuCliente({
 
         return (
           <section key={categoria.id}>
-            <h2 className="text-lg font-bold text-gray-800 mb-3 border-b border-gray-200 pb-2">
+            <h2 className="text-lg font-bold text-[#2b1d12] mb-3 border-b-2 border-[#a67c3d] pb-2">
               {categoria.nombre}
             </h2>
             <div className="grid gap-3">
@@ -50,6 +50,7 @@ export default function MenuCliente({
                       <img
                         src={producto.imagen}
                         alt={producto.nombre}
+                        loading="lazy"
                         className="w-20 h-20 rounded-lg object-cover flex-shrink-0"
                       />
                     )}

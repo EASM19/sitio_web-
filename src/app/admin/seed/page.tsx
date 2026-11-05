@@ -73,7 +73,7 @@ export default function SeedPage() {
           descripcion: prod.descripcion || "",
           precio: prod.precio,
           ingredientes: "",
-          imagen: "",
+          imagen: prod.imagen || "",
           categoriaId: catIds[prod.categoria] || "",
           disponible: true,
           estado: "activo",

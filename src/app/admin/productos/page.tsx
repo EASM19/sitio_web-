@@ -385,52 +385,128 @@ export default function ProductosPage() {
             <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-amber-800 mx-auto"></div>
           </div>
         ) : (
-          <div className="grid gap-3">
-            {productos.map((producto) => (
-              <div
-                key={producto.id}
-                className="bg-white rounded-lg p-4 shadow-sm flex items-center gap-4"
-              >
-                {producto.imagen && (
-                  <img
-                    src={producto.imagen}
-                    alt={producto.nombre}
-                    className="w-16 h-16 rounded-lg object-cover"
-                  />
-                )}
-                <div className="flex-1">
-                  <h3 className="font-semibold">{producto.nombre}</h3>
-                  <p className="text-amber-800 font-bold">${producto.precio.toFixed(2)}</p>
-                  <p className="text-sm text-gray-500">
-                    {categorias.find((c) => c.id === producto.categoriaId)?.nombre}
-                  </p>
+          <div className="space-y-6">
+            {[...categorias]
+              .sort((a, b) => (a.orden || 0) - (b.orden || 0))
+              .map((cat) => {
+                const prods = productos.filter((p) => p.categoriaId === cat.id);
+                if (prods.length === 0) return null;
+                return (
+                  <section key={cat.id}>
+                    <h2 className="text-lg font-bold text-[#2b1d12] border-b-2 border-[#a67c3d] pb-1 mb-3 flex items-baseline gap-2">
+                      {cat.nombre}
+                      <span className="text-xs font-normal text-gray-500">{prods.length} productos</span>
+                    </h2>
+                    <div className="grid gap-3">
+                      {prods.map((producto) => (
+                        <div
+                          key={producto.id}
+                          className="bg-white rounded-lg p-4 shadow-sm flex items-center gap-4"
+                        >
+                          {producto.imagen ? (
+                            <img
+                              src={producto.imagen}
+                              alt={producto.nombre}
+                              loading="lazy"
+                              className="w-16 h-16 rounded-lg object-cover"
+                            />
+                          ) : (
+                            <div className="w-16 h-16 rounded-lg bg-amber-50 flex items-center justify-center flex-shrink-0">
+                              <span className="text-xl">🍽️</span>
+                            </div>
+                          )}
+                          <div className="flex-1">
+                            <h3 className="font-semibold">{producto.nombre}</h3>
+                            <p className="text-amber-800 font-bold">${producto.precio.toFixed(2)}</p>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <button
+                              onClick={() => toggleDisponible(producto)}
+                              className={`px-3 py-1 rounded text-sm font-medium ${
+                                producto.disponible
+                                  ? "bg-green-100 text-green-700"
+                                  : "bg-amber-100 text-amber-900"
+                              }`}
+                            >
+                              {producto.disponible ? "Disponible" : "Agotado"}
+                            </button>
+                            <button
+                              onClick={() => editarProducto(producto)}
+                              className="bg-blue-100 text-blue-700 px-3 py-1 rounded text-sm font-medium"
+                            >
+                              Editar
+                            </button>
+                            <button
+                              onClick={() => eliminarProducto(producto.id)}
+                              className="bg-amber-100 text-amber-900 px-3 py-1 rounded text-sm font-medium"
+                            >
+                              Eliminar
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </section>
+                );
+              })}
+            {productos.filter((p) => !categorias.some((c) => c.id === p.categoriaId)).length > 0 && (
+              <section>
+                <h2 className="text-lg font-bold text-[#2b1d12] border-b-2 border-[#a67c3d] pb-1 mb-3">
+                  Sin categoría
+                </h2>
+                <div className="grid gap-3">
+                  {productos
+                    .filter((p) => !categorias.some((c) => c.id === p.categoriaId))
+                    .map((producto) => (
+                      <div
+                        key={producto.id}
+                        className="bg-white rounded-lg p-4 shadow-sm flex items-center gap-4"
+                      >
+                        {producto.imagen ? (
+                          <img
+                            src={producto.imagen}
+                            alt={producto.nombre}
+                            loading="lazy"
+                            className="w-16 h-16 rounded-lg object-cover"
+                          />
+                        ) : (
+                          <div className="w-16 h-16 rounded-lg bg-amber-50 flex items-center justify-center flex-shrink-0">
+                            <span className="text-xl">🍽️</span>
+                          </div>
+                        )}
+                        <div className="flex-1">
+                          <h3 className="font-semibold">{producto.nombre}</h3>
+                          <p className="text-amber-800 font-bold">${producto.precio.toFixed(2)}</p>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => toggleDisponible(producto)}
+                            className={`px-3 py-1 rounded text-sm font-medium ${
+                              producto.disponible
+                                ? "bg-green-100 text-green-700"
+                                : "bg-amber-100 text-amber-900"
+                            }`}
+                          >
+                            {producto.disponible ? "Disponible" : "Agotado"}
+                          </button>
+                          <button
+                            onClick={() => editarProducto(producto)}
+                            className="bg-blue-100 text-blue-700 px-3 py-1 rounded text-sm font-medium"
+                          >
+                            Editar
+                          </button>
+                          <button
+                            onClick={() => eliminarProducto(producto.id)}
+                            className="bg-amber-100 text-amber-900 px-3 py-1 rounded text-sm font-medium"
+                          >
+                            Eliminar
+                          </button>
+                        </div>
+                      </div>
+                    ))}
                 </div>
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => toggleDisponible(producto)}
-                    className={`px-3 py-1 rounded text-sm font-medium ${
-                      producto.disponible
-                        ? "bg-green-100 text-green-700"
-                        : "bg-amber-100 text-amber-900"
-                    }`}
-                  >
-                    {producto.disponible ? "Disponible" : "Agotado"}
-                  </button>
-                  <button
-                    onClick={() => editarProducto(producto)}
-                    className="bg-blue-100 text-blue-700 px-3 py-1 rounded text-sm font-medium"
-                  >
-                    Editar
-                  </button>
-                  <button
-                    onClick={() => eliminarProducto(producto.id)}
-                    className="bg-amber-100 text-amber-900 px-3 py-1 rounded text-sm font-medium"
-                  >
-                    Eliminar
-                  </button>
-                </div>
-              </div>
-            ))}
+              </section>
+            )}
           </div>
         )}
       </main>

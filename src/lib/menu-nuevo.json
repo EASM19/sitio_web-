@@ -1,152 +1,935 @@
 {
   "categorias": [
-    { "nombre": "De Nuestra Cocina", "orden": 1 },
-    { "nombre": "Barra Fría - Mariscos", "orden": 2 },
-    { "nombre": "Cortes de Carne", "orden": 3 },
-    { "nombre": "Postres", "orden": 4 },
-    { "nombre": "Refrescos y Calientes", "orden": 5 },
-    { "nombre": "Bebidas Preparadas", "orden": 6 },
-    { "nombre": "Vinos y Cervezas", "orden": 7 },
-    { "nombre": "Shots, Destilados y Digestivos", "orden": 8 },
-    { "nombre": "Servicios (Botellas)", "orden": 9 },
-    { "nombre": "Cata Mezcal", "orden": 10 }
+    {
+      "nombre": "De Nuestra Cocina",
+      "orden": 1
+    },
+    {
+      "nombre": "Barra Fría - Mariscos",
+      "orden": 2
+    },
+    {
+      "nombre": "Cortes de Carne",
+      "orden": 3
+    },
+    {
+      "nombre": "Postres",
+      "orden": 4
+    },
+    {
+      "nombre": "Refrescos y Calientes",
+      "orden": 5
+    },
+    {
+      "nombre": "Bebidas Preparadas",
+      "orden": 6
+    },
+    {
+      "nombre": "Vinos y Cervezas",
+      "orden": 7
+    },
+    {
+      "nombre": "Shots, Destilados y Digestivos",
+      "orden": 8
+    },
+    {
+      "nombre": "Servicios (Botellas)",
+      "orden": 9
+    },
+    {
+      "nombre": "Cata Mezcal",
+      "orden": 10
+    }
   ],
   "productos": [
-    { "categoria": "De Nuestra Cocina", "nombre": "Torta ahogada", "precio": 95, "descripcion": "" },
-    { "categoria": "De Nuestra Cocina", "nombre": "Tacos dorados 5 piezas", "precio": 60, "descripcion": "" },
-    { "categoria": "De Nuestra Cocina", "nombre": "Hamburguesa de sirloin", "precio": 120, "descripcion": "Incluye porción de papas" },
-    { "categoria": "De Nuestra Cocina", "nombre": "Hamburguesa de camarón", "precio": 170, "descripcion": "Incluye porción de papas" },
-    { "categoria": "De Nuestra Cocina", "nombre": "Papas gajo", "precio": 70, "descripcion": "" },
-    { "categoria": "De Nuestra Cocina", "nombre": "Papas a la francesa", "precio": 50, "descripcion": "" },
-    { "categoria": "De Nuestra Cocina", "nombre": "Orden de alitas", "precio": 150, "descripcion": "Saborés: BBQ, Búffalo Original y Hot Búffalo" },
-    { "categoria": "De Nuestra Cocina", "nombre": "Tostada de trompa", "precio": 35, "descripcion": "" },
-    { "categoria": "De Nuestra Cocina", "nombre": "Tostada de cuero", "precio": 35, "descripcion": "" },
-    { "categoria": "De Nuestra Cocina", "nombre": "Tosticarne", "precio": 40, "descripcion": "" },
-    { "categoria": "De Nuestra Cocina", "nombre": "Rico Menudo (domingos)", "precio": 115, "descripcion": "Especial de domingo · El plato" },
-
-    { "categoria": "Barra Fría - Mariscos", "nombre": "Tostada especial 1 persona", "precio": 130, "descripcion": "Especial solo en fines de semana" },
-    { "categoria": "Barra Fría - Mariscos", "nombre": "Tostada especial 2 personas", "precio": 260, "descripcion": "Camarón crudo y cocido, calamar, atún y pulpo ahumado" },
-    { "categoria": "Barra Fría - Mariscos", "nombre": "Callos de tilapia", "precio": 130, "descripcion": "" },
-    { "categoria": "Barra Fría - Mariscos", "nombre": "Aguachile original", "precio": 120, "descripcion": "" },
-    { "categoria": "Barra Fría - Mariscos", "nombre": "Aguachile mixto", "precio": 150, "descripcion": "Camarón crudo y cocido" },
-    { "categoria": "Barra Fría - Mariscos", "nombre": "Pa picar", "precio": 99, "descripcion": "Camarón cocido, callo y calamar" },
-    { "categoria": "Barra Fría - Mariscos", "nombre": "Sashimi", "precio": 130, "descripcion": "Atún en tiras" },
-
-    { "categoria": "Cortes de Carne", "nombre": "T-bone", "precio": 195, "descripcion": "Fines de semana o con anticipo · Incluye cebolla asada, papa asada y chile serrano asado" },
-    { "categoria": "Cortes de Carne", "nombre": "Arrachera", "precio": 210, "descripcion": "Fines de semana o con anticipo · Incluye cebolla asada, papa asada y chile serrano asado" },
-    { "categoria": "Cortes de Carne", "nombre": "New York - Angus Beef", "precio": 650, "descripcion": "Fines de semana o con anticipo · Incluye cebolla asada, papa asada y chile serrano asado" },
-    { "categoria": "Cortes de Carne", "nombre": "Camarones a la bóveda", "precio": 175, "descripcion": "Especial de La Bóveda · Camarones asados a la parrilla con guarnición de arroz y ensalada" },
-
-    { "categoria": "Postres", "nombre": "Pay tortuga rebanada", "precio": 50, "descripcion": "" },
-    { "categoria": "Postres", "nombre": "Pay de queso flambée rebanada", "precio": 50, "descripcion": "" },
-    { "categoria": "Postres", "nombre": "Mini pastel cumpleañero", "precio": 150, "descripcion": "Preferentemente solicitar con anticipación" },
-
-    { "categoria": "Refrescos y Calientes", "nombre": "Cocacola 355ml", "precio": 30, "descripcion": "" },
-    { "categoria": "Refrescos y Calientes", "nombre": "Pepsi 355ml", "precio": 30, "descripcion": "" },
-    { "categoria": "Refrescos y Calientes", "nombre": "Mirinda lata 355ml", "precio": 35, "descripcion": "" },
-    { "categoria": "Refrescos y Calientes", "nombre": "Manzanita Sol 355ml", "precio": 35, "descripcion": "" },
-    { "categoria": "Refrescos y Calientes", "nombre": "Seven Up 355ml", "precio": 30, "descripcion": "" },
-    { "categoria": "Refrescos y Calientes", "nombre": "Agua mineral 355ml", "precio": 35, "descripcion": "" },
-    { "categoria": "Refrescos y Calientes", "nombre": "Jumex néctar 200ml", "precio": 15, "descripcion": "" },
-    { "categoria": "Refrescos y Calientes", "nombre": "Agua embotellada 355ml", "precio": 15, "descripcion": "" },
-    { "categoria": "Refrescos y Calientes", "nombre": "Café clásico", "precio": 35, "descripcion": "Bebida caliente" },
-    { "categoria": "Refrescos y Calientes", "nombre": "Café de olla", "precio": 35, "descripcion": "Bebida caliente" },
-    { "categoria": "Refrescos y Calientes", "nombre": "Canela", "precio": 40, "descripcion": "Bebida caliente" },
-
-    { "categoria": "Bebidas Preparadas", "nombre": "Paloma · Mezcal Santa Teresa cristalino", "precio": 55, "descripcion": "Paloma" },
-    { "categoria": "Bebidas Preparadas", "nombre": "Paloma · Mezcal Don Antonio Briones cristalino", "precio": 55, "descripcion": "Paloma" },
-    { "categoria": "Bebidas Preparadas", "nombre": "Paloma · Centenario Plata", "precio": 65, "descripcion": "Paloma" },
-    { "categoria": "Bebidas Preparadas", "nombre": "Paloma · Centenario Reposado", "precio": 75, "descripcion": "Paloma" },
-    { "categoria": "Bebidas Preparadas", "nombre": "Paloma · José Cuervo", "precio": 50, "descripcion": "Paloma" },
-    { "categoria": "Bebidas Preparadas", "nombre": "Paloma · Maestro Dobel", "precio": 120, "descripcion": "Paloma" },
-    { "categoria": "Bebidas Preparadas", "nombre": "Paloma · Mezcal Santa Teresa Reposado", "precio": 120, "descripcion": "Paloma" },
-    { "categoria": "Bebidas Preparadas", "nombre": "Paloma · Patrón Silver", "precio": 80, "descripcion": "Paloma" },
-    { "categoria": "Bebidas Preparadas", "nombre": "Paloma · Patrón Añejo", "precio": 90, "descripcion": "Paloma" },
-    { "categoria": "Bebidas Preparadas", "nombre": "Paloma · Don Julio 70", "precio": 150, "descripcion": "Paloma" },
-    { "categoria": "Bebidas Preparadas", "nombre": "Mojito · Mezcal Santa Teresa cristalino", "precio": 65, "descripcion": "Mojito" },
-    { "categoria": "Bebidas Preparadas", "nombre": "Mojito · Mezcal Antonio Briones cristalino", "precio": 70, "descripcion": "Mojito" },
-    { "categoria": "Bebidas Preparadas", "nombre": "Mojito · Bacardí", "precio": 70, "descripcion": "Mojito" },
-    { "categoria": "Bebidas Preparadas", "nombre": "Vampiro · Mezcal Santa Teresa cristalino", "precio": 65, "descripcion": "Vampiro" },
-    { "categoria": "Bebidas Preparadas", "nombre": "Vampiro · Mezcal Don Antonio Briones", "precio": 65, "descripcion": "Vampiro" },
-    { "categoria": "Bebidas Preparadas", "nombre": "Vampiro · Centenario Plata", "precio": 75, "descripcion": "Vampiro" },
-    { "categoria": "Bebidas Preparadas", "nombre": "Vampiro · Centenario Reposado", "precio": 80, "descripcion": "Vampiro" },
-    { "categoria": "Bebidas Preparadas", "nombre": "Vampiro · José Cuervo", "precio": 60, "descripcion": "Vampiro" },
-    { "categoria": "Bebidas Preparadas", "nombre": "Vampiro · Maestro Dobel", "precio": 120, "descripcion": "Vampiro" },
-    { "categoria": "Bebidas Preparadas", "nombre": "Vampiro · Mezcal Santa Teresa Reposado", "precio": 130, "descripcion": "Vampiro" },
-    { "categoria": "Bebidas Preparadas", "nombre": "Vampiro · Patrón Silver", "precio": 90, "descripcion": "Vampiro" },
-    { "categoria": "Bebidas Preparadas", "nombre": "Vampiro · Patrón Añejo", "precio": 100, "descripcion": "Vampiro" },
-    { "categoria": "Bebidas Preparadas", "nombre": "Vampiro · Don Julio 70", "precio": 160, "descripcion": "Vampiro" },
-    { "categoria": "Bebidas Preparadas", "nombre": "Crajillo", "precio": 70, "descripcion": "Combinado" },
-    { "categoria": "Bebidas Preparadas", "nombre": "Piña Colada", "precio": 90, "descripcion": "Combinado" },
-    { "categoria": "Bebidas Preparadas", "nombre": "Piña Colada (sin alcohol)", "precio": 75, "descripcion": "Combinado" },
-    { "categoria": "Bebidas Preparadas", "nombre": "Limonada", "precio": 35, "descripcion": "Combinado" },
-
-    { "categoria": "Vinos y Cervezas", "nombre": "Cuatro Soles Merlot", "precio": 420, "descripcion": "Vino" },
-    { "categoria": "Vinos y Cervezas", "nombre": "Riuñte Lambrusco", "precio": 500, "descripcion": "Vino" },
-    { "categoria": "Vinos y Cervezas", "nombre": "Monte Ciego Rioja", "precio": 650, "descripcion": "Vino" },
-    { "categoria": "Vinos y Cervezas", "nombre": "El Somo Rioja", "precio": 450, "descripcion": "Vino" },
-    { "categoria": "Vinos y Cervezas", "nombre": "Corona 355ml", "precio": 30, "descripcion": "Cerveza" },
-    { "categoria": "Vinos y Cervezas", "nombre": "Cerveza Victoria 355ml", "precio": 30, "descripcion": "Cerveza" },
-    { "categoria": "Vinos y Cervezas", "nombre": "Mixtelada Corona 355ml", "precio": 50, "descripcion": "Cerveza" },
-    { "categoria": "Vinos y Cervezas", "nombre": "Mixtelada Victoria 355ml", "precio": 50, "descripcion": "Cerveza" },
-    { "categoria": "Vinos y Cervezas", "nombre": "Micheloza", "precio": 40, "descripcion": "Cerveza" },
-    { "categoria": "Vinos y Cervezas", "nombre": "Chelada", "precio": 45, "descripcion": "Cerveza" },
-    { "categoria": "Vinos y Cervezas", "nombre": "Preparado", "precio": 25, "descripcion": "Cerveza" },
-
-    { "categoria": "Shots, Destilados y Digestivos", "nombre": "Shot Centenario Plata", "precio": 35, "descripcion": "Shot" },
-    { "categoria": "Shots, Destilados y Digestivos", "nombre": "Shot Centenario Reposado", "precio": 35, "descripcion": "Shot" },
-    { "categoria": "Shots, Destilados y Digestivos", "nombre": "Shot Red Label", "precio": 40, "descripcion": "Shot" },
-    { "categoria": "Shots, Destilados y Digestivos", "nombre": "Shot José Cuervo", "precio": 40, "descripcion": "Shot" },
-    { "categoria": "Shots, Destilados y Digestivos", "nombre": "Shot Captain Morgan", "precio": 30, "descripcion": "Shot" },
-    { "categoria": "Shots, Destilados y Digestivos", "nombre": "Shot Maestro Dobel", "precio": 50, "descripcion": "Shot" },
-    { "categoria": "Shots, Destilados y Digestivos", "nombre": "Shot Patrón Silver", "precio": 60, "descripcion": "Shot" },
-    { "categoria": "Shots, Destilados y Digestivos", "nombre": "Shot Patrón Añejo", "precio": 65, "descripcion": "Shot" },
-    { "categoria": "Shots, Destilados y Digestivos", "nombre": "Shot Don Julio 70", "precio": 75, "descripcion": "Shot" },
-    { "categoria": "Shots, Destilados y Digestivos", "nombre": "Shot Black & White", "precio": 35, "descripcion": "Shot" },
-    { "categoria": "Shots, Destilados y Digestivos", "nombre": "Shot Smirnoff", "precio": 35, "descripcion": "Shot" },
-    { "categoria": "Shots, Destilados y Digestivos", "nombre": "Shot Jim Beam Bourbon", "precio": 60, "descripcion": "Shot" },
-    { "categoria": "Shots, Destilados y Digestivos", "nombre": "Shot Bacardí", "precio": 35, "descripcion": "Shot" },
-    { "categoria": "Shots, Destilados y Digestivos", "nombre": "Destilado Centenario Plata", "precio": 95, "descripcion": "Destilado preparado" },
-    { "categoria": "Shots, Destilados y Digestivos", "nombre": "Destilado Centenario Reposado", "precio": 95, "descripcion": "Destilado preparado" },
-    { "categoria": "Shots, Destilados y Digestivos", "nombre": "Destilado Red Label", "precio": 120, "descripcion": "Destilado preparado" },
-    { "categoria": "Shots, Destilados y Digestivos", "nombre": "Destilado José Cuervo", "precio": 100, "descripcion": "Destilado preparado" },
-    { "categoria": "Shots, Destilados y Digestivos", "nombre": "Destilado Captain Morgan", "precio": 65, "descripcion": "Destilado preparado" },
-    { "categoria": "Shots, Destilados y Digestivos", "nombre": "Destilado Maestro Dobel", "precio": 130, "descripcion": "Destilado preparado" },
-    { "categoria": "Shots, Destilados y Digestivos", "nombre": "Destilado Patrón Silver", "precio": 150, "descripcion": "Destilado preparado" },
-    { "categoria": "Shots, Destilados y Digestivos", "nombre": "Destilado Patrón Añejo", "precio": 160, "descripcion": "Destilado preparado" },
-    { "categoria": "Shots, Destilados y Digestivos", "nombre": "Destilado Don Julio 70", "precio": 180, "descripcion": "Destilado preparado" },
-    { "categoria": "Shots, Destilados y Digestivos", "nombre": "Destilado Black & White", "precio": 100, "descripcion": "Destilado preparado" },
-    { "categoria": "Shots, Destilados y Digestivos", "nombre": "Destilado Smirnoff", "precio": 100, "descripcion": "Destilado preparado" },
-    { "categoria": "Shots, Destilados y Digestivos", "nombre": "Destilado Jim Beam Bourbon", "precio": 120, "descripcion": "Destilado preparado" },
-    { "categoria": "Shots, Destilados y Digestivos", "nombre": "Mezcal de la Casa", "precio": 75, "descripcion": "Destilado preparado" },
-    { "categoria": "Shots, Destilados y Digestivos", "nombre": "Licor 43 shot", "precio": 90, "descripcion": "Digestivo" },
-    { "categoria": "Shots, Destilados y Digestivos", "nombre": "Baileys shot", "precio": 75, "descripcion": "Digestivo" },
-
-    { "categoria": "Servicios (Botellas)", "nombre": "Don Ramón", "precio": 900, "descripcion": "Botella · Tequila" },
-    { "categoria": "Servicios (Botellas)", "nombre": "Centenario Plata", "precio": 1100, "descripcion": "Botella · Tequila" },
-    { "categoria": "Servicios (Botellas)", "nombre": "Centenario Reposado", "precio": 1100, "descripcion": "Botella · Tequila" },
-    { "categoria": "Servicios (Botellas)", "nombre": "José Cuervo", "precio": 1200, "descripcion": "Botella · Tequila" },
-    { "categoria": "Servicios (Botellas)", "nombre": "Maestro Dobel", "precio": 1600, "descripcion": "Botella · Tequila" },
-    { "categoria": "Servicios (Botellas)", "nombre": "Patrón Silver", "precio": 1800, "descripcion": "Botella · Tequila" },
-    { "categoria": "Servicios (Botellas)", "nombre": "Patrón Añejo", "precio": 2000, "descripcion": "Botella · Tequila" },
-    { "categoria": "Servicios (Botellas)", "nombre": "Don Julio 70", "precio": 2500, "descripcion": "Botella · Tequila" },
-    { "categoria": "Servicios (Botellas)", "nombre": "Red Label", "precio": 1100, "descripcion": "Botella · Whisky" },
-    { "categoria": "Servicios (Botellas)", "nombre": "Black & White", "precio": 800, "descripcion": "Botella · Whisky" },
-    { "categoria": "Servicios (Botellas)", "nombre": "Jim Beam Bourbon", "precio": 14000, "descripcion": "Botella · Whisky" },
-    { "categoria": "Servicios (Botellas)", "nombre": "Bacardí", "precio": 1000, "descripcion": "Botella · Ron" },
-    { "categoria": "Servicios (Botellas)", "nombre": "Captain Morgan", "precio": 650, "descripcion": "Botella · Ron" },
-    { "categoria": "Servicios (Botellas)", "nombre": "Smirnoff", "precio": 1000, "descripcion": "Botella · Vodka" },
-
-    { "categoria": "Cata Mezcal", "nombre": "Mezcal de la Casa · Cristalino Suelto", "precio": 30, "descripcion": "Casa Santa Teresa · Shot · Botella $230/L" },
-    { "categoria": "Cata Mezcal", "nombre": "Mezcal Cristalino · Santa Teresa", "precio": 35, "descripcion": "Casa Santa Teresa · Shot · Botella $350" },
-    { "categoria": "Cata Mezcal", "nombre": "Mezcal Cristalino 4° · Santa Teresa", "precio": 120, "descripcion": "Casa Santa Teresa · Shot · Botella $780" },
-    { "categoria": "Cata Mezcal", "nombre": "Crema de Mezcal Taro", "precio": 45, "descripcion": "Casa Santa Teresa · Shot · Botella $400" },
-    { "categoria": "Cata Mezcal", "nombre": "Crema de Mezcal Café", "precio": 45, "descripcion": "Casa Santa Teresa · Shot · Botella $400" },
-    { "categoria": "Cata Mezcal", "nombre": "Mezcal Cristalino Suelto · Don Antonio Briones", "precio": 35, "descripcion": "Casa Don Antonio Briones · Shot · Botella $250/L" },
-    { "categoria": "Cata Mezcal", "nombre": "Mezcal Cristalino 1° · Don Antonio Briones", "precio": 120, "descripcion": "Casa Don Antonio Briones · Shot · Botella $550" },
-    { "categoria": "Cata Mezcal", "nombre": "Mezcal Cristalino 3° · Don Antonio Briones", "precio": 130, "descripcion": "Casa Don Antonio Briones · Shot · Botella $730" },
-    { "categoria": "Cata Mezcal", "nombre": "Mezcal Cristalino 4° · Don Antonio Briones", "precio": 140, "descripcion": "Casa Don Antonio Briones · Shot · Botella $850" },
-    { "categoria": "Cata Mezcal", "nombre": "Licor de Viznaga", "precio": 50, "descripcion": "Casa Don Antonio Briones · Shot · Botella $450" },
-    { "categoria": "Cata Mezcal", "nombre": "Licor de Café", "precio": 50, "descripcion": "Casa Don Antonio Briones · Shot · Botella $450" }
+    {
+      "categoria": "De Nuestra Cocina",
+      "nombre": "Torta ahogada",
+      "precio": 95,
+      "descripcion": "",
+      "imagen": "https://images.unsplash.com/photo-1528735602780-2552fd46c7af?w=400&h=400&fit=crop"
+    },
+    {
+      "categoria": "De Nuestra Cocina",
+      "nombre": "Tacos dorados 5 piezas",
+      "precio": 60,
+      "descripcion": "",
+      "imagen": "https://images.unsplash.com/photo-1552332386-f8dd00dc2f85?w=400&h=400&fit=crop"
+    },
+    {
+      "categoria": "De Nuestra Cocina",
+      "nombre": "Hamburguesa de sirloin",
+      "precio": 120,
+      "descripcion": "Incluye porción de papas",
+      "imagen": "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=400&h=400&fit=crop"
+    },
+    {
+      "categoria": "De Nuestra Cocina",
+      "nombre": "Hamburguesa de camarón",
+      "precio": 170,
+      "descripcion": "Incluye porción de papas",
+      "imagen": "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=400&h=400&fit=crop"
+    },
+    {
+      "categoria": "De Nuestra Cocina",
+      "nombre": "Papas gajo",
+      "precio": 70,
+      "descripcion": "",
+      "imagen": "https://images.unsplash.com/photo-1576107232684-1279f390859f?w=400&h=400&fit=crop"
+    },
+    {
+      "categoria": "De Nuestra Cocina",
+      "nombre": "Papas a la francesa",
+      "precio": 50,
+      "descripcion": "",
+      "imagen": "https://images.unsplash.com/photo-1573080496219-bb080dd4f877?w=400&h=400&fit=crop"
+    },
+    {
+      "categoria": "De Nuestra Cocina",
+      "nombre": "Orden de alitas",
+      "precio": 150,
+      "descripcion": "Saborés: BBQ, Búffalo Original y Hot Búffalo",
+      "imagen": "https://images.unsplash.com/photo-1608039755401-742074f0548d?w=400&h=400&fit=crop"
+    },
+    {
+      "categoria": "De Nuestra Cocina",
+      "nombre": "Tostada de trompa",
+      "precio": 35,
+      "descripcion": "",
+      "imagen": "https://images.unsplash.com/photo-1613514785940-daed07799d9b?w=400&h=400&fit=crop"
+    },
+    {
+      "categoria": "De Nuestra Cocina",
+      "nombre": "Tostada de cuero",
+      "precio": 35,
+      "descripcion": "",
+      "imagen": "https://images.unsplash.com/photo-1613514785940-daed07799d9b?w=400&h=400&fit=crop"
+    },
+    {
+      "categoria": "De Nuestra Cocina",
+      "nombre": "Tosticarne",
+      "precio": 40,
+      "descripcion": "",
+      "imagen": "https://images.unsplash.com/photo-1613514785940-daed07799d9b?w=400&h=400&fit=crop"
+    },
+    {
+      "categoria": "De Nuestra Cocina",
+      "nombre": "Rico Menudo (domingos)",
+      "precio": 115,
+      "descripcion": "Especial de domingo · El plato",
+      "imagen": "https://images.unsplash.com/photo-1547592166-23ac45744acd?w=400&h=400&fit=crop"
+    },
+    {
+      "categoria": "Barra Fría - Mariscos",
+      "nombre": "Tostada especial 1 persona",
+      "precio": 130,
+      "descripcion": "Especial solo en fines de semana",
+      "imagen": "https://images.unsplash.com/photo-1613514785940-daed07799d9b?w=400&h=400&fit=crop"
+    },
+    {
+      "categoria": "Barra Fría - Mariscos",
+      "nombre": "Tostada especial 2 personas",
+      "precio": 260,
+      "descripcion": "Camarón crudo y cocido, calamar, atún y pulpo ahumado",
+      "imagen": "https://images.unsplash.com/photo-1615141982883-c7ad0e69fd62?w=400&h=400&fit=crop"
+    },
+    {
+      "categoria": "Barra Fría - Mariscos",
+      "nombre": "Callos de tilapia",
+      "precio": 130,
+      "descripcion": "",
+      "imagen": "https://images.unsplash.com/photo-1580476262798-bddd9f4b7369?w=400&h=400&fit=crop"
+    },
+    {
+      "categoria": "Barra Fría - Mariscos",
+      "nombre": "Aguachile original",
+      "precio": 120,
+      "descripcion": "",
+      "imagen": "https://images.unsplash.com/photo-1565680018434-b513d5e5fd47?w=400&h=400&fit=crop"
+    },
+    {
+      "categoria": "Barra Fría - Mariscos",
+      "nombre": "Aguachile mixto",
+      "precio": 150,
+      "descripcion": "Camarón crudo y cocido",
+      "imagen": "https://images.unsplash.com/photo-1565680018434-b513d5e5fd47?w=400&h=400&fit=crop"
+    },
+    {
+      "categoria": "Barra Fría - Mariscos",
+      "nombre": "Pa picar",
+      "precio": 99,
+      "descripcion": "Camarón cocido, callo y calamar",
+      "imagen": "https://images.unsplash.com/photo-1559737558-2f5a35f4523b?w=400&h=400&fit=crop"
+    },
+    {
+      "categoria": "Barra Fría - Mariscos",
+      "nombre": "Sashimi",
+      "precio": 130,
+      "descripcion": "Atún en tiras",
+      "imagen": "https://images.unsplash.com/photo-1579584425555-c3ce17fd4351?w=400&h=400&fit=crop"
+    },
+    {
+      "categoria": "Cortes de Carne",
+      "nombre": "T-bone",
+      "precio": 195,
+      "descripcion": "Fines de semana o con anticipo · Incluye cebolla asada, papa asada y chile serrano asado",
+      "imagen": "https://images.unsplash.com/photo-1600891964092-4316c288032e?w=400&h=400&fit=crop"
+    },
+    {
+      "categoria": "Cortes de Carne",
+      "nombre": "Arrachera",
+      "precio": 210,
+      "descripcion": "Fines de semana o con anticipo · Incluye cebolla asada, papa asada y chile serrano asado",
+      "imagen": "https://images.unsplash.com/photo-1544025162-d76694265947?w=400&h=400&fit=crop"
+    },
+    {
+      "categoria": "Cortes de Carne",
+      "nombre": "New York - Angus Beef",
+      "precio": 650,
+      "descripcion": "Fines de semana o con anticipo · Incluye cebolla asada, papa asada y chile serrano asado",
+      "imagen": "https://images.unsplash.com/photo-1546964124-0cce460f38ef?w=400&h=400&fit=crop"
+    },
+    {
+      "categoria": "Cortes de Carne",
+      "nombre": "Camarones a la bóveda",
+      "precio": 175,
+      "descripcion": "Especial de La Bóveda · Camarones asados a la parrilla con guarnición de arroz y ensalada",
+      "imagen": "https://images.unsplash.com/photo-1559737558-2f5a35f4523b?w=400&h=400&fit=crop"
+    },
+    {
+      "categoria": "Postres",
+      "nombre": "Pay tortuga rebanada",
+      "precio": 50,
+      "descripcion": "",
+      "imagen": "https://images.unsplash.com/photo-1571115177098-24ec42ed204d?w=400&h=400&fit=crop"
+    },
+    {
+      "categoria": "Postres",
+      "nombre": "Pay de queso flambée rebanada",
+      "precio": 50,
+      "descripcion": "",
+      "imagen": "https://images.unsplash.com/photo-1533134242443-d4fd215305ad?w=400&h=400&fit=crop"
+    },
+    {
+      "categoria": "Postres",
+      "nombre": "Mini pastel cumpleañero",
+      "precio": 150,
+      "descripcion": "Preferentemente solicitar con anticipación",
+      "imagen": "https://images.unsplash.com/photo-1578985545062-69928b1d9587?w=400&h=400&fit=crop"
+    },
+    {
+      "categoria": "Refrescos y Calientes",
+      "nombre": "Cocacola 355ml",
+      "precio": 30,
+      "descripcion": "",
+      "imagen": "https://images.unsplash.com/photo-1554866585-cd94860890b7?w=400&h=400&fit=crop"
+    },
+    {
+      "categoria": "Refrescos y Calientes",
+      "nombre": "Pepsi 355ml",
+      "precio": 30,
+      "descripcion": "",
+      "imagen": "https://images.unsplash.com/photo-1629203851122-3726ecdf080e?w=400&h=400&fit=crop"
+    },
+    {
+      "categoria": "Refrescos y Calientes",
+      "nombre": "Mirinda lata 355ml",
+      "precio": 35,
+      "descripcion": "",
+      "imagen": "https://images.unsplash.com/photo-1624517452488-04869289c4ca?w=400&h=400&fit=crop"
+    },
+    {
+      "categoria": "Refrescos y Calientes",
+      "nombre": "Manzanita Sol 355ml",
+      "precio": 35,
+      "descripcion": "",
+      "imagen": "https://images.unsplash.com/photo-1613478223719-2ab802602423?w=400&h=400&fit=crop"
+    },
+    {
+      "categoria": "Refrescos y Calientes",
+      "nombre": "Seven Up 355ml",
+      "precio": 30,
+      "descripcion": "",
+      "imagen": "https://images.unsplash.com/photo-1625772299848-391b6a87d7b3?w=400&h=400&fit=crop"
+    },
+    {
+      "categoria": "Refrescos y Calientes",
+      "nombre": "Agua mineral 355ml",
+      "precio": 35,
+      "descripcion": "",
+      "imagen": "https://images.unsplash.com/photo-1548839140-29a749e1cf4d?w=400&h=400&fit=crop"
+    },
+    {
+      "categoria": "Refrescos y Calientes",
+      "nombre": "Jumex néctar 200ml",
+      "precio": 15,
+      "descripcion": "",
+      "imagen": "https://images.unsplash.com/photo-1600271886742-f049cd451bba?w=400&h=400&fit=crop"
+    },
+    {
+      "categoria": "Refrescos y Calientes",
+      "nombre": "Agua embotellada 355ml",
+      "precio": 15,
+      "descripcion": "",
+      "imagen": "https://images.unsplash.com/photo-1548839140-29a749e1cf4d?w=400&h=400&fit=crop"
+    },
+    {
+      "categoria": "Refrescos y Calientes",
+      "nombre": "Café clásico",
+      "precio": 35,
+      "descripcion": "Bebida caliente",
+      "imagen": "https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=400&h=400&fit=crop"
+    },
+    {
+      "categoria": "Refrescos y Calientes",
+      "nombre": "Café de olla",
+      "precio": 35,
+      "descripcion": "Bebida caliente",
+      "imagen": "https://images.unsplash.com/photo-1509042239860-f550ce710b93?w=400&h=400&fit=crop"
+    },
+    {
+      "categoria": "Refrescos y Calientes",
+      "nombre": "Canela",
+      "precio": 40,
+      "descripcion": "Bebida caliente",
+      "imagen": "https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=400&h=400&fit=crop"
+    },
+    {
+      "categoria": "Bebidas Preparadas",
+      "nombre": "Paloma · Mezcal Santa Teresa cristalino",
+      "precio": 55,
+      "descripcion": "Paloma",
+      "imagen": "https://images.unsplash.com/photo-1609951651556-5334e2706168?w=400&h=400&fit=crop"
+    },
+    {
+      "categoria": "Bebidas Preparadas",
+      "nombre": "Paloma · Mezcal Don Antonio Briones cristalino",
+      "precio": 55,
+      "descripcion": "Paloma",
+      "imagen": "https://images.unsplash.com/photo-1609951651556-5334e2706168?w=400&h=400&fit=crop"
+    },
+    {
+      "categoria": "Bebidas Preparadas",
+      "nombre": "Paloma · Centenario Plata",
+      "precio": 65,
+      "descripcion": "Paloma",
+      "imagen": "https://images.unsplash.com/photo-1609951651556-5334e2706168?w=400&h=400&fit=crop"
+    },
+    {
+      "categoria": "Bebidas Preparadas",
+      "nombre": "Paloma · Centenario Reposado",
+      "precio": 75,
+      "descripcion": "Paloma",
+      "imagen": "https://images.unsplash.com/photo-1544145945-f90425340c7e?w=400&h=400&fit=crop"
+    },
+    {
+      "categoria": "Bebidas Preparadas",
+      "nombre": "Paloma · José Cuervo",
+      "precio": 50,
+      "descripcion": "Paloma",
+      "imagen": "https://images.unsplash.com/photo-1544145945-f90425340c7e?w=400&h=400&fit=crop"
+    },
+    {
+      "categoria": "Bebidas Preparadas",
+      "nombre": "Paloma · Maestro Dobel",
+      "precio": 120,
+      "descripcion": "Paloma",
+      "imagen": "https://images.unsplash.com/photo-1560512823-829485b8bf24?w=400&h=400&fit=crop"
+    },
+    {
+      "categoria": "Bebidas Preparadas",
+      "nombre": "Paloma · Mezcal Santa Teresa Reposado",
+      "precio": 120,
+      "descripcion": "Paloma",
+      "imagen": "https://images.unsplash.com/photo-1560512823-829485b8bf24?w=400&h=400&fit=crop"
+    },
+    {
+      "categoria": "Bebidas Preparadas",
+      "nombre": "Paloma · Patrón Silver",
+      "precio": 80,
+      "descripcion": "Paloma",
+      "imagen": "https://images.unsplash.com/photo-1609951651556-5334e2706168?w=400&h=400&fit=crop"
+    },
+    {
+      "categoria": "Bebidas Preparadas",
+      "nombre": "Paloma · Patrón Añejo",
+      "precio": 90,
+      "descripcion": "Paloma",
+      "imagen": "https://images.unsplash.com/photo-1541546006121-5c3bc5e8c7b9?w=400&h=400&fit=crop"
+    },
+    {
+      "categoria": "Bebidas Preparadas",
+      "nombre": "Paloma · Don Julio 70",
+      "precio": 150,
+      "descripcion": "Paloma",
+      "imagen": "https://images.unsplash.com/photo-1541546006121-5c3bc5e8c7b9?w=400&h=400&fit=crop"
+    },
+    {
+      "categoria": "Bebidas Preparadas",
+      "nombre": "Mojito · Mezcal Santa Teresa cristalino",
+      "precio": 65,
+      "descripcion": "Mojito",
+      "imagen": "https://images.unsplash.com/photo-1546171753-97d7676e4602?w=400&h=400&fit=crop"
+    },
+    {
+      "categoria": "Bebidas Preparadas",
+      "nombre": "Mojito · Mezcal Antonio Briones cristalino",
+      "precio": 70,
+      "descripcion": "Mojito",
+      "imagen": "https://images.unsplash.com/photo-1551538827-9c037cb4f32a?w=400&h=400&fit=crop"
+    },
+    {
+      "categoria": "Bebidas Preparadas",
+      "nombre": "Mojito · Bacardí",
+      "precio": 70,
+      "descripcion": "Mojito",
+      "imagen": "https://images.unsplash.com/photo-1546171753-97d7676e4602?w=400&h=400&fit=crop"
+    },
+    {
+      "categoria": "Bebidas Preparadas",
+      "nombre": "Vampiro · Mezcal Santa Teresa cristalino",
+      "precio": 65,
+      "descripcion": "Vampiro",
+      "imagen": "https://images.unsplash.com/photo-1595981267035-7b04ca84a82d?w=400&h=400&fit=crop"
+    },
+    {
+      "categoria": "Bebidas Preparadas",
+      "nombre": "Vampiro · Mezcal Don Antonio Briones",
+      "precio": 65,
+      "descripcion": "Vampiro",
+      "imagen": "https://images.unsplash.com/photo-1595981267035-7b04ca84a82d?w=400&h=400&fit=crop"
+    },
+    {
+      "categoria": "Bebidas Preparadas",
+      "nombre": "Vampiro · Centenario Plata",
+      "precio": 75,
+      "descripcion": "Vampiro",
+      "imagen": "https://images.unsplash.com/photo-1560508180-03f285f67ded?w=400&h=400&fit=crop"
+    },
+    {
+      "categoria": "Bebidas Preparadas",
+      "nombre": "Vampiro · Centenario Reposado",
+      "precio": 80,
+      "descripcion": "Vampiro",
+      "imagen": "https://images.unsplash.com/photo-1560508180-03f285f67ded?w=400&h=400&fit=crop"
+    },
+    {
+      "categoria": "Bebidas Preparadas",
+      "nombre": "Vampiro · José Cuervo",
+      "precio": 60,
+      "descripcion": "Vampiro",
+      "imagen": "https://images.unsplash.com/photo-1595981267035-7b04ca84a82d?w=400&h=400&fit=crop"
+    },
+    {
+      "categoria": "Bebidas Preparadas",
+      "nombre": "Vampiro · Maestro Dobel",
+      "precio": 120,
+      "descripcion": "Vampiro",
+      "imagen": "https://images.unsplash.com/photo-1560508180-03f285f67ded?w=400&h=400&fit=crop"
+    },
+    {
+      "categoria": "Bebidas Preparadas",
+      "nombre": "Vampiro · Mezcal Santa Teresa Reposado",
+      "precio": 130,
+      "descripcion": "Vampiro",
+      "imagen": "https://images.unsplash.com/photo-1595981267035-7b04ca84a82d?w=400&h=400&fit=crop"
+    },
+    {
+      "categoria": "Bebidas Preparadas",
+      "nombre": "Vampiro · Patrón Silver",
+      "precio": 90,
+      "descripcion": "Vampiro",
+      "imagen": "https://images.unsplash.com/photo-1560508180-03f285f67ded?w=400&h=400&fit=crop"
+    },
+    {
+      "categoria": "Bebidas Preparadas",
+      "nombre": "Vampiro · Patrón Añejo",
+      "precio": 100,
+      "descripcion": "Vampiro",
+      "imagen": "https://images.unsplash.com/photo-1595981267035-7b04ca84a82d?w=400&h=400&fit=crop"
+    },
+    {
+      "categoria": "Bebidas Preparadas",
+      "nombre": "Vampiro · Don Julio 70",
+      "precio": 160,
+      "descripcion": "Vampiro",
+      "imagen": "https://images.unsplash.com/photo-1560508180-03f285f67ded?w=400&h=400&fit=crop"
+    },
+    {
+      "categoria": "Bebidas Preparadas",
+      "nombre": "Crajillo",
+      "precio": 70,
+      "descripcion": "Combinado",
+      "imagen": "https://images.unsplash.com/photo-1560508180-03f285f67ded?w=400&h=400&fit=crop"
+    },
+    {
+      "categoria": "Bebidas Preparadas",
+      "nombre": "Piña Colada",
+      "precio": 90,
+      "descripcion": "Combinado",
+      "imagen": "https://images.unsplash.com/photo-1544145945-f90425340c7e?w=400&h=400&fit=crop"
+    },
+    {
+      "categoria": "Bebidas Preparadas",
+      "nombre": "Piña Colada (sin alcohol)",
+      "precio": 75,
+      "descripcion": "Combinado",
+      "imagen": "https://images.unsplash.com/photo-1544145945-f90425340c7e?w=400&h=400&fit=crop"
+    },
+    {
+      "categoria": "Bebidas Preparadas",
+      "nombre": "Limonada",
+      "precio": 35,
+      "descripcion": "Combinado",
+      "imagen": "https://images.unsplash.com/photo-1621263764928-df1444c5e859?w=400&h=400&fit=crop"
+    },
+    {
+      "categoria": "Vinos y Cervezas",
+      "nombre": "Cuatro Soles Merlot",
+      "precio": 420,
+      "descripcion": "Vino",
+      "imagen": "https://images.unsplash.com/photo-1474722883778-792e7990302f?w=400&h=400&fit=crop"
+    },
+    {
+      "categoria": "Vinos y Cervezas",
+      "nombre": "Riuñte Lambrusco",
+      "precio": 500,
+      "descripcion": "Vino",
+      "imagen": "https://images.unsplash.com/photo-1553361371-9b22f78e8b1d?w=400&h=400&fit=crop"
+    },
+    {
+      "categoria": "Vinos y Cervezas",
+      "nombre": "Monte Ciego Rioja",
+      "precio": 650,
+      "descripcion": "Vino",
+      "imagen": "https://images.unsplash.com/photo-1510812431401-41d2bd2722f3?w=400&h=400&fit=crop"
+    },
+    {
+      "categoria": "Vinos y Cervezas",
+      "nombre": "El Somo Rioja",
+      "precio": 450,
+      "descripcion": "Vino",
+      "imagen": "https://images.unsplash.com/photo-1516594915697-87eb3b1c14ea?w=400&h=400&fit=crop"
+    },
+    {
+      "categoria": "Vinos y Cervezas",
+      "nombre": "Corona 355ml",
+      "precio": 30,
+      "descripcion": "Cerveza",
+      "imagen": "https://images.unsplash.com/photo-1608270586620-248524c67de9?w=400&h=400&fit=crop"
+    },
+    {
+      "categoria": "Vinos y Cervezas",
+      "nombre": "Cerveza Victoria 355ml",
+      "precio": 30,
+      "descripcion": "Cerveza",
+      "imagen": "https://images.unsplash.com/photo-1535958636474-b021ee887b13?w=400&h=400&fit=crop"
+    },
+    {
+      "categoria": "Vinos y Cervezas",
+      "nombre": "Mixtelada Corona 355ml",
+      "precio": 50,
+      "descripcion": "Cerveza",
+      "imagen": "https://images.unsplash.com/photo-1567696911980-2eed69a46042?w=400&h=400&fit=crop"
+    },
+    {
+      "categoria": "Vinos y Cervezas",
+      "nombre": "Mixtelada Victoria 355ml",
+      "precio": 50,
+      "descripcion": "Cerveza",
+      "imagen": "https://images.unsplash.com/photo-1584225064785-c62a8b43d148?w=400&h=400&fit=crop"
+    },
+    {
+      "categoria": "Vinos y Cervezas",
+      "nombre": "Micheloza",
+      "precio": 40,
+      "descripcion": "Cerveza",
+      "imagen": "https://images.unsplash.com/photo-1608270586620-248524c67de9?w=400&h=400&fit=crop"
+    },
+    {
+      "categoria": "Vinos y Cervezas",
+      "nombre": "Chelada",
+      "precio": 45,
+      "descripcion": "Cerveza",
+      "imagen": "https://images.unsplash.com/photo-1535958636474-b021ee887b13?w=400&h=400&fit=crop"
+    },
+    {
+      "categoria": "Vinos y Cervezas",
+      "nombre": "Preparado",
+      "precio": 25,
+      "descripcion": "Cerveza",
+      "imagen": "https://images.unsplash.com/photo-1584225064785-c62a8b43d148?w=400&h=400&fit=crop"
+    },
+    {
+      "categoria": "Shots, Destilados y Digestivos",
+      "nombre": "Shot Centenario Plata",
+      "precio": 35,
+      "descripcion": "Shot",
+      "imagen": "https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?w=400&h=400&fit=crop"
+    },
+    {
+      "categoria": "Shots, Destilados y Digestivos",
+      "nombre": "Shot Centenario Reposado",
+      "precio": 35,
+      "descripcion": "Shot",
+      "imagen": "https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?w=400&h=400&fit=crop"
+    },
+    {
+      "categoria": "Shots, Destilados y Digestivos",
+      "nombre": "Shot Red Label",
+      "precio": 40,
+      "descripcion": "Shot",
+      "imagen": "https://images.unsplash.com/photo-1527281400683-1aae777175f8?w=400&h=400&fit=crop"
+    },
+    {
+      "categoria": "Shots, Destilados y Digestivos",
+      "nombre": "Shot José Cuervo",
+      "precio": 40,
+      "descripcion": "Shot",
+      "imagen": "https://images.unsplash.com/photo-1541546006121-5c3bc5e8c7b9?w=400&h=400&fit=crop"
+    },
+    {
+      "categoria": "Shots, Destilados y Digestivos",
+      "nombre": "Shot Captain Morgan",
+      "precio": 30,
+      "descripcion": "Shot",
+      "imagen": "https://images.unsplash.com/photo-1614313511387-1436a4480ebb?w=400&h=400&fit=crop"
+    },
+    {
+      "categoria": "Shots, Destilados y Digestivos",
+      "nombre": "Shot Maestro Dobel",
+      "precio": 50,
+      "descripcion": "Shot",
+      "imagen": "https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?w=400&h=400&fit=crop"
+    },
+    {
+      "categoria": "Shots, Destilados y Digestivos",
+      "nombre": "Shot Patrón Silver",
+      "precio": 60,
+      "descripcion": "Shot",
+      "imagen": "https://images.unsplash.com/photo-1541546006121-5c3bc5e8c7b9?w=400&h=400&fit=crop"
+    },
+    {
+      "categoria": "Shots, Destilados y Digestivos",
+      "nombre": "Shot Patrón Añejo",
+      "precio": 65,
+      "descripcion": "Shot",
+      "imagen": "https://images.unsplash.com/photo-1607622750671-6cd9a99eabd1?w=400&h=400&fit=crop"
+    },
+    {
+      "categoria": "Shots, Destilados y Digestivos",
+      "nombre": "Shot Don Julio 70",
+      "precio": 75,
+      "descripcion": "Shot",
+      "imagen": "https://images.unsplash.com/photo-1607622750671-6cd9a99eabd1?w=400&h=400&fit=crop"
+    },
+    {
+      "categoria": "Shots, Destilados y Digestivos",
+      "nombre": "Shot Black & White",
+      "precio": 35,
+      "descripcion": "Shot",
+      "imagen": "https://images.unsplash.com/photo-1569529465841-dfecdab7503b?w=400&h=400&fit=crop"
+    },
+    {
+      "categoria": "Shots, Destilados y Digestivos",
+      "nombre": "Shot Smirnoff",
+      "precio": 35,
+      "descripcion": "Shot",
+      "imagen": "https://images.unsplash.com/photo-1607622750671-6cd9a99eabd1?w=400&h=400&fit=crop"
+    },
+    {
+      "categoria": "Shots, Destilados y Digestivos",
+      "nombre": "Shot Jim Beam Bourbon",
+      "precio": 60,
+      "descripcion": "Shot",
+      "imagen": "https://images.unsplash.com/photo-1569529465841-dfecdab7503b?w=400&h=400&fit=crop"
+    },
+    {
+      "categoria": "Shots, Destilados y Digestivos",
+      "nombre": "Shot Bacardí",
+      "precio": 35,
+      "descripcion": "Shot",
+      "imagen": "https://images.unsplash.com/photo-1614313511387-1436a4480ebb?w=400&h=400&fit=crop"
+    },
+    {
+      "categoria": "Shots, Destilados y Digestivos",
+      "nombre": "Destilado Centenario Plata",
+      "precio": 95,
+      "descripcion": "Destilado preparado",
+      "imagen": "https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?w=400&h=400&fit=crop"
+    },
+    {
+      "categoria": "Shots, Destilados y Digestivos",
+      "nombre": "Destilado Centenario Reposado",
+      "precio": 95,
+      "descripcion": "Destilado preparado",
+      "imagen": "https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?w=400&h=400&fit=crop"
+    },
+    {
+      "categoria": "Shots, Destilados y Digestivos",
+      "nombre": "Destilado Red Label",
+      "precio": 120,
+      "descripcion": "Destilado preparado",
+      "imagen": "https://images.unsplash.com/photo-1569529465841-dfecdab7503b?w=400&h=400&fit=crop"
+    },
+    {
+      "categoria": "Shots, Destilados y Digestivos",
+      "nombre": "Destilado José Cuervo",
+      "precio": 100,
+      "descripcion": "Destilado preparado",
+      "imagen": "https://images.unsplash.com/photo-1541546006121-5c3bc5e8c7b9?w=400&h=400&fit=crop"
+    },
+    {
+      "categoria": "Shots, Destilados y Digestivos",
+      "nombre": "Destilado Captain Morgan",
+      "precio": 65,
+      "descripcion": "Destilado preparado",
+      "imagen": "https://images.unsplash.com/photo-1614313511387-1436a4480ebb?w=400&h=400&fit=crop"
+    },
+    {
+      "categoria": "Shots, Destilados y Digestivos",
+      "nombre": "Destilado Maestro Dobel",
+      "precio": 130,
+      "descripcion": "Destilado preparado",
+      "imagen": "https://images.unsplash.com/photo-1607622750671-6cd9a99eabd1?w=400&h=400&fit=crop"
+    },
+    {
+      "categoria": "Shots, Destilados y Digestivos",
+      "nombre": "Destilado Patrón Silver",
+      "precio": 150,
+      "descripcion": "Destilado preparado",
+      "imagen": "https://images.unsplash.com/photo-1541546006121-5c3bc5e8c7b9?w=400&h=400&fit=crop"
+    },
+    {
+      "categoria": "Shots, Destilados y Digestivos",
+      "nombre": "Destilado Patrón Añejo",
+      "precio": 160,
+      "descripcion": "Destilado preparado",
+      "imagen": "https://images.unsplash.com/photo-1607622750671-6cd9a99eabd1?w=400&h=400&fit=crop"
+    },
+    {
+      "categoria": "Shots, Destilados y Digestivos",
+      "nombre": "Destilado Don Julio 70",
+      "precio": 180,
+      "descripcion": "Destilado preparado",
+      "imagen": "https://images.unsplash.com/photo-1607622750671-6cd9a99eabd1?w=400&h=400&fit=crop"
+    },
+    {
+      "categoria": "Shots, Destilados y Digestivos",
+      "nombre": "Destilado Black & White",
+      "precio": 100,
+      "descripcion": "Destilado preparado",
+      "imagen": "https://images.unsplash.com/photo-1527281400683-1aae777175f8?w=400&h=400&fit=crop"
+    },
+    {
+      "categoria": "Shots, Destilados y Digestivos",
+      "nombre": "Destilado Smirnoff",
+      "precio": 100,
+      "descripcion": "Destilado preparado",
+      "imagen": "https://images.unsplash.com/photo-1597290282695-edc43d0e7129?w=400&h=400&fit=crop"
+    },
+    {
+      "categoria": "Shots, Destilados y Digestivos",
+      "nombre": "Destilado Jim Beam Bourbon",
+      "precio": 120,
+      "descripcion": "Destilado preparado",
+      "imagen": "https://images.unsplash.com/photo-1569529465841-dfecdab7503b?w=400&h=400&fit=crop"
+    },
+    {
+      "categoria": "Shots, Destilados y Digestivos",
+      "nombre": "Mezcal de la Casa",
+      "precio": 75,
+      "descripcion": "Destilado preparado",
+      "imagen": "https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?w=400&h=400&fit=crop"
+    },
+    {
+      "categoria": "Shots, Destilados y Digestivos",
+      "nombre": "Licor 43 shot",
+      "precio": 90,
+      "descripcion": "Digestivo",
+      "imagen": "https://images.unsplash.com/photo-1607622750671-6cd9a99eabd1?w=400&h=400&fit=crop"
+    },
+    {
+      "categoria": "Shots, Destilados y Digestivos",
+      "nombre": "Baileys shot",
+      "precio": 75,
+      "descripcion": "Digestivo",
+      "imagen": "https://images.unsplash.com/photo-1607622750671-6cd9a99eabd1?w=400&h=400&fit=crop"
+    },
+    {
+      "categoria": "Servicios (Botellas)",
+      "nombre": "Don Ramón",
+      "precio": 900,
+      "descripcion": "Botella · Tequila",
+      "imagen": "https://images.unsplash.com/photo-1541546006121-5c3bc5e8c7b9?w=400&h=400&fit=crop"
+    },
+    {
+      "categoria": "Servicios (Botellas)",
+      "nombre": "Centenario Plata",
+      "precio": 1100,
+      "descripcion": "Botella · Tequila",
+      "imagen": "https://images.unsplash.com/photo-1541546006121-5c3bc5e8c7b9?w=400&h=400&fit=crop"
+    },
+    {
+      "categoria": "Servicios (Botellas)",
+      "nombre": "Centenario Reposado",
+      "precio": 1100,
+      "descripcion": "Botella · Tequila",
+      "imagen": "https://images.unsplash.com/photo-1597290282695-edc43d0e7129?w=400&h=400&fit=crop"
+    },
+    {
+      "categoria": "Servicios (Botellas)",
+      "nombre": "José Cuervo",
+      "precio": 1200,
+      "descripcion": "Botella · Tequila",
+      "imagen": "https://images.unsplash.com/photo-1541546006121-5c3bc5e8c7b9?w=400&h=400&fit=crop"
+    },
+    {
+      "categoria": "Servicios (Botellas)",
+      "nombre": "Maestro Dobel",
+      "precio": 1600,
+      "descripcion": "Botella · Tequila",
+      "imagen": "https://images.unsplash.com/photo-1597290282695-edc43d0e7129?w=400&h=400&fit=crop"
+    },
+    {
+      "categoria": "Servicios (Botellas)",
+      "nombre": "Patrón Silver",
+      "precio": 1800,
+      "descripcion": "Botella · Tequila",
+      "imagen": "https://images.unsplash.com/photo-1597290282695-edc43d0e7129?w=400&h=400&fit=crop"
+    },
+    {
+      "categoria": "Servicios (Botellas)",
+      "nombre": "Patrón Añejo",
+      "precio": 2000,
+      "descripcion": "Botella · Tequila",
+      "imagen": "https://images.unsplash.com/photo-1597290282695-edc43d0e7129?w=400&h=400&fit=crop"
+    },
+    {
+      "categoria": "Servicios (Botellas)",
+      "nombre": "Don Julio 70",
+      "precio": 2500,
+      "descripcion": "Botella · Tequila",
+      "imagen": "https://images.unsplash.com/photo-1597290282695-edc43d0e7129?w=400&h=400&fit=crop"
+    },
+    {
+      "categoria": "Servicios (Botellas)",
+      "nombre": "Red Label",
+      "precio": 1100,
+      "descripcion": "Botella · Whisky",
+      "imagen": "https://images.unsplash.com/photo-1527281400683-1aae777175f8?w=400&h=400&fit=crop"
+    },
+    {
+      "categoria": "Servicios (Botellas)",
+      "nombre": "Black & White",
+      "precio": 800,
+      "descripcion": "Botella · Whisky",
+      "imagen": "https://images.unsplash.com/photo-1569529465841-dfecdab7503b?w=400&h=400&fit=crop"
+    },
+    {
+      "categoria": "Servicios (Botellas)",
+      "nombre": "Jim Beam Bourbon",
+      "precio": 14000,
+      "descripcion": "Botella · Whisky",
+      "imagen": "https://images.unsplash.com/photo-1569529465841-dfecdab7503b?w=400&h=400&fit=crop"
+    },
+    {
+      "categoria": "Servicios (Botellas)",
+      "nombre": "Bacardí",
+      "precio": 1000,
+      "descripcion": "Botella · Ron",
+      "imagen": "https://images.unsplash.com/photo-1614313511387-1436a4480ebb?w=400&h=400&fit=crop"
+    },
+    {
+      "categoria": "Servicios (Botellas)",
+      "nombre": "Captain Morgan",
+      "precio": 650,
+      "descripcion": "Botella · Ron",
+      "imagen": "https://images.unsplash.com/photo-1614313511387-1436a4480ebb?w=400&h=400&fit=crop"
+    },
+    {
+      "categoria": "Servicios (Botellas)",
+      "nombre": "Smirnoff",
+      "precio": 1000,
+      "descripcion": "Botella · Vodka",
+      "imagen": "https://images.unsplash.com/photo-1597290282695-edc43d0e7129?w=400&h=400&fit=crop"
+    },
+    {
+      "categoria": "Cata Mezcal",
+      "nombre": "Mezcal de la Casa · Cristalino Suelto",
+      "precio": 30,
+      "descripcion": "Casa Santa Teresa · Shot · Botella $230/L",
+      "imagen": "https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?w=400&h=400&fit=crop"
+    },
+    {
+      "categoria": "Cata Mezcal",
+      "nombre": "Mezcal Cristalino · Santa Teresa",
+      "precio": 35,
+      "descripcion": "Casa Santa Teresa · Shot · Botella $350",
+      "imagen": "https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?w=400&h=400&fit=crop"
+    },
+    {
+      "categoria": "Cata Mezcal",
+      "nombre": "Mezcal Cristalino 4° · Santa Teresa",
+      "precio": 120,
+      "descripcion": "Casa Santa Teresa · Shot · Botella $780",
+      "imagen": "https://images.unsplash.com/photo-1607622750671-6cd9a99eabd1?w=400&h=400&fit=crop"
+    },
+    {
+      "categoria": "Cata Mezcal",
+      "nombre": "Crema de Mezcal Taro",
+      "precio": 45,
+      "descripcion": "Casa Santa Teresa · Shot · Botella $400",
+      "imagen": "https://images.unsplash.com/photo-1607622750671-6cd9a99eabd1?w=400&h=400&fit=crop"
+    },
+    {
+      "categoria": "Cata Mezcal",
+      "nombre": "Crema de Mezcal Café",
+      "precio": 45,
+      "descripcion": "Casa Santa Teresa · Shot · Botella $400",
+      "imagen": "https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=400&h=400&fit=crop"
+    },
+    {
+      "categoria": "Cata Mezcal",
+      "nombre": "Mezcal Cristalino Suelto · Don Antonio Briones",
+      "precio": 35,
+      "descripcion": "Casa Don Antonio Briones · Shot · Botella $250/L",
+      "imagen": "https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?w=400&h=400&fit=crop"
+    },
+    {
+      "categoria": "Cata Mezcal",
+      "nombre": "Mezcal Cristalino 1° · Don Antonio Briones",
+      "precio": 120,
+      "descripcion": "Casa Don Antonio Briones · Shot · Botella $550",
+      "imagen": "https://images.unsplash.com/photo-1541546006121-5c3bc5e8c7b9?w=400&h=400&fit=crop"
+    },
+    {
+      "categoria": "Cata Mezcal",
+      "nombre": "Mezcal Cristalino 3° · Don Antonio Briones",
+      "precio": 130,
+      "descripcion": "Casa Don Antonio Briones · Shot · Botella $730",
+      "imagen": "https://images.unsplash.com/photo-1541546006121-5c3bc5e8c7b9?w=400&h=400&fit=crop"
+    },
+    {
+      "categoria": "Cata Mezcal",
+      "nombre": "Mezcal Cristalino 4° · Don Antonio Briones",
+      "precio": 140,
+      "descripcion": "Casa Don Antonio Briones · Shot · Botella $850",
+      "imagen": "https://images.unsplash.com/photo-1607622750671-6cd9a99eabd1?w=400&h=400&fit=crop"
+    },
+    {
+      "categoria": "Cata Mezcal",
+      "nombre": "Licor de Viznaga",
+      "precio": 50,
+      "descripcion": "Casa Don Antonio Briones · Shot · Botella $450",
+      "imagen": "https://images.unsplash.com/photo-1607622750671-6cd9a99eabd1?w=400&h=400&fit=crop"
+    },
+    {
+      "categoria": "Cata Mezcal",
+      "nombre": "Licor de Café",
+      "precio": 50,
+      "descripcion": "Casa Don Antonio Briones · Shot · Botella $450",
+      "imagen": "https://images.unsplash.com/photo-1509042239860-f550ce710b93?w=400&h=400&fit=crop"
+    }
   ]
 }

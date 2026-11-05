@@ -599,14 +599,14 @@ export default function PedidoCasaPage() {
               if (prods.length === 0) return null;
               return (
                 <section key={cat.id}>
-                  <h2 className="text-lg font-bold text-gray-800 mb-3">{cat.nombre}</h2>
+                  <h2 className="text-lg font-bold text-[#2b1d12] border-b-2 border-[#a67c3d] pb-1 mb-3">{cat.nombre}</h2>
                   <div className="space-y-3">
                     {prods.map((prod) => {
                       const cant = carrito.get(prod.id) || 0;
                       return (
                         <div key={prod.id} className="bg-white rounded-xl p-4 shadow-sm border border-gray-100 flex gap-4">
                           {prod.imagen ? (
-                            <img src={prod.imagen} alt={prod.nombre} className="w-20 h-20 rounded-lg object-cover flex-shrink-0" />
+                            <img src={prod.imagen} alt={prod.nombre} loading="lazy" className="w-20 h-20 rounded-lg object-cover flex-shrink-0" />
                           ) : (
                             <div className="w-20 h-20 rounded-lg bg-gray-100 flex items-center justify-center flex-shrink-0">
                               <span className="text-2xl">🍽️</span>
