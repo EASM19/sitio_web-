@@ -67,9 +67,9 @@ export default function ModalOpinion({ pedidoId, numeroPedido, cliente, onCerrar
         ) : (
           <>
             <p className="text-3xl mb-2">⭐</p>
-            <h2 className="text-xl font-bold text-[#2b1d12]">¿Qué te pareció tu pedido?</h2>
+            <h2 className="text-xl font-bold text-[#2b1d12]">¿Qué te pareció la página?</h2>
             <p className="text-sm text-gray-500 mt-1 mb-4">
-              Cuéntanos tu queja o sugerencia{numeroPedido ? ` del pedido #${numeroPedido}` : ""}
+              Cuéntanos tu queja o sugerencia de la página
             </p>
             <textarea
               value={texto}

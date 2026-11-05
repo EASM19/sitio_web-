@@ -22,6 +22,40 @@ type PromptInstalar = Event & {
 
 const RESTAURANT_ID = "restaurante1";
 
+const pad2 = (n: number) => String(n).padStart(2, "0");
+
+function listarHoras(desde: Date, hasta: Date): string[] {
+  const res: string[] = [];
+  const cur = new Date(desde);
+  while (cur <= hasta) {
+    res.push(`${pad2(cur.getHours())}:${pad2(cur.getMinutes())}`);
+    cur.setMinutes(cur.getMinutes() + 30);
+  }
+  return res;
+}
+
+function generarHorasRecoger(): string[] {
+  const ahora = new Date();
+  const fin = new Date(ahora);
+  fin.setHours(23, 0, 0, 0);
+  const inicio = new Date(ahora.getTime() + 30 * 60000);
+  inicio.setMinutes(Math.ceil(inicio.getMinutes() / 30) * 30, 0, 0);
+  let horas = listarHoras(inicio, fin);
+  if (horas.length === 0) {
+    const apertura = new Date(ahora);
+    apertura.setHours(11, 0, 0, 0);
+    horas = listarHoras(apertura, fin);
+  }
+  return horas;
+}
+
+function formato12(hhmm: string): string {
+  const [h, m] = hhmm.split(":").map(Number);
+  const suf = h >= 12 ? "p.m." : "a.m.";
+  const h12 = h % 12 === 0 ? 12 : h % 12;
+  return `${h12}:${pad2(m)} ${suf}`;
+}
+
 export default function PedidoCasaPage() {
   const [productos, setProductos] = useState<Producto[]>([]);
   const [categorias, setCategorias] = useState<Categoria[]>([]);
@@ -45,7 +79,13 @@ export default function PedidoCasaPage() {
   const [tipo, setTipo] = useState<TipoPedido>("MESA");
   const [mesaNumero, setMesaNumero] = useState("");
   const [hora, setHora] = useState("");
+  const [horasRecoger, setHorasRecoger] = useState<string[]>([]);
   const [ingresando, setIngresando] = useState(false);
+
+  useEffect(() => {
+    const t = setTimeout(() => setHorasRecoger(generarHorasRecoger()), 0);
+    return () => clearTimeout(t);
+  }, []);
 
   const [promptInstalar, setPromptInstalar] = useState<PromptInstalar | null>(null);
   const [esIOS, setEsIOS] = useState(false);
@@ -261,7 +301,10 @@ export default function PedidoCasaPage() {
     }
     if (!nombre || !telefono) return;
     if (tipo === "DOMICILIO" && !direccionFinal) return;
-    if (tipo === "PARA_LLEVAR" && !hora) return;
+    if (tipo === "PARA_LLEVAR" && !hora) {
+      setError("Selecciona la hora de recogida");
+      return;
+    }
     if (tipo === "MESA" && !mesaNumero) return;
 
     setEnviando(true);
@@ -357,7 +400,7 @@ export default function PedidoCasaPage() {
           <img
             src="/logo-menu.png"
             alt="La Bóveda del Real"
-            className="absolute inset-0 w-full h-full object-cover"
+            className="absolute inset-0 w-full h-full object-cover animate-pulse"
           />
           <div className="absolute left-0 right-0 flex justify-center" style={{ top: "66%" }}>
             <span
@@ -575,16 +618,35 @@ export default function PedidoCasaPage() {
                 )}
                 {tipo === "PARA_LLEVAR" && (
                   <div className="mt-3">
-                    <label className="block text-sm font-bold text-gray-700 mb-1">
+                    <label className="block text-sm font-bold text-gray-700 mb-2">
                       🕐 ¿A qué hora recoges tu pedido? *
                     </label>
-                    <input
-                      type="time"
-                      value={hora}
-                      onChange={(e) => setHora(e.target.value)}
-                      className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl outline-none"
-                      style={{ color: "#1f2937" }}
-                    />
+                    <div className="bg-[#fffdf6] border-2 border-gray-200 rounded-xl p-3">
+                      <div className="flex flex-wrap gap-2 justify-center">
+                        {horasRecoger.length === 0 && (
+                          <span className="text-sm text-gray-500">Cargando horarios...</span>
+                        )}
+                        {horasRecoger.map((h) => (
+                          <button
+                            key={h}
+                            type="button"
+                            onClick={() => setHora(h)}
+                            className={`px-3 py-2 rounded-lg text-sm font-bold border-2 transition ${
+                              hora === h
+                                ? "bg-amber-800 border-amber-800 text-white"
+                                : "bg-white border-gray-200 text-gray-700 hover:border-amber-400"
+                            }`}
+                          >
+                            {formato12(h)}
+                          </button>
+                        ))}
+                      </div>
+                      {horasRecoger.length === 0 && (
+                        <p className="text-xs text-gray-400 text-center mt-2">
+                          No hay horarios disponibles para hoy
+                        </p>
+                      )}
+                    </div>
                   </div>
                 )}
               </div>

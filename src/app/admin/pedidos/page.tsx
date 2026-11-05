@@ -7,7 +7,7 @@ import {
 } from "firebase/firestore";
 import { auth, db } from "@/lib/firebase";
 import type { Pedido, EstadoPedido, Mensaje } from "@/types";
-import { sonarAlerta, desbloquearAudio } from "@/lib/sound";
+import { sonarAlerta } from "@/lib/sound";
 import { pedirPermisoNotificaciones, notificar } from "@/lib/notif";
 import { suscribirsePush, obtenerSuscripciones, enviarNotificacionPush } from "@/lib/push";
 import { useRouter } from "next/navigation";
@@ -74,7 +74,6 @@ export default function PedidosPage() {
     { id: string; titulo: string; cuerpo: string; hora: Date; leido: boolean }[]
   >([]);
   const [bellAbierto, setBellAbierto] = useState(false);
-  const [alertasActivas, setAlertasActivas] = useState(false);
   const [historialAbierto, setHistorialAbierto] = useState(false);
   const [semanaSel, setSemanaSel] = useState<number | null>(null);
   const router = useRouter();
@@ -106,17 +105,10 @@ export default function PedidosPage() {
     );
   };
 
-  const activarAlertas = async () => {
-    const permiso = await pedirPermisoNotificaciones();
-    desbloquearAudio();
-    if (user) await suscribirsePush("admin", user.uid);
-    setAlertasActivas(permiso === "granted");
-  };
-
   useEffect(() => {
     if (!user) return;
 
-    pedirPermisoNotificaciones().then((p) => setAlertasActivas(p === "granted"));
+    pedirPermisoNotificaciones();
     suscribirsePush("admin", user.uid);
 
     const q = query(
@@ -305,17 +297,6 @@ export default function PedidosPage() {
             <Link href="/admin/mesas" className="text-gray-500 hover:text-gray-700 font-medium">QR</Link>
           </div>
           <div className="flex items-center gap-3">
-            <button
-              onClick={activarAlertas}
-              className={`text-sm px-3 py-1.5 rounded-lg font-bold border ${
-                alertasActivas
-                  ? "bg-green-50 border-green-200 text-green-700"
-                  : "bg-amber-50 border-amber-200 text-amber-800 hover:bg-amber-100"
-              }`}
-              title="Activar notificaciones y sonido"
-            >
-              {alertasActivas ? "✅ Alertas activas" : "🔔 Activar alertas"}
-            </button>
             <div className="relative">
               <button
                 onClick={() => setBellAbierto((v) => !v)}

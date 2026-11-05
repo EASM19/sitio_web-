@@ -10,7 +10,7 @@ import {
 } from "firebase/auth";
 import { auth, db } from "@/lib/firebase";
 import type { Pedido, Mensaje } from "@/types";
-import { sonarAlerta, desbloquearAudio } from "@/lib/sound";
+import { sonarAlerta } from "@/lib/sound";
 import { pedirPermisoNotificaciones, notificar } from "@/lib/notif";
 import { suscribirsePush, obtenerSuscripciones, enviarNotificacionPush } from "@/lib/push";
 import ModalOpinion from "@/components/ModalOpinion";
@@ -49,8 +49,8 @@ export default function PedidoPage() {
   const pedidoSelIdRef = useRef<string | null>(null);
   const msgsConocidos = useRef<Set<string> | null>(null);
   const pendiente = useRef<{ sel: string | null; chat: boolean }>({ sel: null, chat: false });
-  const [alertasActivas, setAlertasActivas] = useState(false);
   const [opinionPendiente, setOpinionPendiente] = useState(false);
+  const [mostrarHistorial, setMostrarHistorial] = useState(false);
 
   useEffect(() => {
     if (!user || !pedidoSel || pedidoSel.estado !== "ENTREGADO") return;
@@ -68,19 +68,12 @@ export default function PedidoPage() {
     return () => clearTimeout(t);
   }, [user, pedidoSel]);
 
-  const activarAlertas = async () => {
-    const permiso = await pedirPermisoNotificaciones();
-    desbloquearAudio();
-    if (user) await suscribirsePush("cliente", user.uid);
-    setAlertasActivas(permiso === "granted");
-  };
-
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, (u) => {
       setUser(u);
       setAuthLoading(false);
       if (u) {
-        pedirPermisoNotificaciones().then((p) => setAlertasActivas(p === "granted"));
+        pedirPermisoNotificaciones();
         suscribirsePush("cliente", u.uid);
       }
     });
@@ -316,6 +309,10 @@ export default function PedidoPage() {
     }
   };
 
+  const activos = misPedidos.filter((p) => p.estado !== "ENTREGADO");
+  const pedidosVisibles = activos.length > 0 ? activos : misPedidos.slice(0, 1);
+  const pedidosOcultos = misPedidos.filter((p) => !pedidosVisibles.some((v) => v.id === p.id));
+
   if (authLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[#f6efdc]">
@@ -334,17 +331,6 @@ export default function PedidoPage() {
           >
             🍽️ Ir al menú
           </a>
-          <button
-            onClick={activarAlertas}
-            className={`inline-flex items-center gap-1 shadow-md px-4 py-2.5 rounded-full text-sm font-bold border ${
-              alertasActivas
-                ? "bg-green-50 border-green-200 text-green-700"
-                : "bg-white border-amber-100 text-amber-800 hover:bg-amber-50"
-            }`}
-            title="Activar notificaciones de tu pedido"
-          >
-            {alertasActivas ? "✅ Alertas activas" : "🔔 Alertas"}
-          </button>
         </div>
 
         <div className="text-center mb-6">
@@ -424,33 +410,73 @@ export default function PedidoPage() {
                   Aún no has hecho pedidos con esta cuenta
                 </p>
               ) : (
-                misPedidos.map((p) => (
-                  <button
-                    key={p.id}
-                    onClick={() => setSeleccionadoId(p.id)}
-                    className={`w-full flex justify-between items-center p-3 text-left hover:bg-gray-50 ${
-                      seleccionadoId === p.id ? "bg-amber-50" : ""
-                    }`}
-                  >
-                    <div>
-                      <span className="font-bold text-gray-800">#{p.numeroPedido}</span>
-                      {(p.chatNoLeidoCliente || 0) > 0 && (
-                        <span className="inline-block align-middle ml-1.5 bg-amber-800 text-white text-[10px] font-bold rounded-full min-w-[18px] h-[18px] px-1 text-center leading-[18px]">
-                          {p.chatNoLeidoCliente}
+                <>
+                  {pedidosVisibles.map((p) => (
+                    <button
+                      key={p.id}
+                      onClick={() => setSeleccionadoId(p.id)}
+                      className={`w-full flex justify-between items-center p-3 text-left hover:bg-gray-50 ${
+                        seleccionadoId === p.id ? "bg-amber-50" : ""
+                      }`}
+                    >
+                      <div>
+                        <span className="font-bold text-gray-800">#{p.numeroPedido}</span>
+                        {(p.chatNoLeidoCliente || 0) > 0 && (
+                          <span className="inline-block align-middle ml-1.5 bg-amber-800 text-white text-[10px] font-bold rounded-full min-w-[18px] h-[18px] px-1 text-center leading-[18px]">
+                            {p.chatNoLeidoCliente}
+                          </span>
+                        )}
+                        <p className="text-xs text-gray-500">
+                          {p.fechaCreacion instanceof Date
+                            ? p.fechaCreacion.toLocaleDateString("es-MX", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })
+                            : ""}
+                          {" · "}${p.total.toFixed(2)}
+                        </p>
+                      </div>
+                      <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${getEstadoColor(p.estado)}`}>
+                        {p.estado}
+                      </span>
+                    </button>
+                  ))}
+                  {pedidosOcultos.length > 0 && (
+                    <button
+                      onClick={() => setMostrarHistorial((v) => !v)}
+                      className="w-full p-3 text-center text-sm font-bold text-amber-800 hover:bg-amber-50"
+                    >
+                      {mostrarHistorial
+                        ? "▲ Ocultar pedidos anteriores"
+                        : `📜 Ver pedidos anteriores (${pedidosOcultos.length})`}
+                    </button>
+                  )}
+                  {mostrarHistorial &&
+                    pedidosOcultos.map((p) => (
+                      <button
+                        key={p.id}
+                        onClick={() => setSeleccionadoId(p.id)}
+                        className={`w-full flex justify-between items-center p-3 text-left hover:bg-gray-50 ${
+                          seleccionadoId === p.id ? "bg-amber-50" : ""
+                        }`}
+                      >
+                        <div>
+                          <span className="font-bold text-gray-800">#{p.numeroPedido}</span>
+                          {(p.chatNoLeidoCliente || 0) > 0 && (
+                            <span className="inline-block align-middle ml-1.5 bg-amber-800 text-white text-[10px] font-bold rounded-full min-w-[18px] h-[18px] px-1 text-center leading-[18px]">
+                              {p.chatNoLeidoCliente}
+                            </span>
+                          )}
+                          <p className="text-xs text-gray-500">
+                            {p.fechaCreacion instanceof Date
+                              ? p.fechaCreacion.toLocaleDateString("es-MX", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })
+                              : ""}
+                            {" · "}${p.total.toFixed(2)}
+                          </p>
+                        </div>
+                        <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${getEstadoColor(p.estado)}`}>
+                          {p.estado}
                         </span>
-                      )}
-                      <p className="text-xs text-gray-500">
-                        {p.fechaCreacion instanceof Date
-                          ? p.fechaCreacion.toLocaleDateString("es-MX", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })
-                          : ""}
-                        {" · "}${p.total.toFixed(2)}
-                      </p>
-                    </div>
-                    <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${getEstadoColor(p.estado)}`}>
-                      {p.estado}
-                    </span>
-                  </button>
-                ))
+                      </button>
+                    ))}
+                </>
               )}
             </div>
 
