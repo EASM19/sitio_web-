@@ -39,14 +39,14 @@ export default function MesasPage() {
 
   if (!user) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-stone-50">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-rose-500"></div>
+      <div className="min-h-screen flex items-center justify-center bg-[#f6efdc]">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-amber-600"></div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-stone-50">
+    <div className="min-h-screen bg-[#f6efdc]">
       <header className="bg-white/80 backdrop-blur border-b border-gray-200 sticky top-0 z-10">
         <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-6">
@@ -54,9 +54,9 @@ export default function MesasPage() {
             <Link href="/admin/productos" className="text-gray-500 hover:text-gray-700 font-medium">Productos</Link>
             <Link href="/admin/categorias" className="text-gray-500 hover:text-gray-700 font-medium">Categorías</Link>
             <Link href="/admin/ventas" className="text-gray-500 hover:text-gray-700 font-medium">Ventas</Link>
-            <span className="text-rose-600 font-bold">QR</span>
+            <span className="text-amber-800 font-bold">QR</span>
           </div>
-          <button onClick={handleLogout} className="text-rose-600 hover:text-rose-700 font-medium">Cerrar sesión</button>
+          <button onClick={handleLogout} className="text-amber-800 hover:text-amber-900 font-medium">Cerrar sesión</button>
         </div>
       </header>
 
@@ -73,7 +73,7 @@ export default function MesasPage() {
               type="text"
               value={customUrl || qrUrl}
               onChange={(e) => setCustomUrl(e.target.value)}
-              className="w-full px-4 py-2 border-2 border-gray-200 rounded-xl text-sm outline-none focus:border-rose-400"
+              className="w-full px-4 py-2 border-2 border-gray-200 rounded-xl text-sm outline-none focus:border-amber-500"
               style={{ color: "#1f2937" }}
             />
             <p className="text-xs text-gray-400 mt-1">Para probar desde tu celular usa la IP de tu red. Para producción usa la URL de Vercel.</p>
@@ -87,7 +87,7 @@ export default function MesasPage() {
               href={customUrl || qrUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="bg-rose-600 text-white px-6 py-3 rounded-xl font-bold shadow"
+              className="bg-amber-800 text-white px-6 py-3 rounded-xl font-bold shadow"
             >
               Probar como cliente
             </a>

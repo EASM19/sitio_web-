@@ -123,24 +123,24 @@ export default function CategoriasPage() {
 
   if (!user) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-stone-50">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-rose-500"></div>
+      <div className="min-h-screen flex items-center justify-center bg-[#f6efdc]">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-amber-600"></div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-stone-50">
+    <div className="min-h-screen bg-[#f6efdc]">
       <header className="bg-white/80 backdrop-blur border-b border-gray-200 sticky top-0 z-10">
         <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-6">
             <Link href="/admin/pedidos" className="text-gray-500 hover:text-gray-700 font-medium">Pedidos</Link>
             <Link href="/admin/productos" className="text-gray-500 hover:text-gray-700 font-medium">Productos</Link>
-            <Link href="/admin/categorias" className="text-rose-600 font-bold text-lg">Categorías</Link>
+            <Link href="/admin/categorias" className="text-amber-800 font-bold text-lg">Categorías</Link>
             <Link href="/admin/ventas" className="text-gray-500 hover:text-gray-700 font-medium">Ventas</Link>
             <Link href="/admin/mesas" className="text-gray-500 hover:text-gray-700 font-medium">QR</Link>
           </div>
-          <button onClick={handleLogout} className="text-rose-600 hover:text-rose-700 font-medium">
+          <button onClick={handleLogout} className="text-amber-800 hover:text-amber-900 font-medium">
             Cerrar sesión
           </button>
         </div>
@@ -155,13 +155,13 @@ export default function CategoriasPage() {
               value={nuevaCategoria}
               onChange={(e) => setNuevaCategoria(e.target.value)}
               placeholder="Nombre de la categoría"
-              className="flex-1 px-4 py-2 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-rose-500 focus:border-transparent outline-none"
+              className="flex-1 px-4 py-2 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-amber-600 focus:border-transparent outline-none"
               style={{ color: "#1f2937" }}
             />
             <button
               type="submit"
               disabled={creando}
-              className="bg-rose-600 text-white px-6 py-2 rounded-xl font-bold hover:bg-rose-700 disabled:opacity-50 shadow"
+              className="bg-amber-800 text-white px-6 py-2 rounded-xl font-bold hover:bg-amber-900 disabled:opacity-50 shadow"
             >
               {creando ? "Creando..." : "Agregar"}
             </button>
@@ -169,7 +169,7 @@ export default function CategoriasPage() {
           <button
             onClick={agregarCategoriasEjemplo}
             disabled={creando}
-            className="mt-3 text-sm text-rose-600 hover:text-rose-700 font-medium underline"
+            className="mt-3 text-sm text-amber-800 hover:text-amber-900 font-medium underline"
           >
             Agregar categorías de ejemplo (Pizzas, Comida Ligera)
           </button>
@@ -177,7 +177,7 @@ export default function CategoriasPage() {
 
         {loading ? (
           <div className="text-center py-12">
-            <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-rose-500 mx-auto"></div>
+            <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-amber-600 mx-auto"></div>
           </div>
         ) : (
           <div className="grid gap-3">
@@ -196,14 +196,14 @@ export default function CategoriasPage() {
                     className={`px-3 py-1 rounded-lg text-sm font-bold ${
                       categoria.estado === "activa"
                         ? "bg-green-100 text-green-700"
-                        : "bg-rose-100 text-rose-700"
+                        : "bg-amber-100 text-amber-900"
                     }`}
                   >
                     {categoria.estado === "activa" ? "Activa" : "Inactiva"}
                   </button>
                   <button
                     onClick={() => eliminarCategoria(categoria.id)}
-                    className="bg-rose-100 text-rose-700 px-3 py-1 rounded-lg text-sm font-bold hover:bg-rose-200"
+                    className="bg-amber-100 text-amber-900 px-3 py-1 rounded-lg text-sm font-bold hover:bg-amber-200"
                   >
                     Eliminar
                   </button>

@@ -300,19 +300,19 @@ export default function PedidoPage() {
 
   if (authLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-stone-50">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-rose-500"></div>
+      <div className="min-h-screen flex items-center justify-center bg-[#f6efdc]">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-amber-600"></div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-stone-50 p-4 pb-24">
+    <div className="min-h-screen bg-[#f6efdc] p-4 pb-24">
       <div className="max-w-md mx-auto pt-4 pb-8">
         <div className="sticky top-2 z-10 flex justify-center gap-2 mb-4">
           <a
             href="/pedido-casa"
-            className="inline-flex items-center gap-2 bg-white shadow-md px-5 py-2.5 rounded-full text-sm font-bold text-rose-600 border border-rose-100 hover:bg-rose-50"
+            className="inline-flex items-center gap-2 bg-white shadow-md px-5 py-2.5 rounded-full text-sm font-bold text-amber-800 border border-amber-100 hover:bg-amber-50"
           >
             🍽️ Ir al menú
           </a>
@@ -321,7 +321,7 @@ export default function PedidoPage() {
             className={`inline-flex items-center gap-1 shadow-md px-4 py-2.5 rounded-full text-sm font-bold border ${
               alertasActivas
                 ? "bg-green-50 border-green-200 text-green-700"
-                : "bg-white border-rose-100 text-rose-600 hover:bg-rose-50"
+                : "bg-white border-amber-100 text-amber-800 hover:bg-amber-50"
             }`}
             title="Activar notificaciones de tu pedido"
           >
@@ -367,7 +367,7 @@ export default function PedidoPage() {
                 <button
                   type="submit"
                   disabled={buscando}
-                  className="bg-rose-600 text-white px-6 py-3 rounded-xl font-bold disabled:opacity-50 shadow"
+                  className="bg-amber-800 text-white px-6 py-3 rounded-xl font-bold disabled:opacity-50 shadow"
                 >
                   {buscando ? "..." : "Buscar"}
                 </button>
@@ -376,7 +376,7 @@ export default function PedidoPage() {
 
             {noEncontrado && (
               <div className="bg-white rounded-xl p-6 shadow-sm text-center">
-                <p className="text-rose-500">Pedido no encontrado</p>
+                <p className="text-amber-600">Pedido no encontrado</p>
               </div>
             )}
           </div>
@@ -394,7 +394,7 @@ export default function PedidoPage() {
                   setPedidoSel(null);
                   setMensajes([]);
                 }}
-                className="text-rose-600 text-sm font-medium"
+                className="text-amber-800 text-sm font-medium"
               >
                 Cerrar sesión
               </button>
@@ -411,13 +411,13 @@ export default function PedidoPage() {
                     key={p.id}
                     onClick={() => setSeleccionadoId(p.id)}
                     className={`w-full flex justify-between items-center p-3 text-left hover:bg-gray-50 ${
-                      seleccionadoId === p.id ? "bg-rose-50" : ""
+                      seleccionadoId === p.id ? "bg-amber-50" : ""
                     }`}
                   >
                     <div>
                       <span className="font-bold text-gray-800">#{p.numeroPedido}</span>
                       {(p.chatNoLeidoCliente || 0) > 0 && (
-                        <span className="inline-block align-middle ml-1.5 bg-rose-600 text-white text-[10px] font-bold rounded-full min-w-[18px] h-[18px] px-1 text-center leading-[18px]">
+                        <span className="inline-block align-middle ml-1.5 bg-amber-800 text-white text-[10px] font-bold rounded-full min-w-[18px] h-[18px] px-1 text-center leading-[18px]">
                           {p.chatNoLeidoCliente}
                         </span>
                       )}
@@ -492,7 +492,7 @@ export default function PedidoPage() {
 
             <div className="border-t pt-3 flex justify-between items-center">
               <span className="font-bold text-gray-800">Total</span>
-              <span className="font-bold text-rose-600 text-lg">${pedidoSel.total.toFixed(2)}</span>
+              <span className="font-bold text-amber-800 text-lg">${pedidoSel.total.toFixed(2)}</span>
             </div>
 
             <div className="mt-4">
@@ -504,7 +504,7 @@ export default function PedidoPage() {
               </div>
               <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
                 <div
-                  className="h-full bg-rose-600 transition-all"
+                  className="h-full bg-amber-800 transition-all"
                   style={{ width: progreso(pedidoSel.estado) }}
                 ></div>
               </div>
@@ -522,7 +522,7 @@ export default function PedidoPage() {
             <h3 className="font-bold text-gray-800 mb-3 flex items-center gap-2">
               💬 Chat con el restaurante
               {(pedidoSel.chatNoLeidoCliente || 0) > 0 && (
-                <span className="bg-rose-600 text-white text-[10px] font-bold rounded-full min-w-[18px] h-[18px] px-1 flex items-center justify-center">
+                <span className="bg-amber-800 text-white text-[10px] font-bold rounded-full min-w-[18px] h-[18px] px-1 flex items-center justify-center">
                   {pedidoSel.chatNoLeidoCliente}
                 </span>
               )}
@@ -534,7 +534,7 @@ export default function PedidoPage() {
                 </p>
                 <button
                   onClick={entrarConGoogle}
-                  className="bg-rose-600 text-white px-4 py-2 rounded-xl text-sm font-bold"
+                  className="bg-amber-800 text-white px-4 py-2 rounded-xl text-sm font-bold"
                 >
                   Iniciar sesión con Google
                 </button>
@@ -555,12 +555,12 @@ export default function PedidoPage() {
                       <div
                         className={`max-w-[80%] px-3 py-2 rounded-xl text-sm ${
                           m.emisor === "admin"
-                            ? "bg-rose-500 text-white"
+                            ? "bg-amber-600 text-white"
                             : "bg-gray-100 text-gray-800"
                         }`}
                       >
                         <p>{m.texto}</p>
-                        <p className={`text-[10px] mt-1 ${m.emisor === "admin" ? "text-rose-100" : "text-gray-400"}`}>
+                        <p className={`text-[10px] mt-1 ${m.emisor === "admin" ? "text-amber-100" : "text-gray-400"}`}>
                           {m.nombre}
                           {m.fechaCreacion &&
                             ` · ${m.fechaCreacion.toLocaleTimeString("es-MX", { hour: "2-digit", minute: "2-digit" })}`}
@@ -581,7 +581,7 @@ export default function PedidoPage() {
                   <button
                     type="submit"
                     disabled={enviandoMsg || !textoMsg.trim()}
-                    className="bg-rose-600 text-white px-4 py-2 rounded-xl text-sm font-bold disabled:opacity-50"
+                    className="bg-amber-800 text-white px-4 py-2 rounded-xl text-sm font-bold disabled:opacity-50"
                   >
                     Enviar
                   </button>

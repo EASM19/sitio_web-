@@ -109,24 +109,24 @@ export default function VentasPage() {
 
   if (!user) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-stone-50">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-rose-500"></div>
+      <div className="min-h-screen flex items-center justify-center bg-[#f6efdc]">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-amber-600"></div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-stone-50">
+    <div className="min-h-screen bg-[#f6efdc]">
       <header className="bg-white/80 backdrop-blur border-b border-gray-200 sticky top-0 z-10">
         <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-6">
             <Link href="/admin/pedidos" className="text-gray-500 hover:text-gray-700 font-medium">Pedidos</Link>
             <Link href="/admin/productos" className="text-gray-500 hover:text-gray-700 font-medium">Productos</Link>
             <Link href="/admin/categorias" className="text-gray-500 hover:text-gray-700 font-medium">Categorías</Link>
-            <Link href="/admin/ventas" className="text-rose-600 font-bold text-lg">Ventas</Link>
+            <Link href="/admin/ventas" className="text-amber-800 font-bold text-lg">Ventas</Link>
             <Link href="/admin/mesas" className="text-gray-500 hover:text-gray-700 font-medium">QR</Link>
           </div>
-          <button onClick={handleLogout} className="text-rose-600 hover:text-rose-700 font-medium">
+          <button onClick={handleLogout} className="text-amber-800 hover:text-amber-900 font-medium">
             Cerrar sesión
           </button>
         </div>
@@ -151,7 +151,7 @@ export default function VentasPage() {
               setFechaSel(claveDia(new Date()));
               setVerTodo(false);
             }}
-            className="bg-rose-600 text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-rose-700"
+            className="bg-amber-800 text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-amber-900"
           >
             Hoy
           </button>
@@ -159,7 +159,7 @@ export default function VentasPage() {
             onClick={() => setVerTodo(!verTodo)}
             className={`px-4 py-2 rounded-lg text-sm font-bold border-2 ${
               verTodo
-                ? "bg-rose-50 border-rose-500 text-rose-600"
+                ? "bg-amber-50 border-amber-600 text-amber-800"
                 : "bg-white border-gray-200 text-gray-600 hover:bg-gray-50"
             }`}
           >
@@ -168,7 +168,7 @@ export default function VentasPage() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-          <div className="bg-rose-600 rounded-xl p-6 text-white shadow-lg">
+          <div className="bg-amber-800 rounded-xl p-6 text-white shadow-lg">
             <p className="text-sm opacity-90 capitalize">Ventas · {etiquetaPeriodo}</p>
             <p className="text-3xl font-bold">${totalVentas.toFixed(2)}</p>
           </div>
@@ -185,7 +185,7 @@ export default function VentasPage() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           {loading ? (
             <div className="text-center py-12">
-              <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-rose-500 mx-auto"></div>
+              <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-amber-600 mx-auto"></div>
             </div>
           ) : (
             <>
@@ -197,7 +197,7 @@ export default function VentasPage() {
                   <div className="space-y-3">
                     {productosTop.map(([nombre, cantidad], idx) => (
                       <div key={nombre} className="flex items-center gap-3">
-                        <span className="w-8 h-8 bg-rose-100 rounded-full flex items-center justify-center text-rose-600 font-bold text-sm">
+                        <span className="w-8 h-8 bg-amber-100 rounded-full flex items-center justify-center text-amber-800 font-bold text-sm">
                           {idx + 1}
                         </span>
                         <span className="flex-1 font-medium text-gray-800">{nombre}</span>
@@ -227,7 +227,7 @@ export default function VentasPage() {
                           }}
                           className={`w-full flex justify-between items-center px-3 py-2.5 rounded-lg text-sm border transition ${
                             !verTodo && fechaSel === dia
-                              ? "border-rose-500 bg-rose-50"
+                              ? "border-amber-600 bg-amber-50"
                               : "border-gray-100 hover:bg-gray-50"
                           }`}
                         >
@@ -239,7 +239,7 @@ export default function VentasPage() {
                               {info.count} pedido{info.count !== 1 ? "s" : ""} · {info.entregados} entregado{info.entregados !== 1 ? "s" : ""}
                             </span>
                           </div>
-                          <span className="font-bold text-rose-600">${info.total.toFixed(2)}</span>
+                          <span className="font-bold text-amber-800">${info.total.toFixed(2)}</span>
                         </button>
                       );
                     })}
@@ -272,7 +272,7 @@ export default function VentasPage() {
                       {p.infoCliente?.nombre || p.clienteEmail || ""}
                     </span>
                   </div>
-                  <span className="font-bold text-rose-600">${p.total.toFixed(2)}</span>
+                  <span className="font-bold text-amber-800">${p.total.toFixed(2)}</span>
                 </div>
               ))}
             </div>

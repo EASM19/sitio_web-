@@ -271,8 +271,8 @@ export default function PedidosPage() {
 
   if (!user) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-stone-50">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-rose-500"></div>
+      <div className="min-h-screen flex items-center justify-center bg-[#f6efdc]">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-amber-600"></div>
       </div>
     );
   }
@@ -294,11 +294,11 @@ export default function PedidosPage() {
   ).sort((a, b) => b[0] - a[0]);
 
   return (
-    <div className="min-h-screen bg-stone-50">
+    <div className="min-h-screen bg-[#f6efdc]">
       <header className="bg-white/80 backdrop-blur border-b border-gray-200 sticky top-0 z-10">
         <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-6">
-            <Link href="/admin/pedidos" className="text-rose-600 font-bold text-lg">Pedidos</Link>
+            <Link href="/admin/pedidos" className="text-amber-800 font-bold text-lg">Pedidos</Link>
             <Link href="/admin/productos" className="text-gray-500 hover:text-gray-700 font-medium">Productos</Link>
             <Link href="/admin/categorias" className="text-gray-500 hover:text-gray-700 font-medium">Categorías</Link>
             <Link href="/admin/ventas" className="text-gray-500 hover:text-gray-700 font-medium">Ventas</Link>
@@ -310,7 +310,7 @@ export default function PedidosPage() {
               className={`text-sm px-3 py-1.5 rounded-lg font-bold border ${
                 alertasActivas
                   ? "bg-green-50 border-green-200 text-green-700"
-                  : "bg-rose-50 border-rose-200 text-rose-600 hover:bg-rose-100"
+                  : "bg-amber-50 border-amber-200 text-amber-800 hover:bg-amber-100"
               }`}
               title="Activar notificaciones y sonido"
             >
@@ -324,7 +324,7 @@ export default function PedidosPage() {
               >
                 🔔
                 {avisos.filter((a) => !a.leido).length > 0 && (
-                  <span className="absolute -top-0.5 -right-0.5 bg-rose-600 text-white text-[10px] font-bold rounded-full min-w-[18px] h-[18px] px-1 flex items-center justify-center">
+                  <span className="absolute -top-0.5 -right-0.5 bg-amber-800 text-white text-[10px] font-bold rounded-full min-w-[18px] h-[18px] px-1 flex items-center justify-center">
                     {avisos.filter((a) => !a.leido).length}
                   </span>
                 )}
@@ -337,7 +337,7 @@ export default function PedidosPage() {
                       <b className="text-sm text-gray-800">Notificaciones</b>
                       <button
                         onClick={() => setAvisos((prev) => prev.map((a) => ({ ...a, leido: true })))}
-                        className="text-xs text-rose-600 font-bold"
+                        className="text-xs text-amber-800 font-bold"
                       >
                         Marcar leídas
                       </button>
@@ -350,7 +350,7 @@ export default function PedidosPage() {
                       avisos.map((a) => (
                         <div
                           key={a.id}
-                          className={`p-3 border-b border-gray-50 text-sm ${a.leido ? "opacity-60" : "bg-rose-50/50"}`}
+                          className={`p-3 border-b border-gray-50 text-sm ${a.leido ? "opacity-60" : "bg-amber-50/50"}`}
                         >
                           <div className="flex justify-between gap-2">
                             <b className="text-gray-800">{a.titulo}</b>
@@ -368,7 +368,7 @@ export default function PedidosPage() {
             </div>
             <button
               onClick={handleLogout}
-              className="text-rose-600 hover:text-rose-700 font-medium"
+              className="text-amber-800 hover:text-amber-900 font-medium"
             >
               Cerrar sesión
             </button>
@@ -379,7 +379,7 @@ export default function PedidosPage() {
       <main className="max-w-7xl mx-auto p-4">
         {loading ? (
           <div className="text-center py-12">
-            <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-rose-500 mx-auto"></div>
+            <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-amber-600 mx-auto"></div>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -457,7 +457,7 @@ export default function PedidosPage() {
                                     ))}
                                   </div>
                                   <div className="flex justify-between items-center pt-2 border-t border-gray-100">
-                                    <span className="font-bold text-rose-600">${pedido.total.toFixed(2)}</span>
+                                    <span className="font-bold text-amber-800">${pedido.total.toFixed(2)}</span>
                                     <button
                                       onClick={() => {
                                         setMensajes([]);
@@ -467,7 +467,7 @@ export default function PedidosPage() {
                                     >
                                       💬 Chat
                                       {(pedido.chatNoLeidoAdmin || 0) > 0 && (
-                                        <span className="absolute -top-1.5 -right-1.5 bg-rose-600 text-white text-[10px] font-bold rounded-full min-w-[18px] h-[18px] px-1 flex items-center justify-center shadow">
+                                        <span className="absolute -top-1.5 -right-1.5 bg-amber-800 text-white text-[10px] font-bold rounded-full min-w-[18px] h-[18px] px-1 flex items-center justify-center shadow">
                                           {pedido.chatNoLeidoAdmin}
                                         </span>
                                       )}
@@ -508,7 +508,7 @@ export default function PedidosPage() {
                             ))}
                           </div>
                           <div className="flex justify-between items-center pt-2 border-t border-gray-100">
-                            <span className="font-bold text-rose-600">
+                            <span className="font-bold text-amber-800">
                               ${pedido.total.toFixed(2)}
                             </span>
                             <div className="flex gap-2">
@@ -522,7 +522,7 @@ export default function PedidosPage() {
                               >
                                 💬 Chat
                                 {(pedido.chatNoLeidoAdmin || 0) > 0 && (
-                                  <span className="absolute -top-1.5 -right-1.5 bg-rose-600 text-white text-[10px] font-bold rounded-full min-w-[18px] h-[18px] px-1 flex items-center justify-center shadow">
+                                  <span className="absolute -top-1.5 -right-1.5 bg-amber-800 text-white text-[10px] font-bold rounded-full min-w-[18px] h-[18px] px-1 flex items-center justify-center shadow">
                                     {pedido.chatNoLeidoAdmin}
                                   </span>
                                 )}
@@ -534,7 +534,7 @@ export default function PedidosPage() {
                                     cambiarEstado(pedido, ESTADOS[idx + 1]);
                                   }
                                 }}
-                                className="bg-rose-600 text-white px-4 py-1.5 rounded-lg text-sm font-bold hover:bg-rose-700 transition shadow"
+                                className="bg-amber-800 text-white px-4 py-1.5 rounded-lg text-sm font-bold hover:bg-amber-900 transition shadow"
                               >
                                 {ESTADOS[ESTADOS.indexOf(estado) + 1]}
                               </button>
@@ -590,12 +590,12 @@ export default function PedidosPage() {
                   <div
                     className={`max-w-[80%] px-3 py-2 rounded-xl text-sm ${
                       m.emisor === "admin"
-                        ? "bg-rose-500 text-white"
+                        ? "bg-amber-600 text-white"
                         : "bg-gray-100 text-gray-800"
                     }`}
                   >
                     <p>{m.texto}</p>
-                    <p className={`text-[10px] mt-1 ${m.emisor === "admin" ? "text-rose-100" : "text-gray-400"}`}>
+                    <p className={`text-[10px] mt-1 ${m.emisor === "admin" ? "text-amber-100" : "text-gray-400"}`}>
                       {m.nombre}
                       {m.fechaCreacion &&
                         ` · ${m.fechaCreacion.toLocaleTimeString("es-MX", { hour: "2-digit", minute: "2-digit" })}`}
@@ -616,7 +616,7 @@ export default function PedidosPage() {
               <button
                 type="submit"
                 disabled={enviandoMsg || !textoMsg.trim()}
-                className="bg-rose-600 text-white px-4 py-2 rounded-xl text-sm font-bold disabled:opacity-50"
+                className="bg-amber-800 text-white px-4 py-2 rounded-xl text-sm font-bold disabled:opacity-50"
               >
                 Enviar
               </button>
@@ -695,7 +695,7 @@ export default function PedidosPage() {
                                   >
                                     <div className="flex justify-between font-bold text-gray-800">
                                       <span>#{pedido.numeroPedido}</span>
-                                      <span className="text-rose-600">
+                                      <span className="text-amber-800">
                                         ${pedido.total.toFixed(2)}
                                       </span>
                                     </div>
