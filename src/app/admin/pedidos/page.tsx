@@ -76,6 +76,7 @@ export default function PedidosPage() {
   const [bellAbierto, setBellAbierto] = useState(false);
   const [historialAbierto, setHistorialAbierto] = useState(false);
   const [semanaSel, setSemanaSel] = useState<number | null>(null);
+  const [fechasAbiertas, setFechasAbiertas] = useState<Set<string>>(new Set());
   const router = useRouter();
   useSesionActiva(user);
 
@@ -397,68 +398,101 @@ export default function PedidosPage() {
                         const ordenados = [...pedidosEstado].sort(
                           (a, b) => b.fechaCreacion.getTime() - a.fechaCreacion.getTime()
                         );
+                        const hoyClave = new Date().toDateString();
                         ordenados.forEach((p) => {
-                          const clave = p.fechaCreacion.toLocaleDateString("es-MX", {
+                          const clave = p.fechaCreacion.toDateString();
+                          if (!porFecha.has(clave)) porFecha.set(clave, []);
+                          porFecha.get(clave)!.push(p);
+                        });
+                        return Array.from(porFecha.entries()).map(([clave, lista]) => {
+                          const esHoy = clave === hoyClave;
+                          const abierta = esHoy || fechasAbiertas.has(clave);
+                          const fechaLabel = lista[0].fechaCreacion.toLocaleDateString("es-MX", {
                             weekday: "long",
                             day: "numeric",
                             month: "long",
                           });
-                          if (!porFecha.has(clave)) porFecha.set(clave, []);
-                          porFecha.get(clave)!.push(p);
-                        });
-                        return Array.from(porFecha.entries()).map(([fecha, lista]) => (
-                          <div key={fecha}>
-                            <p className="text-xs font-bold text-gray-500 uppercase sticky top-0 bg-white/60 backdrop-blur py-1 rounded">
-                              📅 {fecha} · {lista.length} pedido{lista.length !== 1 ? "s" : ""} · ${lista.reduce((s, p) => s + p.total, 0).toFixed(2)}
-                            </p>
-                            <div className="space-y-3 mt-2">
-                              {lista.map((pedido) => (
-                                <div key={pedido.id} className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
-                                  <div className="flex justify-between items-start mb-1">
-                                    <span className="font-bold text-lg text-gray-800">#{pedido.numeroPedido}</span>
-                                    <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-gray-100 text-gray-600">
-                                      {pedido.tipo === "MESA" ? `Mesa ${pedido.mesaNumero}` : pedido.tipo === "PARA_LLEVAR" ? "🛍️ Recoger" : "🏠 Domicilio"}
-                                    </span>
-                                  </div>
-                                  {pedido.infoCliente && (
-                                    <p className="text-xs text-gray-500 mb-2">
-                                      {pedido.infoCliente.nombre} · {pedido.infoCliente.telefono}
-                                    </p>
-                                  )}
-                                  {pedido.infoCliente?.referencia && (
-                                    <p className="text-xs font-bold text-gray-600 mb-2">
-                                      📍 {pedido.infoCliente.referencia}
-                                    </p>
-                                  )}
-                                  <div className="text-sm space-y-1 mb-3">
-                                    {pedido.detalles.map((detalle, idx) => (
-                                      <div key={idx} className="flex justify-between text-gray-600">
-                                        <span>{detalle.cantidad}x {detalle.nombre}</span>
-                                      </div>
-                                    ))}
-                                  </div>
-                                  <div className="flex justify-between items-center pt-2 border-t border-gray-100">
-                                    <span className="font-bold text-amber-800">${pedido.total.toFixed(2)}</span>
-                                    <button
-                                      onClick={() => {
-                                        setMensajes([]);
-                                        setChatPedido(pedido);
-                                      }}
-                                      className="relative bg-gray-100 text-gray-600 px-3 py-1.5 rounded-lg text-sm font-bold hover:bg-gray-200"
-                                    >
-                                      💬 Chat
-                                      {(pedido.chatNoLeidoAdmin || 0) > 0 && (
-                                        <span className="absolute -top-1.5 -right-1.5 bg-amber-800 text-white text-[10px] font-bold rounded-full min-w-[18px] h-[18px] px-1 flex items-center justify-center shadow">
-                                          {pedido.chatNoLeidoAdmin}
+                          const totalFecha = lista.reduce((s, p) => s + p.total, 0);
+                          const alternar = () => {
+                            if (esHoy) return;
+                            setFechasAbiertas((prev) => {
+                              const next = new Set(prev);
+                              if (next.has(clave)) next.delete(clave);
+                              else next.add(clave);
+                              return next;
+                            });
+                          };
+                          return (
+                            <div key={clave}>
+                              <button
+                                onClick={alternar}
+                                className={`w-full text-left text-xs font-bold uppercase py-1.5 px-2 rounded flex items-center gap-2 ${
+                                  esHoy
+                                    ? "bg-gray-100 text-gray-700 cursor-default"
+                                    : "bg-white/70 text-gray-500 hover:bg-white hover:text-gray-700"
+                                }`}
+                              >
+                                <span className={`inline-block transition-transform ${abierta ? "rotate-180" : ""}`}>
+                                  ▼
+                                </span>
+                                <span className="flex-1">
+                                  📅 {fechaLabel}
+                                  <span className="text-gray-400 font-normal normal-case ml-1">
+                                    · {lista.length} pedido{lista.length !== 1 ? "s" : ""} · ${totalFecha.toFixed(2)}
+                                  </span>
+                                </span>
+                              </button>
+                              {abierta && (
+                                <div className="space-y-3 mt-2">
+                                  {lista.map((pedido) => (
+                                    <div key={pedido.id} className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
+                                      <div className="flex justify-between items-start mb-1">
+                                        <span className="font-bold text-lg text-gray-800">#{pedido.numeroPedido}</span>
+                                        <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-gray-100 text-gray-600">
+                                          {pedido.tipo === "MESA" ? `Mesa ${pedido.mesaNumero}` : pedido.tipo === "PARA_LLEVAR" ? "🛍️ Recoger" : "🏠 Domicilio"}
                                         </span>
+                                      </div>
+                                      {pedido.infoCliente && (
+                                        <p className="text-xs text-gray-500 mb-2">
+                                          {pedido.infoCliente.nombre} · {pedido.infoCliente.telefono}
+                                        </p>
                                       )}
-                                    </button>
-                                  </div>
+                                      {pedido.infoCliente?.referencia && (
+                                        <p className="text-xs font-bold text-gray-600 mb-2">
+                                          📍 {pedido.infoCliente.referencia}
+                                        </p>
+                                      )}
+                                      <div className="text-sm space-y-1 mb-3">
+                                        {pedido.detalles.map((detalle, idx) => (
+                                          <div key={idx} className="flex justify-between text-gray-600">
+                                            <span>{detalle.cantidad}x {detalle.nombre}</span>
+                                          </div>
+                                        ))}
+                                      </div>
+                                      <div className="flex justify-between items-center pt-2 border-t border-gray-100">
+                                        <span className="font-bold text-amber-800">${pedido.total.toFixed(2)}</span>
+                                        <button
+                                          onClick={() => {
+                                            setMensajes([]);
+                                            setChatPedido(pedido);
+                                          }}
+                                          className="relative bg-gray-100 text-gray-600 px-3 py-1.5 rounded-lg text-sm font-bold hover:bg-gray-200"
+                                        >
+                                          💬 Chat
+                                          {(pedido.chatNoLeidoAdmin || 0) > 0 && (
+                                            <span className="absolute -top-1.5 -right-1.5 bg-amber-800 text-white text-[10px] font-bold rounded-full min-w-[18px] h-[18px] px-1 flex items-center justify-center shadow">
+                                              {pedido.chatNoLeidoAdmin}
+                                            </span>
+                                          )}
+                                        </button>
+                                      </div>
+                                    </div>
+                                  ))}
                                 </div>
-                              ))}
+                              )}
                             </div>
-                          </div>
-                        ));
+                          );
+                        });
                       })()
                     ) : (
                       pedidosEstado.map((pedido) => (

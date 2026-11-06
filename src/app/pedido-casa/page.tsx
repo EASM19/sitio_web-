@@ -185,10 +185,6 @@ export default function PedidoCasaPage() {
 
   const iniciarCheckout = () => {
     if (authLoading) return;
-    if (!user) {
-      setVista("login");
-      return;
-    }
     setVista("checkout");
   };
 
@@ -257,14 +253,28 @@ export default function PedidoCasaPage() {
 
   const confirmar = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!user) {
+    if (!nombre.trim() || !telefono.trim()) {
+      setError("Completa tu nombre y teléfono.");
+      return;
+    }
+    if (tipo === "DOMICILIO" && !direccionFinal) {
+      setError("Agrega tu dirección de entrega.");
+      return;
+    }
+    if (tipo === "PARA_LLEVAR" && !hora) {
+      setError("Elige la hora de recoger.");
+      return;
+    }
+    if (tipo === "MESA" && !mesaNumero.trim()) {
+      setError("Escribe el número de mesa.");
+      return;
+    }
+    const requiereLogin = tipo === "PARA_LLEVAR" || tipo === "DOMICILIO";
+    if (requiereLogin && !user) {
+      sessionStorage.setItem("irCheckout", "1");
       setVista("login");
       return;
     }
-    if (!nombre || !telefono) return;
-    if (tipo === "DOMICILIO" && !direccionFinal) return;
-    if (tipo === "PARA_LLEVAR" && !hora) return;
-    if (tipo === "MESA" && !mesaNumero) return;
 
     setEnviando(true);
     setError("");
@@ -291,8 +301,8 @@ export default function PedidoCasaPage() {
         total,
         fechaCreacion: serverTimestamp(),
         detalles,
-        uid: user.uid,
-        clienteEmail: user.email || "",
+        uid: user?.uid || "",
+        clienteEmail: user?.email || "",
         infoCliente: {
           nombre,
           telefono,
@@ -302,19 +312,21 @@ export default function PedidoCasaPage() {
         },
       });
 
-      await setDoc(
-        doc(db, "restaurantes", RESTAURANT_ID, "clientes", user.uid),
-        {
-          uid: user.uid,
-          email: user.email || "",
-          nombre,
-          telefono,
-          direccion: direccionGuardada || (tipo === "DOMICILIO" ? direccionNueva : ""),
-          ...(tipo === "DOMICILIO" ? { referencia: referencia.trim() } : {}),
-          actualizado: serverTimestamp(),
-        },
-        { merge: true }
-      );
+      if (user) {
+        await setDoc(
+          doc(db, "restaurantes", RESTAURANT_ID, "clientes", user.uid),
+          {
+            uid: user.uid,
+            email: user.email || "",
+            nombre,
+            telefono,
+            direccion: direccionGuardada || (tipo === "DOMICILIO" ? direccionNueva : ""),
+            ...(tipo === "DOMICILIO" ? { referencia: referencia.trim() } : {}),
+            actualizado: serverTimestamp(),
+          },
+          { merge: true }
+        );
+      }
 
       try {
         localStorage.setItem(
@@ -415,11 +427,13 @@ export default function PedidoCasaPage() {
     return (
       <div className="min-h-screen bg-[#f6efdc] flex items-center justify-center p-4">
         <div className="bg-white rounded-2xl p-8 shadow-xl max-w-sm w-full text-center">
-          <div className="text-4xl mb-3">🍽️</div>
-          <h2 className="text-xl font-bold text-gray-800 mb-2">Inicia sesión para pedir</h2>
+          <div className="text-4xl mb-3">🛍️</div>
+          <h2 className="text-xl font-bold text-gray-800 mb-2">Inicia sesión para continuar</h2>
           <p className="text-gray-500 text-sm mb-6">
-            Con tu cuenta de Google guardamos tu pedido, tu dirección y puedes ver el
-            estado y el historial de tus pedidos.
+            Para pedidos de <b>recoger</b> o <b>domicilio</b> necesitamos tu cuenta de Google
+            para guardarte tus datos y poder avisarte del estado de tu pedido.
+            <br />
+            <span className="text-xs">Los pedidos a mesa no requieren sesión.</span>
           </p>
           <button
             onClick={entrarConGoogle}
@@ -436,7 +450,11 @@ export default function PedidoCasaPage() {
           </button>
           {error && <p className="text-amber-600 text-sm mb-3">{error}</p>}
           <button
-            onClick={() => { setVista("menu"); setError(""); }}
+            onClick={() => {
+              sessionStorage.removeItem("irCheckout");
+              setVista("menu");
+              setError("");
+            }}
             className="text-amber-800 font-bold text-sm"
           >
             ← Volver al menú
@@ -644,6 +662,41 @@ export default function PedidoCasaPage() {
           </div>
         ) : (
           <div className="space-y-6">
+            <section className="-mx-4 -mt-4 mb-2 relative overflow-hidden">
+              <div className="absolute inset-0">
+                <img src="/menu/hero.jpg" alt="" className="w-full h-full object-cover" />
+                <div className="absolute inset-0 bg-black/55" />
+              </div>
+              <div className="relative px-6 py-10 text-center">
+                <img src="/menu/logo.png" alt="La Bóveda Del Real" className="w-40 sm:w-48 h-auto mx-auto mb-5 drop-shadow-2xl" />
+                <p className="font-serif text-lg sm:text-xl text-[#f0e2c4]">
+                  Donde la historia y la comida se fusionan.
+                </p>
+                <p className="font-serif text-base sm:text-lg text-[#f0e2c4]/90 mt-5 mb-2">
+                  ¡Síguenos en redes!
+                </p>
+                <div className="flex items-center justify-center gap-5">
+                  <a
+                    href="https://www.instagram.com/labovedadelreal"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label="Instagram"
+                    className="hover:opacity-80 transition-opacity"
+                  >
+                    <img src="/menu/instagram.png" alt="Instagram" width={44} height={44} />
+                  </a>
+                  <a
+                    href="https://www.facebook.com/share/1BzRuv79S6/?mibextid=wwXIfr"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label="Facebook"
+                    className="hover:opacity-80 transition-opacity"
+                  >
+                    <img src="/menu/facebook.png" alt="Facebook" width={44} height={44} />
+                  </a>
+                </div>
+              </div>
+            </section>
             {categorias.map((cat) => {
               const prods = productos.filter((p) => p.categoriaId === cat.id && p.disponible);
               if (prods.length === 0) return null;
@@ -708,7 +761,7 @@ export default function PedidoCasaPage() {
               onClick={iniciarCheckout}
               className="bg-amber-800 text-white px-6 py-3 rounded-xl font-bold shadow"
             >
-              {user ? "Hacer Pedido" : "Iniciar sesión y pedir"}
+              Hacer Pedido
             </button>
           </div>
         </div>

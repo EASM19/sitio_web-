@@ -14,7 +14,8 @@ interface ModalOpinionProps {
 }
 
 export default function ModalOpinion({ pedidoId, numeroPedido, cliente, onCerrar }: ModalOpinionProps) {
-  const [texto, setTexto] = useState("");
+  const [estrellas, setEstrellas] = useState(0);
+  const [hover, setHover] = useState(0);
   const [enviando, setEnviando] = useState(false);
   const [enviado, setEnviado] = useState(false);
   const [error, setError] = useState("");
@@ -29,12 +30,13 @@ export default function ModalOpinion({ pedidoId, numeroPedido, cliente, onCerrar
   };
 
   const enviar = async () => {
-    if (!texto.trim() || enviando) return;
+    if (estrellas < 1 || enviando) return;
     setEnviando(true);
     setError("");
     try {
       await addDoc(collection(db, "restaurantes", RESTAURANT_ID, "opiniones"), {
-        texto: texto.trim(),
+        estrellas,
+        texto: "",
         pedidoId,
         numeroPedido: numeroPedido || null,
         cliente: cliente || "Anónimo",
@@ -55,32 +57,49 @@ export default function ModalOpinion({ pedidoId, numeroPedido, cliente, onCerrar
     }
   };
 
+  const mostrar = hover || estrellas;
+  const etiquetas = ["", "Malo", "Regular", "Bueno", "Muy bueno", "Excelente"];
+
   return (
     <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4">
       <div className="bg-[#fffdf6] rounded-2xl border-2 border-[#a67c3d] shadow-2xl max-w-sm w-full p-6 text-center">
         {enviado ? (
           <div className="py-6">
             <p className="text-4xl mb-3">🙏</p>
-            <h2 className="text-xl font-bold text-[#2b1d12]">¡Gracias por tu opinión!</h2>
+            <h2 className="text-xl font-bold text-[#2b1d12]">¡Gracias por tu calificación!</h2>
             <p className="text-sm text-gray-500 mt-2">Nos ayuda a mejorar La Bóveda del Real</p>
           </div>
         ) : (
           <>
-            <p className="text-3xl mb-2">⭐</p>
             <h2 className="text-xl font-bold text-[#2b1d12]">¿Qué te pareció la página?</h2>
-            <p className="text-sm text-gray-500 mt-1 mb-4">
-              Cuéntanos tu queja o sugerencia de la página
+            <p className="text-sm text-gray-500 mt-1 mb-5">
+              Califícanos con estrellas
             </p>
-            <textarea
-              value={texto}
-              onChange={(e) => setTexto(e.target.value)}
-              rows={4}
-              maxLength={500}
-              placeholder="Escribe aquí tu opinión..."
-              className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl outline-none focus:border-amber-600 text-sm resize-none text-gray-800"
-            />
-            {error && <p className="text-red-600 text-xs mt-2">{error}</p>}
-            <div className="flex gap-3 mt-4">
+            <div
+              className="flex justify-center gap-2 mb-2"
+              onMouseLeave={() => setHover(0)}
+            >
+              {[1, 2, 3, 4, 5].map((n) => (
+                <button
+                  key={n}
+                  type="button"
+                  aria-label={`${n} estrella${n > 1 ? "s" : ""}`}
+                  onMouseEnter={() => setHover(n)}
+                  onClick={() => setEstrellas(n)}
+                  className="text-4xl sm:text-5xl transition-transform hover:scale-110 leading-none"
+                  style={{
+                    color: n <= mostrar ? "#d97706" : "#d1d5db",
+                  }}
+                >
+                  ★
+                </button>
+              ))}
+            </div>
+            <p className="text-sm font-bold text-amber-700 h-5 mb-2">
+              {etiquetas[mostrar]}
+            </p>
+            {error && <p className="text-red-600 text-xs mt-1">{error}</p>}
+            <div className="flex gap-3 mt-3">
               <button
                 onClick={omitir}
                 disabled={enviando}
@@ -90,7 +109,7 @@ export default function ModalOpinion({ pedidoId, numeroPedido, cliente, onCerrar
               </button>
               <button
                 onClick={enviar}
-                disabled={enviando || !texto.trim()}
+                disabled={enviando || estrellas < 1}
                 className="flex-1 bg-amber-800 text-white py-3 rounded-xl font-bold text-sm hover:bg-amber-900 disabled:opacity-50"
               >
                 {enviando ? "Enviando..." : "Enviar"}

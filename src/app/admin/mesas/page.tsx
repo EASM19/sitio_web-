@@ -16,12 +16,22 @@ const RESTAURANT_ID = "restaurante1";
 
 interface Opinion {
   id: string;
-  texto: string;
+  estrellas?: number;
+  texto?: string;
   pedidoId?: string;
   numeroPedido?: number | null;
   cliente?: string;
   leido?: boolean;
   fechaCreacion?: Date;
+}
+
+function Estrellas({ n }: { n: number }) {
+  return (
+    <span className="text-amber-500 tracking-tight" aria-label={`${n} de 5 estrellas`}>
+      {"★".repeat(n)}
+      <span className="text-gray-300">{"★".repeat(Math.max(0, 5 - n))}</span>
+    </span>
+  );
 }
 
 export default function MesasPage() {
@@ -59,10 +69,10 @@ export default function MesasPage() {
     const unsub = onAuthStateChanged(auth, (u) => {
       const host = window.location.hostname;
       if (host.includes("vercel.app")) {
-        setQrUrl(`${window.location.origin}/menu`);
+        setQrUrl(`${window.location.origin}/pedido-casa`);
       } else {
         const puerto = window.location.port || "3000";
-        setQrUrl(`http://192.168.56.1:${puerto}/menu`);
+        setQrUrl(`http://192.168.56.1:${puerto}/pedido-casa`);
       }
       if (!u) router.push("/admin/login");
       else setUser(u);
@@ -153,7 +163,7 @@ export default function MesasPage() {
           onClick={() => setVerOpiniones(true)}
           className="mt-4 w-full bg-[#2b1d12] text-[#f0e2c4] py-4 rounded-2xl font-bold shadow-lg border-2 border-[#a67c3d] flex items-center justify-center gap-2 hover:bg-[#3a2817] transition"
         >
-          💬 Mensajes
+          ⭐ Calificaciones
           {opiniones.filter((o) => !o.leido).length > 0 && (
             <span className="bg-amber-500 text-white text-xs font-bold rounded-full min-w-[22px] h-[22px] px-1.5 flex items-center justify-center">
               {opiniones.filter((o) => !o.leido).length}
@@ -168,7 +178,7 @@ export default function MesasPage() {
           <div className="bg-[#fffdf6] w-full sm:max-w-lg rounded-t-2xl sm:rounded-2xl border-2 border-[#a67c3d] shadow-2xl max-h-[85vh] flex flex-col">
             <div className="flex items-center justify-between px-5 py-4 border-b border-amber-200">
               <h2 className="text-lg font-bold text-[#2b1d12]">
-                💬 Opinion de clientes
+                ⭐ Calificaciones de clientes
                 <span className="ml-2 text-xs font-normal text-gray-500">({opiniones.length})</span>
               </h2>
               <button
@@ -202,7 +212,15 @@ export default function MesasPage() {
                       </span>
                     )}
                   </div>
-                  <p className="text-sm text-gray-700 whitespace-pre-wrap break-words">{o.texto}</p>
+                  <div className="text-lg mb-1">
+                    {typeof o.estrellas === "number" && o.estrellas > 0 ? (
+                      <Estrellas n={o.estrellas} />
+                    ) : o.texto ? (
+                      <p className="text-sm text-gray-700 whitespace-pre-wrap break-words">{o.texto}</p>
+                    ) : (
+                      <span className="text-gray-400 text-sm">Sin calificación</span>
+                    )}
+                  </div>
                   <div className="flex items-center justify-between mt-2">
                     <span className="text-[11px] text-gray-400">
                       {o.fechaCreacion?.toLocaleString("es-MX", {
