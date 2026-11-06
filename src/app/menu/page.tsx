@@ -1,5 +1,4 @@
 import Image from "next/image";
-import Link from "next/link";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -80,23 +79,6 @@ export default function MenuPage() {
         </div>
       </header>
 
-      <div className="sticky top-0 z-20 bg-[#2b1d12]/95 backdrop-blur border-b-4 border-[#a67c3d] shadow-lg">
-        <div className="max-w-3xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
-          <Link
-            href="/"
-            className="text-sm sm:text-base text-[#f0e2c4]/80 hover:text-[#f0e2c4] font-medium"
-          >
-            ← Menú digital
-          </Link>
-          <Link
-            href="/pedido-casa"
-            className="bg-[#a67c3d] hover:bg-[#8b6529] text-white text-sm sm:text-base font-bold px-5 py-2.5 rounded-xl shadow"
-          >
-            Ordenar en línea
-          </Link>
-        </div>
-      </div>
-
       <main className="max-w-3xl mx-auto px-3 sm:px-4 py-4 sm:py-6 space-y-4 sm:space-y-6">
         {PAGINAS.map((p, i) => (
           <div
@@ -117,15 +99,6 @@ export default function MenuPage() {
       </main>
 
       <footer className="max-w-3xl mx-auto px-4 py-10 text-center space-y-4">
-        <p className="font-serif text-lg text-[#f0e2c4]/90">
-          ¿Listo para ordenar?
-        </p>
-        <Link
-          href="/pedido-casa"
-          className="inline-block bg-[#a67c3d] hover:bg-[#8b6529] text-white font-bold px-8 py-3.5 rounded-xl shadow-lg text-lg"
-        >
-          Ordenar en línea
-        </Link>
         <p className="text-xs text-[#f0e2c4]/50 pt-4">
           Cocina · Copas · Mezcal
         </p>
