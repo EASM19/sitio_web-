@@ -51,9 +51,22 @@ export default function PedidoPage() {
   const pendiente = useRef<{ sel: string | null; chat: boolean }>({ sel: null, chat: false });
   const [opinionPendiente, setOpinionPendiente] = useState(false);
   const [mostrarHistorial, setMostrarHistorial] = useState(false);
+  const [anonId, setAnonId] = useState("");
 
   useEffect(() => {
-    if (!user || !pedidoSel || pedidoSel.estado !== "ENTREGADO") return;
+    const t = setTimeout(() => {
+      try {
+        const id = localStorage.getItem("anon_id");
+        if (id) setAnonId(id);
+      } catch {
+        // almacenamiento no disponible
+      }
+    }, 0);
+    return () => clearTimeout(t);
+  }, []);
+
+  useEffect(() => {
+    if (!pedidoSel || pedidoSel.estado !== "ENTREGADO") return;
     try {
       if (
         localStorage.getItem(`opinion_enviada_${pedidoSel.id}`) ||
@@ -66,7 +79,7 @@ export default function PedidoPage() {
     }
     const t = setTimeout(() => setOpinionPendiente(true), 0);
     return () => clearTimeout(t);
-  }, [user, pedidoSel]);
+  }, [pedidoSel]);
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, (u) => {
@@ -93,21 +106,22 @@ export default function PedidoPage() {
   }, []);
 
   useEffect(() => {
-    if (!user || !seleccionadoId || !pedidoSel) return;
+    if (!seleccionadoId || !pedidoSel) return;
     if ((pedidoSel.chatNoLeidoCliente || 0) > 0) {
       updateDoc(doc(db, "restaurantes", RESTAURANT_ID, "pedidos", seleccionadoId), {
         chatNoLeidoCliente: 0,
       });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user, seleccionadoId, pedidoSel?.chatNoLeidoCliente]);
+  }, [seleccionadoId, pedidoSel?.chatNoLeidoCliente]);
 
   useEffect(() => {
-    if (!user) return;
+    const criterio = user ? { campo: "uid", valor: user.uid } : anonId ? { campo: "anonId", valor: anonId } : null;
+    if (!criterio) return;
     primerSnapshot.current = true;
     const q = query(
       collection(db, "restaurantes", RESTAURANT_ID, "pedidos"),
-      where("uid", "==", user.uid)
+      where(criterio.campo, "==", criterio.valor)
     );
     const unsub = onSnapshot(q, (snap) => {
       const lista = snap.docs
@@ -143,6 +157,10 @@ export default function PedidoPage() {
         if (!pendAplicado && lista.length > 0 && !seleccionadoId) {
           const activo = lista.find((p) => p.estado !== "ENTREGADO") || lista[0];
           setSeleccionadoId(activo.id);
+          setTimeout(
+            () => document.getElementById("pedido-estado")?.scrollIntoView({ behavior: "smooth", block: "center" }),
+            350
+          );
         }
       } else {
         lista.forEach((p) => {
@@ -171,7 +189,7 @@ export default function PedidoPage() {
     });
     return () => unsub();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user]);
+  }, [user, anonId]);
 
   useEffect(() => {
     pedidoSelIdRef.current = seleccionadoId;
@@ -338,11 +356,13 @@ export default function PedidoPage() {
           <p className="text-gray-500 text-sm">
             {user
               ? "Estado en tiempo real de tus pedidos"
+              : anonId
+              ? "Estado en tiempo real de tus pedidos de este dispositivo"
               : "Consulta un pedido o inicia sesión para ver tu historial"}
           </p>
         </div>
 
-        {!user ? (
+        {!user && !anonId ? (
           <div className="space-y-4">
             <button
               onClick={entrarConGoogle}
@@ -389,25 +409,37 @@ export default function PedidoPage() {
             <div className="flex items-center justify-between">
               <p className="text-sm text-gray-500">
                 {misPedidos.length} pedido{misPedidos.length !== 1 ? "s" : ""}
+                {!user && anonId ? " · este dispositivo" : ""}
               </p>
-              <button
-                onClick={async () => {
-                  await signOut(auth);
-                  setMisPedidos([]);
-                  setSeleccionadoId(null);
-                  setPedidoSel(null);
-                  setMensajes([]);
-                }}
-                className="text-amber-800 text-sm font-medium"
-              >
-                Cerrar sesión
-              </button>
+              {user ? (
+                <button
+                  onClick={async () => {
+                    await signOut(auth);
+                    setMisPedidos([]);
+                    setSeleccionadoId(null);
+                    setPedidoSel(null);
+                    setMensajes([]);
+                  }}
+                  className="text-amber-800 text-sm font-medium"
+                >
+                  Cerrar sesión
+                </button>
+              ) : (
+                <button
+                  onClick={entrarConGoogle}
+                  className="text-amber-800 text-sm font-medium"
+                >
+                  Vincular con Google
+                </button>
+              )}
             </div>
 
             <div className="bg-white rounded-xl shadow-sm border border-gray-100 divide-y divide-gray-100">
               {misPedidos.length === 0 ? (
                 <p className="text-gray-400 text-sm text-center py-6">
-                  Aún no has hecho pedidos con esta cuenta
+                  {user
+                    ? "Aún no has hecho pedidos con esta cuenta"
+                    : "Aún no hay pedidos en este dispositivo"}
                 </p>
               ) : (
                 <>
@@ -480,7 +512,7 @@ export default function PedidoPage() {
               )}
             </div>
 
-            {seleccionadoId && (
+            {user && seleccionadoId && (
               <form onSubmit={buscarPedido} className="flex gap-3">
                 <input
                   type="number"

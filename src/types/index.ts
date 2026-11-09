@@ -60,6 +60,7 @@ export interface Pedido {
   detalles: DetallePedido[];
   uid?: string;
   clienteEmail?: string;
+  anonId?: string;
   chatNoLeidoAdmin?: number;
   chatNoLeidoCliente?: number;
   ultimoMensaje?: {

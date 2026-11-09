@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import Link from "next/link";
 import {
   collection, query, where, getDocs, addDoc, serverTimestamp, orderBy, limit,
   doc, getDoc, setDoc,
@@ -23,6 +22,22 @@ type PromptInstalar = Event & {
 };
 
 const RESTAURANT_ID = "restaurante1";
+
+function obtenerAnonId(): string {
+  try {
+    let id = localStorage.getItem("anon_id");
+    if (!id) {
+      id =
+        typeof crypto !== "undefined" && crypto.randomUUID
+          ? crypto.randomUUID()
+          : `anon-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+      localStorage.setItem("anon_id", id);
+    }
+    return id;
+  } catch {
+    return "";
+  }
+}
 
 export default function PedidoCasaPage() {
   const [productos, setProductos] = useState<Producto[]>([]);
@@ -253,27 +268,29 @@ export default function PedidoCasaPage() {
 
   const confirmar = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!nombre.trim() || !telefono.trim()) {
-      setError("Completa tu nombre y teléfono.");
-      return;
-    }
-    if (tipo === "DOMICILIO" && !direccionFinal) {
-      setError("Agrega tu dirección de entrega.");
-      return;
-    }
-    if (tipo === "PARA_LLEVAR" && !hora) {
-      setError("Elige la hora de recoger.");
-      return;
-    }
-    if (tipo === "MESA" && !mesaNumero.trim()) {
-      setError("Escribe el número de mesa.");
-      return;
-    }
-    const requiereLogin = tipo === "PARA_LLEVAR" || tipo === "DOMICILIO";
-    if (requiereLogin && !user) {
-      sessionStorage.setItem("irCheckout", "1");
-      setVista("login");
-      return;
+    if (tipo === "MESA") {
+      if (!mesaNumero.trim()) {
+        setError("Escribe el número de mesa.");
+        return;
+      }
+    } else {
+      if (!nombre.trim() || !telefono.trim()) {
+        setError("Completa tu nombre y teléfono.");
+        return;
+      }
+      if (tipo === "DOMICILIO" && !direccionFinal) {
+        setError("Agrega tu dirección de entrega.");
+        return;
+      }
+      if (tipo === "PARA_LLEVAR" && !hora) {
+        setError("Elige la hora de recoger.");
+        return;
+      }
+      if (!user) {
+        sessionStorage.setItem("irCheckout", "1");
+        setVista("login");
+        return;
+      }
     }
 
     setEnviando(true);
@@ -291,11 +308,14 @@ export default function PedidoCasaPage() {
         })
         .filter(Boolean) as DetallePedido[];
 
+      const esMesa = tipo === "MESA";
+      const anonId = esMesa ? obtenerAnonId() : "";
+
       const docRef = await addDoc(ref, {
         restaurantId: RESTAURANT_ID,
         numeroPedido: next,
-        mesaId: tipo === "MESA" ? mesaNumero : "",
-        mesaNumero: tipo === "MESA" ? mesaNumero : "",
+        mesaId: esMesa ? mesaNumero : "",
+        mesaNumero: esMesa ? mesaNumero : "",
         tipo,
         estado: "RECIBIDO",
         total,
@@ -303,13 +323,16 @@ export default function PedidoCasaPage() {
         detalles,
         uid: user?.uid || "",
         clienteEmail: user?.email || "",
-        infoCliente: {
-          nombre,
-          telefono,
-          direccion: direccionFinal,
-          referencia: tipo === "DOMICILIO" ? referencia.trim() : "",
-          hora,
-        },
+        anonId,
+        infoCliente: esMesa
+          ? { nombre: "", telefono: "" }
+          : {
+              nombre,
+              telefono,
+              direccion: direccionFinal,
+              referencia: tipo === "DOMICILIO" ? referencia.trim() : "",
+              hora,
+            },
       });
 
       if (user) {
@@ -410,7 +433,7 @@ export default function PedidoCasaPage() {
             href="/pedido"
             className="block w-full bg-amber-800 text-white py-3 rounded-xl font-bold shadow mb-3"
           >
-            Ver estado de mi pedido
+            Ver estado del pedido
           </a>
           <button
             onClick={() => { setExito(false); setCarrito(new Map()); setVista("menu"); }}
@@ -429,12 +452,22 @@ export default function PedidoCasaPage() {
         <div className="bg-white rounded-2xl p-8 shadow-xl max-w-sm w-full text-center">
           <div className="text-4xl mb-3">🛍️</div>
           <h2 className="text-xl font-bold text-gray-800 mb-2">Inicia sesión para continuar</h2>
-          <p className="text-gray-500 text-sm mb-6">
+          <p className="text-gray-500 text-sm mb-3">
             Para pedidos de <b>recoger</b> o <b>domicilio</b> necesitamos tu cuenta de Google
             para guardarte tus datos y poder avisarte del estado de tu pedido.
-            <br />
-            <span className="text-xs">Los pedidos a mesa no requieren sesión.</span>
           </p>
+          <div className="bg-gray-50 border border-gray-200 rounded-xl p-3 mb-5 text-left">
+            <p className="text-xs text-gray-600 leading-relaxed">
+              🔒 <b>Tu información está protegida.</b> Utilizamos tu correo únicamente para
+              identificar tu cuenta y permitirte consultar tus pedidos de forma segura.
+            </p>
+          </div>
+          <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-3 mb-4 text-left">
+            <p className="text-xs text-emerald-800 leading-relaxed">
+              🔒 <b>Tu información está protegida.</b> Utilizamos tu correo únicamente para
+              identificar tu cuenta y permitirte consultar tus pedidos de forma segura.
+            </p>
+          </div>
           <button
             onClick={entrarConGoogle}
             disabled={ingresando}
@@ -474,13 +507,6 @@ export default function PedidoCasaPage() {
         <div className="max-w-2xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3 min-w-0">
             <h1 className="text-lg font-bold tracking-wide truncate">La Bóveda del Real</h1>
-            <Link
-              href="/menu"
-              className="text-xs bg-white/15 hover:bg-white/25 px-2 py-1 rounded-lg whitespace-nowrap"
-              title="Ver menú ilustrado"
-            >
-              📖 Menú
-            </Link>
           </div>
           <div className="flex items-center gap-2">
             {mostrarInstalar && (
@@ -612,25 +638,37 @@ export default function PedidoCasaPage() {
                 )}
               </div>
 
-              <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100 space-y-3">
-                <h2 className="font-bold text-gray-800">Tus datos</h2>
-                <input
-                  type="text"
-                  value={nombre}
-                  onChange={(e) => setNombre(e.target.value)}
-                  placeholder="Nombre *"
-                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl outline-none"
-                  style={{ color: "#1f2937" }}
-                />
-                <input
-                  type="tel"
-                  value={telefono}
-                  onChange={(e) => setTelefono(e.target.value)}
-                  placeholder="Teléfono *"
-                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl outline-none"
-                  style={{ color: "#1f2937" }}
-                />
-              </div>
+              {tipo !== "MESA" && (
+                <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100 space-y-3">
+                  <h2 className="font-bold text-gray-800">Tus datos</h2>
+                  <input
+                    type="text"
+                    value={nombre}
+                    onChange={(e) => setNombre(e.target.value)}
+                    placeholder="Nombre *"
+                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl outline-none"
+                    style={{ color: "#1f2937" }}
+                  />
+                  <input
+                    type="tel"
+                    value={telefono}
+                    onChange={(e) => setTelefono(e.target.value)}
+                    placeholder="Teléfono *"
+                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl outline-none"
+                    style={{ color: "#1f2937" }}
+                  />
+                  <p className="text-xs text-gray-500 bg-gray-50 rounded-lg p-3 leading-relaxed">
+                    🔒 Tu información está protegida. Utilizamos tu correo únicamente para
+                    identificar tu cuenta y permitirte consultar tus pedidos de forma segura.
+                  </p>
+                </div>
+              )}
+              {tipo === "MESA" && (
+                <p className="text-xs text-gray-400 text-center px-2">
+                  🪑 Pedido a mesa: solo necesitas el número de mesa. No pedimos nombre,
+                  teléfono ni inicio de sesión.
+                </p>
+              )}
 
               <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
                 <h2 className="font-bold text-gray-800 mb-2">Tu pedido</h2>
