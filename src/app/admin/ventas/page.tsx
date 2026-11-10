@@ -9,6 +9,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useSesionActiva } from "@/hooks/useSesionActiva";
 import { useAvisosPedido } from "@/hooks/useAvisosPedido";
+import { esPedidoValido } from "@/lib/pedidos";
 
 const RESTAURANT_ID = "restaurante1";
 
@@ -47,11 +48,13 @@ export default function VentasPage() {
     );
 
     const unsub = onSnapshot(q, (snapshot) => {
-      const pedidosData = snapshot.docs.map((d) => ({
-        id: d.id,
-        ...d.data(),
-        fechaCreacion: d.data().fechaCreacion?.toDate() || new Date(),
-      })) as Pedido[];
+      const pedidosData = snapshot.docs
+        .map((d) => ({
+          id: d.id,
+          ...d.data(),
+          fechaCreacion: d.data().fechaCreacion?.toDate() || new Date(),
+        }))
+        .filter((p) => esPedidoValido((p as { numeroPedido?: number }).numeroPedido)) as Pedido[];
       setPedidos(pedidosData);
       setLoading(false);
     });

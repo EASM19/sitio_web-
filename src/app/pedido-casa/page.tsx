@@ -13,6 +13,7 @@ import { suscribirsePush, obtenerSuscripciones, enviarNotificacionPush } from "@
 import { pedirPermisoNotificaciones, notificar } from "@/lib/notif";
 import { sonarAlerta } from "@/lib/sound";
 import RelojHora from "@/components/RelojHora";
+import { MAX_NUM_PEDIDO_VALIDO } from "@/lib/pedidos";
 import type { Producto, Categoria, DetallePedido, Mensaje } from "@/types";
 
 type TipoPedido = "MESA" | "PARA_LLEVAR" | "DOMICILIO";
@@ -390,7 +391,12 @@ export default function PedidoCasaPage() {
     setError("");
     try {
       const ref = collection(db, "restaurantes", RESTAURANT_ID, "pedidos");
-      const lastQ = query(ref, orderBy("numeroPedido", "desc"), limit(1));
+      const lastQ = query(
+        ref,
+        where("numeroPedido", "<", MAX_NUM_PEDIDO_VALIDO),
+        orderBy("numeroPedido", "desc"),
+        limit(1)
+      );
       const lastS = await getDocs(lastQ);
       const next = lastS.empty ? 1 : (lastS.docs[0].data().numeroPedido || 0) + 1;
 

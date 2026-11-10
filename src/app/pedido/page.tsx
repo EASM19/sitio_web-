@@ -14,6 +14,7 @@ import { sonarAlerta } from "@/lib/sound";
 import { pedirPermisoNotificaciones, notificar } from "@/lib/notif";
 import { suscribirsePush, obtenerSuscripciones, enviarNotificacionPush } from "@/lib/push";
 import ModalOpinion from "@/components/ModalOpinion";
+import { esPedidoValido } from "@/lib/pedidos";
 
 const RESTAURANT_ID = "restaurante1";
 
@@ -68,6 +69,7 @@ export default function PedidoPage() {
 
   useEffect(() => {
     if (!pedidoSel || pedidoSel.estado !== "ENTREGADO") return;
+    if (pedidoSel.tipo === "MESA") return;
     try {
       if (
         localStorage.getItem(`opinion_enviada_${pedidoSel.id}`) ||
@@ -130,7 +132,8 @@ export default function PedidoPage() {
           id: d.id,
           ...d.data(),
           fechaCreacion: d.data().fechaCreacion?.toDate() || new Date(),
-        })) as Pedido[];
+        }))
+        .filter((p) => esPedidoValido((p as { numeroPedido?: number }).numeroPedido)) as Pedido[];
       lista.sort((a, b) => b.numeroPedido - a.numeroPedido);
 
       let pendAplicado = false;

@@ -13,6 +13,7 @@ import { suscribirsePush, obtenerSuscripciones, enviarNotificacionPush } from "@
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useSesionActiva } from "@/hooks/useSesionActiva";
+import { esPedidoValido } from "@/lib/pedidos";
 
 const ESTADOS: EstadoPedido[] = ["RECIBIDO", "PREPARANDO", "LISTO", "ENTREGADO"];
 
@@ -118,11 +119,13 @@ export default function PedidosPage() {
     );
 
     const unsub = onSnapshot(q, (snapshot) => {
-      const pedidosData = snapshot.docs.map((d) => ({
-        id: d.id,
-        ...d.data(),
-        fechaCreacion: d.data().fechaCreacion?.toDate() || new Date(),
-      })) as Pedido[];
+      const pedidosData = snapshot.docs
+        .map((d) => ({
+          id: d.id,
+          ...d.data(),
+          fechaCreacion: d.data().fechaCreacion?.toDate() || new Date(),
+        }))
+        .filter((p) => esPedidoValido((p as { numeroPedido?: number }).numeroPedido)) as Pedido[];
 
       const ids = new Set(pedidosData.map((p) => p.id));
       if (idsConocidos.current === null) {

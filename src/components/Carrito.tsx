@@ -1,8 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { collection, addDoc, serverTimestamp, getDocs, query, orderBy, limit } from "firebase/firestore";
+import { collection, addDoc, serverTimestamp, getDocs, query, orderBy, limit, where } from "firebase/firestore";
 import { db } from "@/lib/firebase";
+import { MAX_NUM_PEDIDO_VALIDO } from "@/lib/pedidos";
 import type { Producto, Mesa, DetallePedido } from "@/types";
 
 interface CarritoProps {
@@ -44,7 +45,12 @@ export default function Carrito({
 
     try {
       const pedidosRef = collection(db, "restaurantes", restaurantId, "pedidos");
-      const lastQuery = query(pedidosRef, orderBy("numeroPedido", "desc"), limit(1));
+      const lastQuery = query(
+        pedidosRef,
+        where("numeroPedido", "<", MAX_NUM_PEDIDO_VALIDO),
+        orderBy("numeroPedido", "desc"),
+        limit(1)
+      );
       const lastSnap = await getDocs(lastQuery);
       const nextNumber = lastSnap.empty ? 1 : (lastSnap.docs[0].data().numeroPedido || 0) + 1;
 
