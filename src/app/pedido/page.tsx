@@ -107,14 +107,14 @@ export default function PedidoPage() {
   }, []);
 
   useEffect(() => {
-    if (!seleccionadoId || !pedidoSel) return;
+    if (!chatAbierto || !seleccionadoId || !pedidoSel) return;
     if ((pedidoSel.chatNoLeidoCliente || 0) > 0) {
       updateDoc(doc(db, "restaurantes", RESTAURANT_ID, "pedidos", seleccionadoId), {
         chatNoLeidoCliente: 0,
       });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [seleccionadoId, pedidoSel?.chatNoLeidoCliente]);
+  }, [chatAbierto, seleccionadoId, pedidoSel?.chatNoLeidoCliente]);
 
   useEffect(() => {
     const criterio = user ? { campo: "uid", valor: user.uid } : anonId ? { campo: "anonId", valor: anonId } : null;
@@ -350,12 +350,16 @@ export default function PedidoPage() {
           {pedidoSel && (
             <button
               onClick={() => setChatAbierto((v) => !v)}
-              className="relative inline-flex items-center bg-white shadow-md px-4 py-2.5 rounded-full text-sm font-bold text-amber-800 border border-amber-100 hover:bg-amber-50"
+              className={`relative inline-flex items-center shadow-md px-4 py-2.5 rounded-full text-sm font-bold border hover:bg-amber-50 ${
+                (pedidoSel.chatNoLeidoCliente || 0) > 0 && !chatAbierto
+                  ? "bg-red-50 text-red-600 border-red-300"
+                  : "bg-white text-amber-800 border-amber-100"
+              }`}
               title="Mensajes con el restaurante"
             >
               💬
-              {(pedidoSel.chatNoLeidoCliente || 0) > 0 && (
-                <span className="absolute -top-1 -right-1 bg-amber-800 text-white text-[10px] font-bold rounded-full min-w-[18px] h-[18px] px-1 flex items-center justify-center">
+              {(pedidoSel.chatNoLeidoCliente || 0) > 0 && !chatAbierto && (
+                <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-bold rounded-full min-w-[18px] h-[18px] px-1 flex items-center justify-center animate-pulse">
                   {pedidoSel.chatNoLeidoCliente}
                 </span>
               )}
