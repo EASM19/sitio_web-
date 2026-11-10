@@ -51,6 +51,7 @@ export default function PedidoPage() {
   const pendiente = useRef<{ sel: string | null; chat: boolean }>({ sel: null, chat: false });
   const [opinionPendiente, setOpinionPendiente] = useState(false);
   const [mostrarHistorial, setMostrarHistorial] = useState(false);
+  const [chatAbierto, setChatAbierto] = useState(false);
   const [anonId, setAnonId] = useState("");
 
   useEffect(() => {
@@ -137,10 +138,7 @@ export default function PedidoPage() {
         setMensajes([]);
         setSeleccionadoId(pendiente.current.sel);
         if (pendiente.current.chat) {
-          setTimeout(
-            () => document.getElementById("chat-seccion")?.scrollIntoView({ behavior: "smooth", block: "center" }),
-            350
-          );
+          setChatAbierto(true);
         } else {
           setTimeout(
             () => document.getElementById("pedido-estado")?.scrollIntoView({ behavior: "smooth", block: "center" }),
@@ -349,6 +347,20 @@ export default function PedidoPage() {
           >
             🍽️ Ir al menú
           </a>
+          {pedidoSel && (
+            <button
+              onClick={() => setChatAbierto((v) => !v)}
+              className="relative inline-flex items-center bg-white shadow-md px-4 py-2.5 rounded-full text-sm font-bold text-amber-800 border border-amber-100 hover:bg-amber-50"
+              title="Mensajes con el restaurante"
+            >
+              💬
+              {(pedidoSel.chatNoLeidoCliente || 0) > 0 && (
+                <span className="absolute -top-1 -right-1 bg-amber-800 text-white text-[10px] font-bold rounded-full min-w-[18px] h-[18px] px-1 flex items-center justify-center">
+                  {pedidoSel.chatNoLeidoCliente}
+                </span>
+              )}
+            </button>
+          )}
         </div>
 
         <div className="text-center mb-6">
@@ -470,14 +482,20 @@ export default function PedidoPage() {
                       </span>
                     </button>
                   ))}
+                  {mostrarHistorial && (
+                    <p className="px-3 pt-2 text-xs font-bold text-gray-400 uppercase">
+                      Pedidos anteriores
+                    </p>
+                  )}
                   {pedidosOcultos.length > 0 && (
                     <button
                       onClick={() => setMostrarHistorial((v) => !v)}
-                      className="w-full p-3 text-center text-sm font-bold text-amber-800 hover:bg-amber-50"
+                      className="w-full p-3 text-center text-sm font-bold text-amber-800 hover:bg-amber-50 flex items-center justify-center gap-1.5"
                     >
-                      {mostrarHistorial
-                        ? "▲ Ocultar pedidos anteriores"
-                        : `📜 Ver pedidos anteriores (${pedidosOcultos.length})`}
+                      📜 Ver pedidos anteriores ({pedidosOcultos.length})
+                      <span className={`inline-block text-xs transition-transform ${mostrarHistorial ? "rotate-180" : ""}`}>
+                        ▼
+                      </span>
                     </button>
                   )}
                   {mostrarHistorial &&
@@ -511,26 +529,6 @@ export default function PedidoPage() {
                 </>
               )}
             </div>
-
-            {user && seleccionadoId && (
-              <form onSubmit={buscarPedido} className="flex gap-3">
-                <input
-                  type="number"
-                  value={numeroPedido}
-                  onChange={(e) => setNumeroPedido(e.target.value)}
-                  placeholder="Buscar otro por número"
-                  className="flex-1 px-4 py-2.5 border-2 border-gray-200 rounded-xl outline-none text-sm"
-                  style={{ color: "#1f2937" }}
-                />
-                <button
-                  type="submit"
-                  disabled={buscando}
-                  className="bg-white border-2 border-gray-200 text-gray-600 px-4 py-2.5 rounded-xl text-sm font-bold"
-                >
-                  Buscar
-                </button>
-              </form>
-            )}
           </div>
         )}
 
@@ -593,77 +591,91 @@ export default function PedidoPage() {
           </div>
         )}
 
-        {pedidoSel && (
-          <div id="chat-seccion" className="mt-4 bg-white rounded-xl shadow-sm border border-gray-100 p-4">
-            <h3 className="font-bold text-gray-800 mb-3 flex items-center gap-2">
-              💬 Chat con el restaurante
-              {(pedidoSel.chatNoLeidoCliente || 0) > 0 && (
-                <span className="bg-amber-800 text-white text-[10px] font-bold rounded-full min-w-[18px] h-[18px] px-1 flex items-center justify-center">
-                  {pedidoSel.chatNoLeidoCliente}
-                </span>
-              )}
-            </h3>
-            {!user ? (
-              <div className="text-center">
-                <p className="text-gray-400 text-sm mb-3">
-                  Inicia sesión para chatear con el restaurante
-                </p>
+        {pedidoSel && chatAbierto && (
+          <div className="fixed inset-0 z-40 bg-black/50 flex items-end sm:items-center justify-center p-0 sm:p-4" onClick={() => setChatAbierto(false)}>
+            <div
+              id="chat-seccion"
+              className="bg-white rounded-t-2xl sm:rounded-2xl shadow-2xl border border-gray-100 w-full sm:max-w-md max-h-[85vh] flex flex-col p-4"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="font-bold text-gray-800 flex items-center gap-2">
+                  💬 Mensajes
+                  {(pedidoSel.chatNoLeidoCliente || 0) > 0 && (
+                    <span className="bg-amber-800 text-white text-[10px] font-bold rounded-full min-w-[18px] h-[18px] px-1 flex items-center justify-center">
+                      {pedidoSel.chatNoLeidoCliente}
+                    </span>
+                  )}
+                </h3>
                 <button
-                  onClick={entrarConGoogle}
-                  className="bg-amber-800 text-white px-4 py-2 rounded-xl text-sm font-bold"
+                  onClick={() => setChatAbierto(false)}
+                  className="text-gray-400 hover:text-gray-700 text-xl leading-none"
                 >
-                  Iniciar sesión con Google
+                  ✕
                 </button>
               </div>
-            ) : (
-              <>
-                <div className="space-y-2 max-h-64 overflow-y-auto mb-3">
-                  {mensajes.length === 0 && (
-                    <p className="text-gray-400 text-sm text-center py-2">
-                      Envía un mensaje si tienes alguna duda o información
-                    </p>
-                  )}
-                  {mensajes.map((m) => (
-                    <div
-                      key={m.id}
-                      className={`flex ${m.emisor === "admin" ? "justify-end" : "justify-start"}`}
-                    >
-                      <div
-                        className={`max-w-[80%] px-3 py-2 rounded-xl text-sm ${
-                          m.emisor === "admin"
-                            ? "bg-amber-600 text-white"
-                            : "bg-gray-100 text-gray-800"
-                        }`}
-                      >
-                        <p>{m.texto}</p>
-                        <p className={`text-[10px] mt-1 ${m.emisor === "admin" ? "text-amber-100" : "text-gray-400"}`}>
-                          {m.nombre}
-                          {m.fechaCreacion &&
-                            ` · ${m.fechaCreacion.toLocaleTimeString("es-MX", { hour: "2-digit", minute: "2-digit" })}`}
-                        </p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-                <form onSubmit={enviarMensaje} className="flex gap-2">
-                  <input
-                    type="text"
-                    value={textoMsg}
-                    onChange={(e) => setTextoMsg(e.target.value)}
-                    placeholder="Escribe un mensaje..."
-                    className="flex-1 px-3 py-2 border-2 border-gray-200 rounded-xl text-sm outline-none"
-                    style={{ color: "#1f2937" }}
-                  />
+              {!user ? (
+                <div className="text-center">
+                  <p className="text-gray-400 text-sm mb-3">
+                    Inicia sesión para chatear con el restaurante
+                  </p>
                   <button
-                    type="submit"
-                    disabled={enviandoMsg || !textoMsg.trim()}
-                    className="bg-amber-800 text-white px-4 py-2 rounded-xl text-sm font-bold disabled:opacity-50"
+                    onClick={entrarConGoogle}
+                    className="bg-amber-800 text-white px-4 py-2 rounded-xl text-sm font-bold"
                   >
-                    Enviar
+                    Iniciar sesión con Google
                   </button>
-                </form>
-              </>
-            )}
+                </div>
+              ) : (
+                <>
+                  <div className="space-y-2 overflow-y-auto mb-3 flex-1">
+                    {mensajes.length === 0 && (
+                      <p className="text-gray-400 text-sm text-center py-2">
+                        Envía un mensaje si tienes alguna duda o información
+                      </p>
+                    )}
+                    {mensajes.map((m) => (
+                      <div
+                        key={m.id}
+                        className={`flex ${m.emisor === "admin" ? "justify-end" : "justify-start"}`}
+                      >
+                        <div
+                          className={`max-w-[80%] px-3 py-2 rounded-xl text-sm ${
+                            m.emisor === "admin"
+                              ? "bg-amber-600 text-white"
+                              : "bg-gray-100 text-gray-800"
+                          }`}
+                        >
+                          <p>{m.texto}</p>
+                          <p className={`text-[10px] mt-1 ${m.emisor === "admin" ? "text-amber-100" : "text-gray-400"}`}>
+                            {m.nombre}
+                            {m.fechaCreacion &&
+                              ` · ${m.fechaCreacion.toLocaleTimeString("es-MX", { hour: "2-digit", minute: "2-digit" })}`}
+                          </p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  <form onSubmit={enviarMensaje} className="flex gap-2">
+                    <input
+                      type="text"
+                      value={textoMsg}
+                      onChange={(e) => setTextoMsg(e.target.value)}
+                      placeholder="Escribe un mensaje..."
+                      className="flex-1 px-3 py-2 border-2 border-gray-200 rounded-xl text-sm outline-none"
+                      style={{ color: "#1f2937" }}
+                    />
+                    <button
+                      type="submit"
+                      disabled={enviandoMsg || !textoMsg.trim()}
+                      className="bg-amber-800 text-white px-4 py-2 rounded-xl text-sm font-bold disabled:opacity-50"
+                    >
+                      Enviar
+                    </button>
+                  </form>
+                </>
+              )}
+            </div>
           </div>
         )}
 

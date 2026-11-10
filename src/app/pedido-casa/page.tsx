@@ -3,15 +3,17 @@
 import { useEffect, useRef, useState } from "react";
 import {
   collection, query, where, getDocs, addDoc, serverTimestamp, orderBy, limit,
-  doc, getDoc, setDoc,
+  doc, getDoc, setDoc, onSnapshot,
 } from "firebase/firestore";
 import {
   onAuthStateChanged, signInWithPopup, signInWithRedirect, signOut, GoogleAuthProvider, User,
 } from "firebase/auth";
 import { auth, db } from "@/lib/firebase";
 import { suscribirsePush, obtenerSuscripciones, enviarNotificacionPush } from "@/lib/push";
+import { pedirPermisoNotificaciones, notificar } from "@/lib/notif";
+import { sonarAlerta } from "@/lib/sound";
 import RelojHora from "@/components/RelojHora";
-import type { Producto, Categoria, DetallePedido } from "@/types";
+import type { Producto, Categoria, DetallePedido, Mensaje } from "@/types";
 
 type TipoPedido = "MESA" | "PARA_LLEVAR" | "DOMICILIO";
 type Vista = "menu" | "login" | "checkout";
@@ -70,6 +72,97 @@ export default function PedidoCasaPage() {
   const [ayudaIOS, setAyudaIOS] = useState(false);
   const [splash, setSplash] = useState<"visible" | "saliendo" | "oculto">("visible");
   const inicioSplash = useRef(0);
+  const [pedidoCreadoId, setPedidoCreadoId] = useState("");
+  const [msgsExito, setMsgsExito] = useState<Mensaje[]>([]);
+  const [bandejaExito, setBandejaExito] = useState(false);
+  const estadoExitoRef = useRef("RECIBIDO");
+  const msgsExitoRef = useRef<Set<string> | null>(null);
+  const [puedeRegresar, setPuedeRegresar] = useState(false);
+
+  useEffect(() => {
+    const t = setTimeout(() => {
+      try {
+        if (sessionStorage.getItem("puede_regresar") === "1") setPuedeRegresar(true);
+      } catch {
+        // ignorado
+      }
+    }, 0);
+    return () => clearTimeout(t);
+  }, []);
+
+  const marcarRegresable = () => {
+    try {
+      sessionStorage.setItem("puede_regresar", "1");
+    } catch {
+      // ignorado
+    }
+    setPuedeRegresar(true);
+  };
+
+  useEffect(() => {
+    if (!exito || !pedidoCreadoId) return;
+    estadoExitoRef.current = "RECIBIDO";
+    msgsExitoRef.current = null;
+
+    const unsubPedido = onSnapshot(
+      doc(db, "restaurantes", RESTAURANT_ID, "pedidos", pedidoCreadoId),
+      (d) => {
+        if (!d.exists()) return;
+        const est = d.data().estado as string;
+        if (est !== estadoExitoRef.current) {
+          const avisos: Record<string, string> = {
+            RECIBIDO: "Tu pedido fue recibido por el restaurante 🧾",
+            PREPARANDO: "Tu pedido ya está en preparación 👨‍🍳",
+            LISTO: "Tu pedido está listo para recoger 🎉",
+            ENTREGADO: "Tu pedido fue entregado. ¡Gracias! ✅",
+          };
+          sonarAlerta();
+          notificar(
+            `🔔 Pedido #${d.data().numeroPedido}`,
+            avisos[est] || `Estado actualizado: ${est}`,
+            `/pedido?pedido=${pedidoCreadoId}`
+          );
+          estadoExitoRef.current = est;
+        }
+      }
+    );
+
+    const unsubMsgs = onSnapshot(
+      query(
+        collection(db, "restaurantes", RESTAURANT_ID, "pedidos", pedidoCreadoId, "mensajes"),
+        orderBy("fechaCreacion", "asc")
+      ),
+      (snap) => {
+        const lista = snap.docs.map((m) => ({
+          id: m.id,
+          ...m.data(),
+          fechaCreacion: m.data().fechaCreacion?.toDate() || null,
+        })) as Mensaje[];
+
+        if (msgsExitoRef.current === null) {
+          msgsExitoRef.current = new Set(lista.map((m) => m.id));
+        } else {
+          for (const m of lista) {
+            if (m.emisor === "admin" && !msgsExitoRef.current.has(m.id)) {
+              sonarAlerta();
+              notificar(
+                "💬 Mensaje del restaurante",
+                m.texto.slice(0, 120),
+                `/pedido?chat=${pedidoCreadoId}`
+              );
+            }
+          }
+          lista.forEach((m) => msgsExitoRef.current!.add(m.id));
+        }
+        setMsgsExito(lista);
+      }
+    );
+
+    return () => {
+      unsubPedido();
+      unsubMsgs();
+    };
+  }, [exito, pedidoCreadoId]);
 
   useEffect(() => {
     inicioSplash.current = Date.now();
@@ -371,7 +464,9 @@ export default function PedidoCasaPage() {
       );
 
       setNumeroPedido(next);
+      setPedidoCreadoId(docRef.id);
       setExito(true);
+      pedirPermisoNotificaciones();
     } catch (err) {
       console.error(err);
       setError("Error al enviar. Intenta de nuevo.");
@@ -418,8 +513,38 @@ export default function PedidoCasaPage() {
   }
 
   if (exito) {
+    const msgsAdmin = msgsExito.filter((m) => m.emisor === "admin");
     return (
       <div className="min-h-screen bg-[#f6efdc] flex items-center justify-center p-4">
+        {msgsAdmin.length > 0 && (
+          <div className="fixed top-3 right-3 z-30">
+            <button
+              onClick={() => setBandejaExito((v) => !v)}
+              className="relative bg-white shadow-lg border border-amber-200 text-gray-700 w-11 h-11 rounded-full flex items-center justify-center text-xl"
+              title="Mensajes del restaurante"
+            >
+              🔔
+              <span className="absolute -top-1 -right-1 bg-amber-800 text-white text-[10px] font-bold rounded-full min-w-[18px] h-[18px] px-1 flex items-center justify-center">
+                {msgsAdmin.length}
+              </span>
+            </button>
+            {bandejaExito && (
+              <div className="mt-2 w-72 max-h-80 overflow-y-auto bg-white rounded-xl shadow-2xl border border-gray-100 p-3 space-y-2">
+                <p className="text-xs font-bold text-gray-500 uppercase">Mensajes del restaurante</p>
+                {msgsAdmin.map((m) => (
+                  <div key={m.id} className="bg-amber-50 rounded-lg p-2">
+                    <p className="text-sm text-gray-800">{m.texto}</p>
+                    <p className="text-[10px] text-gray-400 mt-1">
+                      {m.fechaCreacion instanceof Date
+                        ? m.fechaCreacion.toLocaleTimeString("es-MX", { hour: "2-digit", minute: "2-digit" })
+                        : ""}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
         <div className="bg-white rounded-2xl p-8 shadow-xl max-w-sm w-full text-center">
           <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
             <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -436,7 +561,12 @@ export default function PedidoCasaPage() {
             Ver estado del pedido
           </a>
           <button
-            onClick={() => { setExito(false); setCarrito(new Map()); setVista("menu"); }}
+            onClick={() => {
+              marcarRegresable();
+              setExito(false);
+              setCarrito(new Map());
+              setVista("menu");
+            }}
             className="w-full bg-gray-100 text-gray-700 py-3 rounded-xl font-bold"
           >
             Volver al menú
@@ -456,12 +586,6 @@ export default function PedidoCasaPage() {
             Para pedidos de <b>recoger</b> o <b>domicilio</b> necesitamos tu cuenta de Google
             para guardarte tus datos y poder avisarte del estado de tu pedido.
           </p>
-          <div className="bg-gray-50 border border-gray-200 rounded-xl p-3 mb-5 text-left">
-            <p className="text-xs text-gray-600 leading-relaxed">
-              🔒 <b>Tu información está protegida.</b> Utilizamos tu correo únicamente para
-              identificar tu cuenta y permitirte consultar tus pedidos de forma segura.
-            </p>
-          </div>
           <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-3 mb-4 text-left">
             <p className="text-xs text-emerald-800 leading-relaxed">
               🔒 <b>Tu información está protegida.</b> Utilizamos tu correo únicamente para
@@ -485,6 +609,7 @@ export default function PedidoCasaPage() {
           <button
             onClick={() => {
               sessionStorage.removeItem("irCheckout");
+              marcarRegresable();
               setVista("menu");
               setError("");
             }}
@@ -509,6 +634,23 @@ export default function PedidoCasaPage() {
             <h1 className="text-lg font-bold tracking-wide truncate">La Bóveda del Real</h1>
           </div>
           <div className="flex items-center gap-2">
+            {puedeRegresar && (
+              <a
+                href="/pedido"
+                onClick={() => {
+                  try {
+                    sessionStorage.removeItem("puede_regresar");
+                  } catch {
+                    // ignorado
+                  }
+                  setPuedeRegresar(false);
+                }}
+                className="bg-white/20 hover:bg-white/30 px-3 py-1.5 rounded-lg text-xs font-bold"
+                title="Regresar a mi pedido"
+              >
+                ↩ Regresar
+              </a>
+            )}
             {mostrarInstalar && (
               <button
                 onClick={instalarApp}
@@ -539,7 +681,13 @@ export default function PedidoCasaPage() {
         {vista === "checkout" ? (
           <div>
             <div className="flex items-center justify-between mb-4">
-              <button onClick={() => setVista("menu")} className="text-amber-800 font-bold">
+              <button
+                onClick={() => {
+                  marcarRegresable();
+                  setVista("menu");
+                }}
+                className="text-amber-800 font-bold"
+              >
                 ← Volver al menú
               </button>
               {user && (

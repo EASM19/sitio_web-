@@ -522,17 +522,17 @@ export default function PedidosPage() {
                               </div>
                             ))}
                           </div>
-                          <div className="flex justify-between items-center pt-2 border-t border-gray-100">
+                          <div className="flex flex-wrap justify-between items-center gap-2 pt-2 border-t border-gray-100">
                             <span className="font-bold text-amber-800">
                               ${pedido.total.toFixed(2)}
                             </span>
-                            <div className="flex gap-2">
+                            <div className="flex gap-2 min-w-0">
                               <button
                                 onClick={() => {
                                   setMensajes([]);
                                   setChatPedido(pedido);
                                 }}
-                                className="relative bg-gray-100 text-gray-600 px-3 py-1.5 rounded-lg text-sm font-bold hover:bg-gray-200"
+                                className="relative bg-gray-100 text-gray-600 px-3 py-1.5 rounded-lg text-sm font-bold hover:bg-gray-200 shrink-0"
                                 title="Chat con el cliente"
                               >
                                 💬 Chat
@@ -549,7 +549,7 @@ export default function PedidosPage() {
                                     cambiarEstado(pedido, ESTADOS[idx + 1]);
                                   }
                                 }}
-                                className="bg-amber-800 text-white px-4 py-1.5 rounded-lg text-sm font-bold hover:bg-amber-900 transition shadow"
+                                className="bg-amber-800 text-white px-3 py-1.5 rounded-lg text-xs sm:text-sm font-bold hover:bg-amber-900 transition shadow min-w-0 truncate"
                               >
                                 {ESTADOS[ESTADOS.indexOf(estado) + 1]}
                               </button>
