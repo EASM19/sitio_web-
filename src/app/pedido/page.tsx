@@ -422,11 +422,7 @@ export default function PedidoPage() {
           </div>
         ) : (
           <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <p className="text-sm text-gray-500">
-                {misPedidos.length} pedido{misPedidos.length !== 1 ? "s" : ""}
-                {!user && anonId ? " · este dispositivo" : ""}
-              </p>
+            <div className="flex items-center justify-end">
               {user ? (
                 <button
                   onClick={async () => {

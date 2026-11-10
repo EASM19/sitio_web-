@@ -516,22 +516,28 @@ export default function PedidoCasaPage() {
     const msgsAdmin = msgsExito.filter((m) => m.emisor === "admin");
     return (
       <div className="min-h-screen bg-[#f6efdc] flex items-center justify-center p-4">
-        {msgsAdmin.length > 0 && (
-          <div className="fixed top-3 right-3 z-30">
-            <button
-              onClick={() => setBandejaExito((v) => !v)}
-              className="relative bg-white shadow-lg border border-amber-200 text-gray-700 w-11 h-11 rounded-full flex items-center justify-center text-xl"
-              title="Mensajes del restaurante"
-            >
-              🔔
-              <span className="absolute -top-1 -right-1 bg-amber-800 text-white text-[10px] font-bold rounded-full min-w-[18px] h-[18px] px-1 flex items-center justify-center">
+        <div className="fixed top-3 right-3 z-30">
+          <button
+            onClick={() => setBandejaExito((v) => !v)}
+            className="relative bg-white shadow-lg border border-amber-200 text-gray-700 w-11 h-11 rounded-full flex items-center justify-center text-xl"
+            title="Mensajes del restaurante"
+          >
+            💬
+            {msgsAdmin.length > 0 && (
+              <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-bold rounded-full min-w-[18px] h-[18px] px-1 flex items-center justify-center">
                 {msgsAdmin.length}
               </span>
-            </button>
-            {bandejaExito && (
-              <div className="mt-2 w-72 max-h-80 overflow-y-auto bg-white rounded-xl shadow-2xl border border-gray-100 p-3 space-y-2">
-                <p className="text-xs font-bold text-gray-500 uppercase">Mensajes del restaurante</p>
-                {msgsAdmin.map((m) => (
+            )}
+          </button>
+          {bandejaExito && (
+            <div className="mt-2 w-72 max-h-80 overflow-y-auto bg-white rounded-xl shadow-2xl border border-gray-100 p-3 space-y-2">
+              <p className="text-xs font-bold text-gray-500 uppercase">Mensajes del restaurante</p>
+              {msgsAdmin.length === 0 ? (
+                <p className="text-xs text-gray-400 text-center py-2">
+                  Aún no hay mensajes
+                </p>
+              ) : (
+                msgsAdmin.map((m) => (
                   <div key={m.id} className="bg-amber-50 rounded-lg p-2">
                     <p className="text-sm text-gray-800">{m.texto}</p>
                     <p className="text-[10px] text-gray-400 mt-1">
@@ -540,11 +546,11 @@ export default function PedidoCasaPage() {
                         : ""}
                     </p>
                   </div>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
+                ))
+              )}
+            </div>
+          )}
+        </div>
         <div className="bg-white rounded-2xl p-8 shadow-xl max-w-sm w-full text-center">
           <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
             <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
