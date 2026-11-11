@@ -9,7 +9,7 @@ import {
   collection, onSnapshot, orderBy, query, serverTimestamp, setDoc, updateDoc,
 } from "firebase/firestore";
 import { auth, db } from "@/lib/firebase";
-import { obtenerUsuarioRol, usuarioRolRef } from "@/lib/roles";
+import { consultarRol, usuarioRolRef } from "@/lib/roles";
 import type { RolUsuario, UsuarioRol } from "@/types";
 import { useRouter } from "next/navigation";
 
@@ -45,6 +45,7 @@ export default function SuperadminPage() {
   const [msgExito, setMsgExito] = useState("");
 
   const credsRef = useRef<{ email: string; password: string } | null>(null);
+  const creandoRef = useRef(false);
   const router = useRouter();
 
   useEffect(() => {
@@ -55,15 +56,32 @@ export default function SuperadminPage() {
         setVerificando(false);
         return;
       }
-      const rol = await obtenerUsuarioRol(u.uid);
-      if (rol?.rol === "superadmin" && rol.activo !== false) {
+      if (creandoRef.current) return;
+      const r = await consultarRol(u.uid);
+      if (r.estado === "error") {
+        console.error("Verificación de rol falló:", r.codigo);
+        setUser(null);
+        setAutorizado(false);
+        setVerificando(false);
+        setError(r.mensaje);
+        return;
+      }
+      const rol = r.usuario;
+      if (rol && rol.rol === "superadmin" && rol.activo !== false) {
         setUser(u);
         setAutorizado(true);
+        setError("");
       } else {
         await signOut(auth);
         setUser(null);
         setAutorizado(false);
-        setError("Esta cuenta no tiene permisos de superadmin");
+        setError(
+          !rol
+            ? "Esta cuenta no tiene rol asignado. Contacta al superadmin."
+            : rol.activo === false
+            ? "Esta cuenta está desactivada."
+            : "Esta cuenta no es superadmin."
+        );
       }
       setVerificando(false);
     });
@@ -90,19 +108,24 @@ export default function SuperadminPage() {
     setError("");
     try {
       const cred = await signInWithEmailAndPassword(auth, email.trim(), password);
-      const rol = await obtenerUsuarioRol(cred.user.uid);
-      if (rol?.rol !== "superadmin") {
-        await signOut(auth);
-        setError("Esta cuenta no es superadmin");
-        return;
-      }
-      if (rol.activo === false) {
-        await signOut(auth);
-        setError("Esta cuenta está desactivada");
-        return;
-      }
       credsRef.current = { email: email.trim(), password };
       setPassword("");
+      const r = await consultarRol(cred.user.uid);
+      if (r.estado === "error") {
+        setError(r.mensaje);
+        return;
+      }
+      const rol = r.usuario;
+      if (!rol || rol.rol !== "superadmin" || rol.activo === false) {
+        await signOut(auth);
+        setError(
+          !rol
+            ? "Esta cuenta no tiene rol asignado. Contacta al superadmin."
+            : rol.activo === false
+            ? "Esta cuenta está desactivada."
+            : "Esta cuenta no es superadmin."
+        );
+      }
     } catch {
       setError("Correo o contraseña incorrectos");
     } finally {
@@ -120,6 +143,7 @@ export default function SuperadminPage() {
       return;
     }
     setCreando(true);
+    creandoRef.current = true;
     try {
       const cred = await createUserWithEmailAndPassword(
         auth, nuevoEmail.trim(), nuevoPass
@@ -138,6 +162,7 @@ export default function SuperadminPage() {
         ...(nuevoRol !== "superadmin" ? { restaurantId: "restaurante1" } : {}),
         creado: serverTimestamp(),
       });
+      creandoRef.current = false;
       await signOut(auth);
       if (credsRef.current) {
         await signInWithEmailAndPassword(
@@ -170,6 +195,7 @@ export default function SuperadminPage() {
         }
       }
     } finally {
+      creandoRef.current = false;
       setCreando(false);
     }
   };
