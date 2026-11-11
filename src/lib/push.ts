@@ -21,7 +21,7 @@ function urlBase64ToUint8Array(base64String: string): Uint8Array<ArrayBuffer> {
   return outputArray;
 }
 
-export async function suscribirsePush(tipo: "admin" | "cliente", uid: string) {
+export async function suscribirsePush(tipo: "admin" | "cliente" | "repartidor", uid: string) {
   if (typeof window === "undefined") return;
   if (!("serviceWorker" in navigator) || !("PushManager" in window)) return;
 

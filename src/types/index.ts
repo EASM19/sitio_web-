@@ -37,7 +37,8 @@ export interface Mesa {
 }
 
 export type TipoPedido = "MESA" | "PARA_LLEVAR" | "DOMICILIO";
-export type EstadoPedido = "RECIBIDO" | "PREPARANDO" | "LISTO" | "ENTREGADO";
+export type EstadoPedido = "RECIBIDO" | "PREPARANDO" | "LISTO" | "EN_CAMINO" | "ENTREGADO";
+export type RolUsuario = "superadmin" | "dueno" | "repartidor";
 
 export interface DetallePedido {
   productoId: string;
@@ -75,6 +76,19 @@ export interface Pedido {
     referencia?: string;
     hora?: string;
   };
+  repartidorId?: string;
+  repartidorNombre?: string;
+}
+
+export interface UsuarioRol {
+  uid: string;
+  nombre: string;
+  email: string;
+  rol: RolUsuario;
+  telefono?: string;
+  activo?: boolean;
+  restaurantId?: string;
+  creado?: unknown;
 }
 
 export interface Mensaje {

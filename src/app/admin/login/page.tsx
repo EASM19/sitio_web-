@@ -1,12 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { signInWithEmailAndPassword } from "firebase/auth";
+import { signInWithEmailAndPassword, signOut } from "firebase/auth";
 import { auth } from "@/lib/firebase";
 import { useRouter } from "next/navigation";
 import { pedirPermisoNotificaciones } from "@/lib/notif";
 import { desbloquearAudio } from "@/lib/sound";
 import { suscribirsePush } from "@/lib/push";
+import { obtenerUsuarioRol } from "@/lib/roles";
 
 export default function AdminLoginPage() {
   const [email, setEmail] = useState("");
@@ -21,7 +22,24 @@ export default function AdminLoginPage() {
     setError("");
     try {
       const cred = await signInWithEmailAndPassword(auth, email, password);
+      const rol = await obtenerUsuarioRol(cred.user.uid);
+      if (rol && rol.activo === false) {
+        await signOut(auth);
+        setError("Esta cuenta está desactivada");
+        return;
+      }
       desbloquearAudio();
+      if (rol?.rol === "repartidor") {
+        pedirPermisoNotificaciones().then((p) => {
+          if (p === "granted") suscribirsePush("repartidor", cred.user.uid);
+        });
+        router.push("/repartidor");
+        return;
+      }
+      if (rol?.rol === "superadmin") {
+        router.push("/superadmin");
+        return;
+      }
       pedirPermisoNotificaciones().then((p) => {
         if (p === "granted") {
           suscribirsePush("admin", cred.user.uid);

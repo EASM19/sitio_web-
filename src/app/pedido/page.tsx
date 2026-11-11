@@ -15,6 +15,7 @@ import { pedirPermisoNotificaciones, notificar } from "@/lib/notif";
 import { suscribirsePush, obtenerSuscripciones, enviarNotificacionPush } from "@/lib/push";
 import ModalOpinion from "@/components/ModalOpinion";
 import { esPedidoValido } from "@/lib/pedidos";
+import { avisoEstado, etiquetasProgreso, progresoPedido } from "@/lib/avisos";
 
 const RESTAURANT_ID = "restaurante1";
 
@@ -23,15 +24,11 @@ const getEstadoColor = (estado: string) => {
     case "RECIBIDO": return "bg-blue-100 text-blue-800";
     case "PREPARANDO": return "bg-yellow-100 text-yellow-800";
     case "LISTO": return "bg-green-100 text-green-800";
+    case "EN_CAMINO": return "bg-purple-100 text-purple-800";
     case "ENTREGADO": return "bg-gray-100 text-gray-800";
     default: return "bg-gray-100 text-gray-800";
   }
 };
-
-const progreso = (estado: string) =>
-  estado === "RECIBIDO" ? "25%" :
-  estado === "PREPARANDO" ? "50%" :
-  estado === "LISTO" ? "75%" : "100%";
 
 export default function PedidoPage() {
   const [numeroPedido, setNumeroPedido] = useState("");
@@ -168,15 +165,9 @@ export default function PedidoPage() {
           const prev = estadosPrevios.current.get(p.id);
           if (prev && prev !== p.estado) {
             sonarAlerta();
-            const avisos: Record<string, string> = {
-              RECIBIDO: "Tu pedido fue recibido por el restaurante 🧾",
-              PREPARANDO: "Tu pedido ya está en preparación 👨‍🍳",
-              LISTO: "Tu pedido está listo para recoger 🎉",
-              ENTREGADO: "Tu pedido fue entregado. ¡Gracias! ✅",
-            };
             notificar(
               `🔔 Pedido #${p.numeroPedido}`,
-              avisos[p.estado] || `Estado actualizado: ${p.estado}`,
+              avisoEstado(p.estado, p.tipo),
               `/pedido?pedido=${p.id}`
             );
           }
@@ -574,20 +565,26 @@ export default function PedidoPage() {
 
             <div className="mt-4">
               <div className="flex justify-between text-xs text-gray-400 mb-1">
-                <span>Recibido</span>
-                <span>Preparando</span>
-                <span>Listo</span>
-                <span>Entregado</span>
+                {etiquetasProgreso(pedidoSel.tipo).map((et) => (
+                  <span key={et}>{et}</span>
+                ))}
               </div>
               <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
                 <div
                   className="h-full bg-amber-800 transition-all"
-                  style={{ width: progreso(pedidoSel.estado) }}
+                  style={{ width: progresoPedido(pedidoSel.estado, pedidoSel.tipo) }}
                 ></div>
               </div>
               {pedidoSel.estado === "LISTO" && (
                 <p className="text-green-600 font-bold text-sm mt-2 text-center">
-                  🎉 Tu pedido está listo para recoger
+                  {pedidoSel.tipo === "DOMICILIO"
+                    ? "🛵 Tu pedido está listo, esperando repartidor"
+                    : "🎉 Tu pedido está listo para recoger"}
+                </p>
+              )}
+              {pedidoSel.estado === "EN_CAMINO" && (
+                <p className="text-purple-600 font-bold text-sm mt-2 text-center">
+                  🚗 Tu pedido va en camino
                 </p>
               )}
             </div>

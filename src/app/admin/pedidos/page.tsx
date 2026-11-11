@@ -14,13 +14,15 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useSesionActiva } from "@/hooks/useSesionActiva";
 import { esPedidoValido } from "@/lib/pedidos";
+import { avisoEstado, siguienteEstadoAdmin } from "@/lib/avisos";
 
-const ESTADOS: EstadoPedido[] = ["RECIBIDO", "PREPARANDO", "LISTO", "ENTREGADO"];
+const ESTADOS: EstadoPedido[] = ["RECIBIDO", "PREPARANDO", "LISTO", "EN_CAMINO", "ENTREGADO"];
 
 const ESTADO_COLORS: Record<EstadoPedido, string> = {
   RECIBIDO: "bg-blue-50 border-blue-200",
   PREPARANDO: "bg-yellow-50 border-yellow-200",
   LISTO: "bg-green-50 border-green-200",
+  EN_CAMINO: "bg-purple-50 border-purple-200",
   ENTREGADO: "bg-gray-50 border-gray-200",
 };
 
@@ -28,6 +30,7 @@ const ESTADO_TEXT_COLORS: Record<EstadoPedido, string> = {
   RECIBIDO: "text-blue-700",
   PREPARANDO: "text-yellow-700",
   LISTO: "text-green-700",
+  EN_CAMINO: "text-purple-700",
   ENTREGADO: "text-gray-700",
 };
 
@@ -35,6 +38,7 @@ const ESTADO_BG: Record<EstadoPedido, string> = {
   RECIBIDO: "bg-blue-500",
   PREPARANDO: "bg-yellow-500",
   LISTO: "bg-green-500",
+  EN_CAMINO: "bg-purple-500",
   ENTREGADO: "bg-gray-500",
 };
 
@@ -243,17 +247,21 @@ export default function PedidosPage() {
     const pedidoRef = doc(db, "restaurantes", RESTAURANT_ID, "pedidos", pedido.id);
     await updateDoc(pedidoRef, { estado: nuevoEstado });
     if (pedido.uid) {
-      const avisos: Record<EstadoPedido, string> = {
-        RECIBIDO: "Tu pedido fue recibido 🧾",
-        PREPARANDO: "Tu pedido ya está en preparación 👨‍🍳",
-        LISTO: "Tu pedido está listo para recoger 🎉",
-        ENTREGADO: "Tu pedido fue entregado. ¡Gracias! ✅",
-      };
       obtenerSuscripciones({ uid: pedido.uid }).then((subs) =>
         enviarNotificacionPush(
           `Pedido #${pedido.numeroPedido}`,
-          avisos[nuevoEstado],
+          avisoEstado(nuevoEstado, pedido.tipo),
           `/pedido?pedido=${pedido.id}`,
+          subs
+        )
+      );
+    }
+    if (nuevoEstado === "LISTO" && pedido.tipo === "DOMICILIO") {
+      obtenerSuscripciones({ tipo: "repartidor" }).then((subs) =>
+        enviarNotificacionPush(
+          `🛵 Domicilio listo #${pedido.numeroPedido}`,
+          "Hay un domicilio listo para entregar",
+          "/repartidor",
           subs
         )
       );
@@ -367,7 +375,7 @@ export default function PedidosPage() {
             <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-amber-600 mx-auto"></div>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
             {ESTADOS.map((estado) => {
               const pedidosEstado =
                 estado === "ENTREGADO"
@@ -518,6 +526,11 @@ export default function PedidosPage() {
                               📍 {pedido.infoCliente.referencia}
                             </p>
                           )}
+                          {pedido.repartidorNombre && (
+                            <p className="text-xs font-bold text-purple-700 mb-2">
+                              🛵 Repartidor: {pedido.repartidorNombre}
+                            </p>
+                          )}
                           <div className="text-sm space-y-1 mb-3">
                             {pedido.detalles.map((detalle, idx) => (
                               <div key={idx} className="flex justify-between text-gray-600">
@@ -545,17 +558,27 @@ export default function PedidosPage() {
                                   </span>
                                 )}
                               </button>
-                              <button
-                                onClick={() => {
-                                  const idx = ESTADOS.indexOf(estado);
-                                  if (idx < ESTADOS.length - 1) {
-                                    cambiarEstado(pedido, ESTADOS[idx + 1]);
-                                  }
-                                }}
-                                className="bg-amber-800 text-white px-3 py-1.5 rounded-lg text-xs sm:text-sm font-bold hover:bg-amber-900 transition shadow min-w-0 truncate"
-                              >
-                                {ESTADOS[ESTADOS.indexOf(estado) + 1]}
-                              </button>
+                              {(() => {
+                                const sig = siguienteEstadoAdmin(pedido.tipo, pedido.estado);
+                                if (sig) {
+                                  return (
+                                    <button
+                                      onClick={() => cambiarEstado(pedido, sig)}
+                                      className="bg-amber-800 text-white px-3 py-1.5 rounded-lg text-xs sm:text-sm font-bold hover:bg-amber-900 transition shadow min-w-0 truncate"
+                                    >
+                                      {sig}
+                                    </button>
+                                  );
+                                }
+                                if (pedido.tipo === "DOMICILIO" && pedido.estado === "LISTO") {
+                                  return (
+                                    <span className="text-xs font-bold text-purple-700 bg-purple-50 border border-purple-200 px-3 py-1.5 rounded-lg whitespace-nowrap">
+                                      🛵 Esperando repartidor
+                                    </span>
+                                  );
+                                }
+                                return null;
+                              })()}
                             </div>
                           </div>
                         </div>

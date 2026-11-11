@@ -14,6 +14,7 @@ import { pedirPermisoNotificaciones, notificar } from "@/lib/notif";
 import { sonarAlerta } from "@/lib/sound";
 import RelojHora from "@/components/RelojHora";
 import { MAX_NUM_PEDIDO_VALIDO } from "@/lib/pedidos";
+import { avisoEstado } from "@/lib/avisos";
 import type { Producto, Categoria, DetallePedido, Mensaje } from "@/types";
 
 type TipoPedido = "MESA" | "PARA_LLEVAR" | "DOMICILIO";
@@ -111,16 +112,10 @@ export default function PedidoCasaPage() {
         if (!d.exists()) return;
         const est = d.data().estado as string;
         if (est !== estadoExitoRef.current) {
-          const avisos: Record<string, string> = {
-            RECIBIDO: "Tu pedido fue recibido por el restaurante 🧾",
-            PREPARANDO: "Tu pedido ya está en preparación 👨‍🍳",
-            LISTO: "Tu pedido está listo para recoger 🎉",
-            ENTREGADO: "Tu pedido fue entregado. ¡Gracias! ✅",
-          };
           sonarAlerta();
           notificar(
             `🔔 Pedido #${d.data().numeroPedido}`,
-            avisos[est] || `Estado actualizado: ${est}`,
+            avisoEstado(est, d.data().tipo),
             `/pedido?pedido=${pedidoCreadoId}`
           );
           estadoExitoRef.current = est;
@@ -468,6 +463,16 @@ export default function PedidoCasaPage() {
           subs
         )
       );
+      if (tipo === "DOMICILIO") {
+        obtenerSuscripciones({ tipo: "repartidor" }).then((subs) =>
+          enviarNotificacionPush(
+            `🛵 Nuevo domicilio #${next}`,
+            "Se está preparando un domicilio nuevo",
+            "/repartidor",
+            subs
+          )
+        );
+      }
 
       setNumeroPedido(next);
       setPedidoCreadoId(docRef.id);
