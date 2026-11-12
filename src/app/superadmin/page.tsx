@@ -12,6 +12,7 @@ import { auth, db } from "@/lib/firebase";
 import { consultarRol, usuarioRolRef } from "@/lib/roles";
 import type { RolUsuario, UsuarioRol } from "@/types";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 
 const ROL_LABELS: Record<RolUsuario, string> = {
   superadmin: "👑 Superadmin",
@@ -276,12 +277,20 @@ export default function SuperadminPage() {
               <p className="text-xs text-gray-500">{user.email}</p>
             </div>
           </div>
-          <button
-            onClick={handleLogout}
-            className="text-purple-800 hover:text-purple-900 font-medium"
-          >
-            Cerrar sesión
-          </button>
+          <div className="flex items-center gap-4">
+            <Link
+              href="/admin/pedidos"
+              className="text-gray-600 hover:text-gray-800 font-medium text-sm"
+            >
+              🏪 Panel administrativo
+            </Link>
+            <button
+              onClick={handleLogout}
+              className="text-purple-800 hover:text-purple-900 font-medium"
+            >
+              Cerrar sesión
+            </button>
+          </div>
         </div>
       </header>
 

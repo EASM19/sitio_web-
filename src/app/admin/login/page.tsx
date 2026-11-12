@@ -36,10 +36,6 @@ export default function AdminLoginPage() {
         router.push("/repartidor");
         return;
       }
-      if (rol?.rol === "superadmin") {
-        router.push("/superadmin");
-        return;
-      }
       pedirPermisoNotificaciones().then((p) => {
         if (p === "granted") {
           suscribirsePush("admin", cred.user.uid);

@@ -15,6 +15,7 @@ import Link from "next/link";
 import { useSesionActiva } from "@/hooks/useSesionActiva";
 import { esPedidoValido } from "@/lib/pedidos";
 import { avisoEstado, siguienteEstadoAdmin } from "@/lib/avisos";
+import { consultarRol } from "@/lib/roles";
 
 const ESTADOS: EstadoPedido[] = ["RECIBIDO", "PREPARANDO", "LISTO", "EN_CAMINO", "ENTREGADO"];
 
@@ -82,21 +83,30 @@ export default function PedidosPage() {
   const [historialAbierto, setHistorialAbierto] = useState(false);
   const [semanaSel, setSemanaSel] = useState<number | null>(null);
   const [fechasAbiertas, setFechasAbiertas] = useState<Set<string>>(new Set());
+  const [esSuperadmin, setEsSuperadmin] = useState(false);
   const router = useRouter();
   useSesionActiva(user);
 
   const RESTAURANT_ID = "restaurante1";
 
   useEffect(() => {
-    const unsubAuth = onAuthStateChanged(auth, (u) => {
+    const unsub = onAuthStateChanged(auth, (u) => {
       if (!u) {
         router.push("/admin/login");
       } else {
         setUser(u);
+        consultarRol(u.uid).then((r) => {
+          if (r.estado !== "ok") return;
+          if (r.usuario?.rol === "repartidor") {
+            router.push("/repartidor");
+            return;
+          }
+          setEsSuperadmin(r.usuario?.rol === "superadmin");
+        });
       }
     });
 
-    return () => unsubAuth();
+    return () => unsub();
   }, [router]);
 
   useEffect(() => {
@@ -307,6 +317,11 @@ export default function PedidosPage() {
             <Link href="/admin/categorias" className="text-gray-500 hover:text-gray-700 font-medium">Categorías</Link>
             <Link href="/admin/ventas" className="text-gray-500 hover:text-gray-700 font-medium">Ventas</Link>
             <Link href="/admin/mesas" className="text-gray-500 hover:text-gray-700 font-medium">QR</Link>
+            {esSuperadmin && (
+              <Link href="/superadmin" className="text-purple-700 hover:text-purple-900 font-medium">
+                👑 Superadmin
+              </Link>
+            )}
           </div>
           <div className="flex items-center gap-3">
             <div className="relative">
