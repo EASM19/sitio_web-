@@ -44,6 +44,7 @@ export default function SuperadminPage() {
   const [nuevoTel, setNuevoTel] = useState("");
   const [creando, setCreando] = useState(false);
   const [msgExito, setMsgExito] = useState("");
+  const [eliminando, setEliminando] = useState<string | null>(null);
 
   const credsRef = useRef<{ email: string; password: string } | null>(null);
   const creandoRef = useRef(false);
@@ -204,6 +205,38 @@ export default function SuperadminPage() {
   const alternarActivo = async (u: UsuarioRol) => {
     if (u.uid === user?.uid) return;
     await updateDoc(usuarioRolRef(u.uid), { activo: u.activo === false });
+  };
+
+  const eliminarCuenta = async (u: UsuarioRol) => {
+    if (!user || eliminando) return;
+    const confirmar = window.confirm(
+      `¿Eliminar la cuenta de ${u.email}? Se borrará de Firebase y ya no podrá iniciar sesión.`
+    );
+    if (!confirmar) return;
+    setEliminando(u.uid);
+    setError("");
+    setMsgExito("");
+    try {
+      const token = await user.getIdToken();
+      const res = await fetch("/api/eliminar-usuario", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ uid: u.uid }),
+      });
+      const data = (await res.json().catch(() => ({}))) as { error?: string };
+      if (!res.ok) {
+        setError(data.error || "No se pudo eliminar la cuenta.");
+        return;
+      }
+      setMsgExito(`Cuenta eliminada: ${u.email}`);
+    } catch {
+      setError("Error de conexión al eliminar. Intenta de nuevo.");
+    } finally {
+      setEliminando(null);
+    }
   };
 
   const handleLogout = async () => {
@@ -401,6 +434,15 @@ export default function SuperadminPage() {
                       className="text-xs font-bold px-3 py-1.5 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50"
                     >
                       {u.activo === false ? "Activar" : "Desactivar"}
+                    </button>
+                  )}
+                  {u.uid !== user.uid && u.rol !== "superadmin" && (
+                    <button
+                      onClick={() => eliminarCuenta(u)}
+                      disabled={eliminando !== null}
+                      className="text-xs font-bold px-3 py-1.5 rounded-lg border border-red-200 text-red-600 hover:bg-red-50 disabled:opacity-50"
+                    >
+                      {eliminando === u.uid ? "Eliminando..." : "🗑 Eliminar"}
                     </button>
                   )}
                 </div>
