@@ -21,7 +21,11 @@ function urlBase64ToUint8Array(base64String: string): Uint8Array<ArrayBuffer> {
   return outputArray;
 }
 
-export async function suscribirsePush(tipo: "admin" | "cliente" | "repartidor", uid: string) {
+export async function suscribirsePush(
+  tipo: "admin" | "cliente" | "repartidor",
+  uid: string,
+  rid: string = RESTAURANT_ID
+) {
   if (typeof window === "undefined") return;
   if (!("serviceWorker" in navigator) || !("PushManager" in window)) return;
 
@@ -40,7 +44,7 @@ export async function suscribirsePush(tipo: "admin" | "cliente" | "repartidor", 
       applicationServerKey: urlBase64ToUint8Array(publicKey),
     });
 
-    const col = collection(db, "restaurantes", RESTAURANT_ID, "push");
+    const col = collection(db, "restaurantes", rid, "push");
     const snap = await getDocs(query(col, where("uid", "==", uid)));
     const existente = snap.docs.find(
       (d) =>
@@ -60,9 +64,12 @@ export async function suscribirsePush(tipo: "admin" | "cliente" | "repartidor", 
   }
 }
 
-export async function obtenerSuscripciones(filtro: { tipo?: string; uid?: string }) {
+export async function obtenerSuscripciones(
+  filtro: { tipo?: string; uid?: string },
+  rid: string = RESTAURANT_ID
+) {
   try {
-    const snap = await getDocs(collection(db, "restaurantes", RESTAURANT_ID, "push"));
+    const snap = await getDocs(collection(db, "restaurantes", rid, "push"));
     return snap.docs
       .map((d) => d.data() as { tipo: string; uid: string; subscription: PushSub })
       .filter((d) => {

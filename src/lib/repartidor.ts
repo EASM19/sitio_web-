@@ -9,8 +9,8 @@ import type { EstadoPedido, Pedido } from "@/types";
 
 const RESTAURANT_ID = "restaurante1";
 
-export function pedidosRef() {
-  return collection(db, "restaurantes", RESTAURANT_ID, "pedidos");
+export function pedidosRef(rid: string = RESTAURANT_ID) {
+  return collection(db, "restaurantes", rid, "pedidos");
 }
 
 function mapearPedidos(
@@ -26,9 +26,12 @@ function mapearPedidos(
   );
 }
 
-export function escucharDomiciliosListos(cb: (pedidos: Pedido[]) => void) {
+export function escucharDomiciliosListos(
+  cb: (pedidos: Pedido[]) => void,
+  rid: string = RESTAURANT_ID
+) {
   const q = query(
-    pedidosRef(),
+    pedidosRef(rid),
     where("tipo", "==", "DOMICILIO"),
     where("estado", "==", "LISTO")
   );
@@ -37,8 +40,12 @@ export function escucharDomiciliosListos(cb: (pedidos: Pedido[]) => void) {
   });
 }
 
-export function escucharMisEntregas(uid: string, cb: (pedidos: Pedido[]) => void) {
-  const q = query(pedidosRef(), where("repartidorId", "==", uid));
+export function escucharMisEntregas(
+  uid: string,
+  cb: (pedidos: Pedido[]) => void,
+  rid: string = RESTAURANT_ID
+) {
+  const q = query(pedidosRef(rid), where("repartidorId", "==", uid));
   return onSnapshot(q, (snap) => {
     cb(mapearPedidos(snap));
   });
@@ -47,9 +54,10 @@ export function escucharMisEntregas(uid: string, cb: (pedidos: Pedido[]) => void
 export async function aceptarPedido(
   pedidoId: string,
   repartidorId: string,
-  repartidorNombre: string
+  repartidorNombre: string,
+  rid: string = RESTAURANT_ID
 ): Promise<{ ok: boolean; error?: string }> {
-  const ref = doc(db, "restaurantes", RESTAURANT_ID, "pedidos", pedidoId);
+  const ref = doc(db, "restaurantes", rid, "pedidos", pedidoId);
   const captura: { numero: number | null } = { numero: null };
   try {
     await runTransaction(db, async (tx) => {
@@ -67,7 +75,7 @@ export async function aceptarPedido(
       });
     });
     if (captura.numero !== null) {
-      obtenerSuscripciones({ tipo: "admin" }).then((subs) =>
+      obtenerSuscripciones({ tipo: "admin" }, rid).then((subs) =>
         enviarNotificacionPush(
           `🛵 Pedido #${captura.numero} aceptado`,
           `Repartidor: ${repartidorNombre}`,
@@ -95,9 +103,10 @@ export async function aceptarPedido(
 export async function cambiarEstadoRepartidor(
   pedidoId: string,
   repartidorId: string,
-  nuevoEstado: "EN_CAMINO" | "ENTREGADO"
+  nuevoEstado: "EN_CAMINO" | "ENTREGADO",
+  rid: string = RESTAURANT_ID
 ): Promise<{ ok: boolean; error?: string }> {
-  const ref = doc(db, "restaurantes", RESTAURANT_ID, "pedidos", pedidoId);
+  const ref = doc(db, "restaurantes", rid, "pedidos", pedidoId);
   const captura: { numero: number | null; uid: string | null } = { numero: null, uid: null };
   try {
     await runTransaction(db, async (tx) => {
@@ -114,7 +123,7 @@ export async function cambiarEstadoRepartidor(
     });
     const cuerpo = avisoEstado(nuevoEstado as EstadoPedido, "DOMICILIO");
     if (captura.uid) {
-      obtenerSuscripciones({ uid: captura.uid }).then((subs) =>
+      obtenerSuscripciones({ uid: captura.uid }, rid).then((subs) =>
         enviarNotificacionPush(
           `Pedido #${captura.numero}`,
           cuerpo,
@@ -124,7 +133,7 @@ export async function cambiarEstadoRepartidor(
       );
     }
     if (captura.numero !== null) {
-      obtenerSuscripciones({ tipo: "admin" }).then((subs) =>
+      obtenerSuscripciones({ tipo: "admin" }, rid).then((subs) =>
         enviarNotificacionPush(
           `Pedido #${captura.numero}`,
           cuerpo,

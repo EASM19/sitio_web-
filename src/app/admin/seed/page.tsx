@@ -7,11 +7,11 @@ import { auth, db } from "@/lib/firebase";
 import { useRouter } from "next/navigation";
 import { useSesionActiva } from "@/hooks/useSesionActiva";
 import { useAvisosPedido } from "@/hooks/useAvisosPedido";
+import { useRestauranteActual } from "@/hooks/useRestauranteActual";
 import menu from "@/lib/menu-nuevo.json";
 
-const RESTAURANT_ID = "restaurante1";
-
 export default function SeedPage() {
+  const { rid, listo } = useRestauranteActual();
   const [user, setUser] = useState<User | null>(null);
   const [cargando, setCargando] = useState(false);
   const [mensaje, setMensaje] = useState("");
@@ -27,7 +27,7 @@ export default function SeedPage() {
     return () => unsub();
   }, [router]);
 
-  if (!user) {
+  if (!user || !listo) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[#f6efdc]">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-amber-600"></div>
@@ -39,7 +39,7 @@ export default function SeedPage() {
     setCargando(true);
     setMensaje("");
     try {
-      const catRef = collection(db, "restaurantes", RESTAURANT_ID, "categorias");
+      const catRef = collection(db, "restaurantes", rid, "categorias");
       const existentes = await getDocs(catRef);
       const nombresExistentes = existentes.docs.map((d) => d.data().nombre.toLowerCase());
 
@@ -52,7 +52,7 @@ export default function SeedPage() {
           continue;
         }
         const nueva = await addDoc(catRef, {
-          restaurantId: RESTAURANT_ID,
+          restaurantId: rid,
           nombre: cat.nombre,
           orden: cat.orden,
           estado: "activa",
@@ -60,7 +60,7 @@ export default function SeedPage() {
         catIds[cat.nombre] = nueva.id;
       }
 
-      const prodRef = collection(db, "restaurantes", RESTAURANT_ID, "productos");
+      const prodRef = collection(db, "restaurantes", rid, "productos");
       const prodsExistentes = await getDocs(prodRef);
       const nombresProds = prodsExistentes.docs.map((d) => d.data().nombre.toLowerCase());
 
@@ -68,7 +68,7 @@ export default function SeedPage() {
       for (const prod of menu.productos) {
         if (nombresProds.includes(prod.nombre.toLowerCase())) continue;
         await addDoc(prodRef, {
-          restaurantId: RESTAURANT_ID,
+          restaurantId: rid,
           nombre: prod.nombre,
           descripcion: prod.descripcion || "",
           precio: prod.precio,

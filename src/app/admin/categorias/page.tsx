@@ -9,10 +9,10 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useSesionActiva } from "@/hooks/useSesionActiva";
 import { useAvisosPedido } from "@/hooks/useAvisosPedido";
-
-const RESTAURANT_ID = "restaurante1";
+import { useRestauranteActual } from "@/hooks/useRestauranteActual";
 
 export default function CategoriasPage() {
+  const { rid, listo } = useRestauranteActual();
   const [user, setUser] = useState<User | null>(null);
   const [categorias, setCategorias] = useState<Categoria[]>([]);
   const [loading, setLoading] = useState(true);
@@ -36,7 +36,7 @@ export default function CategoriasPage() {
   const cargarCategorias = async () => {
     try {
       const snap = await getDocs(
-        collection(db, "restaurantes", RESTAURANT_ID, "categorias")
+        collection(db, "restaurantes", rid, "categorias")
       );
       const cats = snap.docs.map((d) => ({ id: d.id, ...d.data() }) as Categoria);
       cats.sort((a, b) => a.orden - b.orden);
@@ -49,10 +49,11 @@ export default function CategoriasPage() {
   };
 
   useEffect(() => {
-    if (!user) return;
+    if (!user || !listo) return;
     const t = setTimeout(cargarCategorias, 0);
     return () => clearTimeout(t);
-  }, [user]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user, listo, rid]);
 
   const crearCategoria = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -61,8 +62,8 @@ export default function CategoriasPage() {
     setCreando(true);
     try {
       const orden = categorias.length + 1;
-      await addDoc(collection(db, "restaurantes", RESTAURANT_ID, "categorias"), {
-        restaurantId: RESTAURANT_ID,
+      await addDoc(collection(db, "restaurantes", rid, "categorias"), {
+        restaurantId: rid,
         nombre: nuevaCategoria.trim(),
         orden,
         estado: "activa",
@@ -85,8 +86,8 @@ export default function CategoriasPage() {
 
       for (const nombre of ejemplos) {
         if (!existentes.includes(nombre.toLowerCase())) {
-          await addDoc(collection(db, "restaurantes", RESTAURANT_ID, "categorias"), {
-            restaurantId: RESTAURANT_ID,
+          await addDoc(collection(db, "restaurantes", rid, "categorias"), {
+            restaurantId: rid,
             nombre,
             orden,
             estado: "activa",
@@ -104,7 +105,7 @@ export default function CategoriasPage() {
 
   const toggleEstado = async (categoria: Categoria) => {
     await updateDoc(
-      doc(db, "restaurantes", RESTAURANT_ID, "categorias", categoria.id),
+      doc(db, "restaurantes", rid, "categorias", categoria.id),
       { estado: categoria.estado === "activa" ? "inactiva" : "activa" }
     );
     cargarCategorias();
@@ -112,7 +113,7 @@ export default function CategoriasPage() {
 
   const eliminarCategoria = async (id: string) => {
     if (!confirm("¿Eliminar esta categoría?")) return;
-    await deleteDoc(doc(db, "restaurantes", RESTAURANT_ID, "categorias", id));
+    await deleteDoc(doc(db, "restaurantes", rid, "categorias", id));
     cargarCategorias();
   };
 
@@ -121,7 +122,7 @@ export default function CategoriasPage() {
     router.push("/admin/login");
   };
 
-  if (!user) {
+  if (!user || !listo) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[#f6efdc]">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-amber-600"></div>

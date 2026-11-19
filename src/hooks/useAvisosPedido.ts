@@ -7,21 +7,22 @@ import { db } from "@/lib/firebase";
 import { sonarAlerta } from "@/lib/sound";
 import { notificar } from "@/lib/notif";
 import { suscribirsePush } from "@/lib/push";
-
-const RESTAURANT_ID = "restaurante1";
+import { useRestauranteActual } from "@/hooks/useRestauranteActual";
 
 export function useAvisosPedido(user: User | null) {
+  const { rid, listo } = useRestauranteActual();
   const idsConocidos = useRef<Set<string> | null>(null);
   const msgsPrevios = useRef<Map<string, string>>(new Map());
 
   useEffect(() => {
-    if (!user) return;
-    suscribirsePush("admin", user.uid);
-  }, [user]);
+    if (!user || !listo) return;
+    suscribirsePush("admin", user.uid, rid);
+  }, [user, listo, rid]);
 
   useEffect(() => {
+    if (!listo) return;
     const q = query(
-      collection(db, "restaurantes", RESTAURANT_ID, "pedidos"),
+      collection(db, "restaurantes", rid, "pedidos"),
       orderBy("fechaCreacion", "asc")
     );
     const unsub = onSnapshot(q, (snapshot) => {
@@ -60,5 +61,5 @@ export function useAvisosPedido(user: User | null) {
       }
     });
     return () => unsub();
-  }, []);
+  }, [listo, rid]);
 }

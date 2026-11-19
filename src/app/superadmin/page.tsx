@@ -473,7 +473,7 @@ export default function SuperadminPage() {
           </div>
           <div className="flex items-center gap-4">
             <Link
-              href="/admin/pedidos"
+              href="/admin/pedidos?r=restaurante1"
               className="text-gray-600 hover:text-gray-800 font-medium text-sm"
             >
               🏪 Panel administrativo
@@ -640,6 +640,12 @@ export default function SuperadminPage() {
                           /{r.slug} · {r.duenoEmail || "sin dueño asignado"}
                         </p>
                       </div>
+                      <Link
+                        href={`/admin/pedidos?r=${r.id}`}
+                        className="text-xs font-bold px-3 py-1.5 rounded-lg bg-purple-800 text-white hover:bg-purple-900"
+                      >
+                        🚀 Abrir panel
+                      </Link>
                       <button
                         onClick={() => setQrRest(r)}
                         className="text-xs font-bold px-3 py-1.5 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50"

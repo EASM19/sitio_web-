@@ -5,7 +5,7 @@ import {
   onAuthStateChanged, signInWithEmailAndPassword, signOut, User,
 } from "firebase/auth";
 import { auth } from "@/lib/firebase";
-import { obtenerUsuarioRol } from "@/lib/roles";
+import { consultarMembresias } from "@/lib/roles";
 import {
   aceptarPedido, cambiarEstadoRepartidor, escucharDomiciliosListos, escucharMisEntregas,
 } from "@/lib/repartidor";
@@ -27,6 +27,7 @@ export default function RepartidorPage() {
   const [user, setUser] = useState<User | null>(null);
   const [autorizado, setAutorizado] = useState(false);
   const [verificando, setVerificando] = useState(true);
+  const [ridPropio, setRidPropio] = useState<string | null>(null);
   const [disponibles, setDisponibles] = useState<Pedido[]>([]);
   const [mias, setMias] = useState<Pedido[]>([]);
   const [errores, setErrores] = useState<Record<string, string>>({});
@@ -44,18 +45,28 @@ export default function RepartidorPage() {
       if (!u) {
         setUser(null);
         setAutorizado(false);
+        setRidPropio(null);
         setVerificando(false);
         return;
       }
-      const rol = await obtenerUsuarioRol(u.uid);
-      if (rol?.rol === "repartidor" && rol.activo !== false) {
+      const membresias = await consultarMembresias(u.uid);
+      const rep = membresias?.find(
+        (m) => m.rol === "repartidor" && m.activo !== false
+      );
+      if (rep) {
         setUser(u);
+        setRidPropio(rep.rid);
         setAutorizado(true);
       } else {
         await signOut(auth);
         setUser(null);
         setAutorizado(false);
-        setError("Esta cuenta no es de repartidor o está desactivada");
+        setRidPropio(null);
+        setError(
+          membresias === null
+            ? "No se pudo verificar tu cuenta. Intenta de nuevo."
+            : "Esta cuenta no es de repartidor o está desactivada"
+        );
       }
       setVerificando(false);
     });
@@ -63,23 +74,23 @@ export default function RepartidorPage() {
   }, []);
 
   useEffect(() => {
-    if (!autorizado || !user) return;
+    if (!autorizado || !user || !ridPropio) return;
     pedirPermisoNotificaciones();
-    suscribirsePush("repartidor", user.uid);
+    suscribirsePush("repartidor", user.uid, ridPropio);
 
     const unsubDisp = escucharDomiciliosListos((lista) => {
       lista.sort((a, b) => a.fechaCreacion.getTime() - b.fechaCreacion.getTime());
       setDisponibles(lista);
-    });
+    }, ridPropio);
     const unsubMias = escucharMisEntregas(user.uid, (lista) => {
       lista.sort((a, b) => b.fechaCreacion.getTime() - a.fechaCreacion.getTime());
       setMias(lista);
-    });
+    }, ridPropio);
     return () => {
       unsubDisp();
       unsubMias();
     };
-  }, [autorizado, user]);
+  }, [autorizado, user, ridPropio]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -87,13 +98,18 @@ export default function RepartidorPage() {
     setError("");
     try {
       const cred = await signInWithEmailAndPassword(auth, email.trim(), password);
-      const rol = await obtenerUsuarioRol(cred.user.uid);
-      if (rol?.rol !== "repartidor") {
+      const membresias = await consultarMembresias(cred.user.uid);
+      const rep = membresias?.find((m) => m.rol === "repartidor");
+      if (!rep) {
         await signOut(auth);
-        setError("Esta cuenta no es de repartidor");
+        setError(
+          membresias === null
+            ? "No se pudo verificar tu cuenta. Intenta de nuevo."
+            : "Esta cuenta no es de repartidor"
+        );
         return;
       }
-      if (rol.activo === false) {
+      if (rep.activo === false) {
         await signOut(auth);
         setError("Esta cuenta está desactivada");
         return;
@@ -120,23 +136,23 @@ export default function RepartidorPage() {
     });
 
   const aceptar = async (p: Pedido) => {
-    if (!user || accionando) return;
+    if (!user || !ridPropio || accionando) return;
     limpiarError(p.id);
     setAccionando(p.id);
     const nombre = user.displayName || user.email || "Repartidor";
-    const res = await aceptarPedido(p.id, user.uid, nombre);
+    const res = await aceptarPedido(p.id, user.uid, nombre, ridPropio);
     if (!res.ok && res.error) setErrores((prev) => ({ ...prev, [p.id]: res.error! }));
     setAccionando(null);
   };
 
   const avanzar = async (p: Pedido) => {
-    if (!user || accionando) return;
+    if (!user || !ridPropio || accionando) return;
     limpiarError(p.id);
     const destino: EstadoPedido | null =
       p.estado === "LISTO" ? "EN_CAMINO" : p.estado === "EN_CAMINO" ? "ENTREGADO" : null;
     if (!destino) return;
     setAccionando(p.id);
-    const res = await cambiarEstadoRepartidor(p.id, user.uid, destino);
+    const res = await cambiarEstadoRepartidor(p.id, user.uid, destino, ridPropio);
     if (!res.ok && res.error) setErrores((prev) => ({ ...prev, [p.id]: res.error! }));
     setAccionando(null);
   };

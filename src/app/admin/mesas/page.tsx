@@ -11,8 +11,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useSesionActiva } from "@/hooks/useSesionActiva";
 import { useAvisosPedido } from "@/hooks/useAvisosPedido";
-
-const RESTAURANT_ID = "restaurante1";
+import { useRestauranteActual } from "@/hooks/useRestauranteActual";
 
 interface Opinion {
   id: string;
@@ -35,6 +34,7 @@ function Estrellas({ n }: { n: number }) {
 }
 
 export default function MesasPage() {
+  const { rid, listo } = useRestauranteActual();
   const [user, setUser] = useState<User | null>(null);
   const [customUrl, setCustomUrl] = useState("");
   const [qrUrl, setQrUrl] = useState("");
@@ -45,10 +45,10 @@ export default function MesasPage() {
   useAvisosPedido(user);
 
   useEffect(() => {
-    if (!user) return;
+    if (!user || !listo) return;
     const unsub = onSnapshot(
       query(
-        collection(db, "restaurantes", RESTAURANT_ID, "opiniones"),
+        collection(db, "restaurantes", rid, "opiniones"),
         orderBy("fechaCreacion", "desc")
       ),
       (snap) => {
@@ -63,7 +63,7 @@ export default function MesasPage() {
       (err) => console.error(err)
     );
     return () => unsub();
-  }, [user]);
+  }, [user, listo, rid]);
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, (u) => {
@@ -85,7 +85,7 @@ export default function MesasPage() {
     router.push("/admin/login");
   };
 
-  if (!user) {
+  if (!user || !listo) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[#f6efdc]">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-amber-600"></div>
@@ -234,7 +234,7 @@ export default function MesasPage() {
                       {!o.leido && (
                         <button
                           onClick={() =>
-                            updateDoc(doc(db, "restaurantes", RESTAURANT_ID, "opiniones", o.id), {
+                            updateDoc(doc(db, "restaurantes", rid, "opiniones", o.id), {
                               leido: true,
                             })
                           }
@@ -245,7 +245,7 @@ export default function MesasPage() {
                       )}
                       <button
                         onClick={() =>
-                          deleteDoc(doc(db, "restaurantes", RESTAURANT_ID, "opiniones", o.id))
+                          deleteDoc(doc(db, "restaurantes", rid, "opiniones", o.id))
                         }
                         className="text-xs text-red-500 font-bold hover:underline"
                       >

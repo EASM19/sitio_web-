@@ -19,10 +19,10 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useSesionActiva } from "@/hooks/useSesionActiva";
 import { useAvisosPedido } from "@/hooks/useAvisosPedido";
-
-const RESTAURANT_ID = "restaurante1";
+import { useRestauranteActual } from "@/hooks/useRestauranteActual";
 
 export default function ProductosPage() {
+  const { rid, listo } = useRestauranteActual();
   const [user, setUser] = useState<User | null>(null);
   const [productos, setProductos] = useState<Producto[]>([]);
   const [categorias, setCategorias] = useState<Categoria[]>([]);
@@ -60,12 +60,12 @@ export default function ProductosPage() {
   const cargarDatos = async () => {
     try {
       const catSnap = await getDocs(
-        collection(db, "restaurantes", RESTAURANT_ID, "categorias")
+        collection(db, "restaurantes", rid, "categorias")
       );
       setCategorias(catSnap.docs.map((d) => ({ id: d.id, ...d.data() }) as Categoria));
 
       const prodSnap = await getDocs(
-        collection(db, "restaurantes", RESTAURANT_ID, "productos")
+        collection(db, "restaurantes", rid, "productos")
       );
       setProductos(prodSnap.docs.map((d) => ({ id: d.id, ...d.data() }) as Producto));
     } catch (err) {
@@ -76,10 +76,11 @@ export default function ProductosPage() {
   };
 
   useEffect(() => {
-    if (!user) return;
+    if (!user || !listo) return;
     const t = setTimeout(cargarDatos, 0);
     return () => clearTimeout(t);
-  }, [user]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user, listo, rid]);
 
   const guardarProducto = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -100,7 +101,7 @@ export default function ProductosPage() {
       }
 
       const datos = {
-        restaurantId: RESTAURANT_ID,
+        restaurantId: rid,
         nombre,
         descripcion,
         precio: parseFloat(precio),
@@ -113,12 +114,12 @@ export default function ProductosPage() {
 
       if (editando) {
         await updateDoc(
-          doc(db, "restaurantes", RESTAURANT_ID, "productos", editando.id),
+          doc(db, "restaurantes", rid, "productos", editando.id),
           datos
         );
       } else {
         await addDoc(
-          collection(db, "restaurantes", RESTAURANT_ID, "productos"),
+          collection(db, "restaurantes", rid, "productos"),
           datos
         );
       }
@@ -135,7 +136,7 @@ export default function ProductosPage() {
 
   const eliminarProducto = async (id: string) => {
     if (!confirm("¿Eliminar este producto?")) return;
-    await deleteDoc(doc(db, "restaurantes", RESTAURANT_ID, "productos", id));
+    await deleteDoc(doc(db, "restaurantes", rid, "productos", id));
     cargarDatos();
   };
 
@@ -144,13 +145,13 @@ export default function ProductosPage() {
     setCreandoCat(true);
     try {
       const snap = await getDocs(
-        query(collection(db, "restaurantes", RESTAURANT_ID, "categorias"), orderBy("orden"))
+        query(collection(db, "restaurantes", rid, "categorias"), orderBy("orden"))
       );
       const orden = snap.size + 1;
       const nueva = await addDoc(
-        collection(db, "restaurantes", RESTAURANT_ID, "categorias"),
+        collection(db, "restaurantes", rid, "categorias"),
         {
-          restaurantId: RESTAURANT_ID,
+          restaurantId: rid,
           nombre: nuevaCat.trim(),
           orden,
           estado: "activa",
@@ -169,7 +170,7 @@ export default function ProductosPage() {
 
   const toggleDisponible = async (producto: Producto) => {
     await updateDoc(
-      doc(db, "restaurantes", RESTAURANT_ID, "productos", producto.id),
+      doc(db, "restaurantes", rid, "productos", producto.id),
       { disponible: !producto.disponible }
     );
     cargarDatos();
@@ -204,7 +205,7 @@ export default function ProductosPage() {
     router.push("/admin/login");
   };
 
-  if (!user) {
+  if (!user || !listo) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-amber-800"></div>

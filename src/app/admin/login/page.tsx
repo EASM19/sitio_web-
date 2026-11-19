@@ -7,7 +7,9 @@ import { useRouter } from "next/navigation";
 import { pedirPermisoNotificaciones } from "@/lib/notif";
 import { desbloquearAudio } from "@/lib/sound";
 import { suscribirsePush } from "@/lib/push";
-import { obtenerUsuarioRol } from "@/lib/roles";
+import { consultarMembresias } from "@/lib/roles";
+import { fijarRestaurante } from "@/hooks/useRestauranteActual";
+import { RESTAURANTE_DEFECTO } from "@/lib/restaurantes";
 
 export default function AdminLoginPage() {
   const [email, setEmail] = useState("");
@@ -22,23 +24,48 @@ export default function AdminLoginPage() {
     setError("");
     try {
       const cred = await signInWithEmailAndPassword(auth, email, password);
-      const rol = await obtenerUsuarioRol(cred.user.uid);
-      if (rol && rol.activo === false) {
+      const membresias = await consultarMembresias(cred.user.uid);
+      if (membresias === null) {
         await signOut(auth);
-        setError("Esta cuenta está desactivada");
+        setError(
+          "No se pudo verificar tu cuenta (problema de conexión). Intenta de nuevo."
+        );
+        return;
+      }
+      const superadmin = membresias.find(
+        (m) => m.rol === "superadmin" && m.activo !== false
+      );
+      const dueno = membresias.find(
+        (m) => m.rol === "dueno" && m.activo !== false
+      );
+      const repartidor = membresias.find(
+        (m) => m.rol === "repartidor" && m.activo !== false
+      );
+      if (!superadmin && !dueno && !repartidor) {
+        await signOut(auth);
+        setError(
+          membresias.length > 0
+            ? "Esta cuenta está desactivada"
+            : "Esta cuenta no tiene rol asignado. Contacta al superadmin."
+        );
         return;
       }
       desbloquearAudio();
-      if (rol?.rol === "repartidor") {
+      if (repartidor && !dueno && !superadmin) {
+        fijarRestaurante(repartidor.rid);
         pedirPermisoNotificaciones().then((p) => {
-          if (p === "granted") suscribirsePush("repartidor", cred.user.uid);
+          if (p === "granted") {
+            suscribirsePush("repartidor", cred.user.uid, repartidor.rid);
+          }
         });
         router.push("/repartidor");
         return;
       }
+      const ridPanel = dueno?.rid || RESTAURANTE_DEFECTO;
+      fijarRestaurante(ridPanel);
       pedirPermisoNotificaciones().then((p) => {
         if (p === "granted") {
-          suscribirsePush("admin", cred.user.uid);
+          suscribirsePush("admin", cred.user.uid, ridPanel);
         }
       });
       router.push("/admin/pedidos");

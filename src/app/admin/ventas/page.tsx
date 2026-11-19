@@ -9,15 +9,15 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useSesionActiva } from "@/hooks/useSesionActiva";
 import { useAvisosPedido } from "@/hooks/useAvisosPedido";
+import { useRestauranteActual } from "@/hooks/useRestauranteActual";
 import { esPedidoValido } from "@/lib/pedidos";
-
-const RESTAURANT_ID = "restaurante1";
 
 function claveDia(d: Date) {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }
 
 export default function VentasPage() {
+  const { rid, listo } = useRestauranteActual();
   const [user, setUser] = useState<User | null>(null);
   const [pedidos, setPedidos] = useState<Pedido[]>([]);
   const [loading, setLoading] = useState(true);
@@ -40,10 +40,10 @@ export default function VentasPage() {
   }, [router]);
 
   useEffect(() => {
-    if (!user) return;
+    if (!user || !listo) return;
 
     const q = query(
-      collection(db, "restaurantes", RESTAURANT_ID, "pedidos"),
+      collection(db, "restaurantes", rid, "pedidos"),
       orderBy("fechaCreacion", "desc")
     );
 
@@ -60,7 +60,7 @@ export default function VentasPage() {
     });
 
     return () => unsub();
-  }, [user]);
+  }, [user, listo, rid]);
 
   const pedidosFiltrados = useMemo(() => {
     if (verTodo) return pedidos;
@@ -110,7 +110,7 @@ export default function VentasPage() {
     router.push("/admin/login");
   };
 
-  if (!user) {
+  if (!user || !listo) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[#f6efdc]">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-amber-600"></div>

@@ -15,7 +15,8 @@ import Link from "next/link";
 import { useSesionActiva } from "@/hooks/useSesionActiva";
 import { esPedidoValido } from "@/lib/pedidos";
 import { avisoEstado, siguienteEstadoAdmin } from "@/lib/avisos";
-import { consultarRol } from "@/lib/roles";
+import { consultarRol, consultarRolEn } from "@/lib/roles";
+import { useRestauranteActual } from "@/hooks/useRestauranteActual";
 
 const ESTADOS: EstadoPedido[] = ["RECIBIDO", "PREPARANDO", "LISTO", "EN_CAMINO", "ENTREGADO"];
 
@@ -87,27 +88,39 @@ export default function PedidosPage() {
   const router = useRouter();
   useSesionActiva(user);
 
-  const RESTAURANT_ID = "restaurante1";
+  const { rid, listo } = useRestauranteActual();
 
   useEffect(() => {
+    if (!listo) return;
     const unsub = onAuthStateChanged(auth, (u) => {
       if (!u) {
         router.push("/admin/login");
-      } else {
-        setUser(u);
-        consultarRol(u.uid).then((r) => {
-          if (r.estado !== "ok") return;
-          if (r.usuario?.rol === "repartidor") {
+        return;
+      }
+      setUser(u);
+      Promise.all([consultarRol(u.uid), consultarRolEn(rid, u.uid)]).then(
+        ([r1, enRid]) => {
+          if (r1.estado !== "ok" || enRid.estado !== "ok") return;
+          const superadmin =
+            r1.usuario?.rol === "superadmin" && r1.usuario.activo !== false;
+          const duenoAqui =
+            enRid.usuario?.rol === "dueno" && enRid.usuario.activo !== false;
+          const repartidorAqui =
+            enRid.usuario?.rol === "repartidor" && enRid.usuario.activo !== false;
+          if (repartidorAqui) {
             router.push("/repartidor");
             return;
           }
-          setEsSuperadmin(r.usuario?.rol === "superadmin");
-        });
-      }
+          setEsSuperadmin(superadmin);
+          if (!superadmin && !duenoAqui) {
+            router.push("/admin/login");
+          }
+        }
+      );
     });
 
     return () => unsub();
-  }, [router]);
+  }, [router, listo, rid]);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -122,13 +135,13 @@ export default function PedidosPage() {
   };
 
   useEffect(() => {
-    if (!user) return;
+    if (!user || !listo) return;
 
     pedirPermisoNotificaciones();
-    suscribirsePush("admin", user.uid);
+    suscribirsePush("admin", user.uid, rid);
 
     const q = query(
-      collection(db, "restaurantes", RESTAURANT_ID, "pedidos"),
+      collection(db, "restaurantes", rid, "pedidos"),
       orderBy("fechaCreacion", "asc")
     );
 
@@ -190,17 +203,17 @@ export default function PedidosPage() {
     });
 
     return () => unsub();
-  }, [user]);
+  }, [user, listo, rid]);
 
   useEffect(() => {
-    if (!chatPedido) return;
+    if (!chatPedido || !listo) return;
     if ((chatPedido.chatNoLeidoAdmin || 0) > 0) {
-      updateDoc(doc(db, "restaurantes", RESTAURANT_ID, "pedidos", chatPedido.id), {
+      updateDoc(doc(db, "restaurantes", rid, "pedidos", chatPedido.id), {
         chatNoLeidoAdmin: 0,
       });
     }
     const q = query(
-      collection(db, "restaurantes", RESTAURANT_ID, "pedidos", chatPedido.id, "mensajes"),
+      collection(db, "restaurantes", rid, "pedidos", chatPedido.id, "mensajes"),
       orderBy("fechaCreacion", "asc")
     );
     const unsub = onSnapshot(q, (snap) => {
@@ -213,7 +226,7 @@ export default function PedidosPage() {
       );
     });
     return () => unsub();
-  }, [chatPedido]);
+  }, [chatPedido, listo, rid]);
 
   const enviarMensaje = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -222,7 +235,7 @@ export default function PedidosPage() {
     try {
       const texto = textoMsg.trim();
       const msgRef = await addDoc(
-        collection(db, "restaurantes", RESTAURANT_ID, "pedidos", chatPedido.id, "mensajes"),
+        collection(db, "restaurantes", rid, "pedidos", chatPedido.id, "mensajes"),
         {
           emisor: "admin",
           nombre: user?.displayName || user?.email || "Restaurante",
@@ -230,14 +243,14 @@ export default function PedidosPage() {
           fechaCreacion: serverTimestamp(),
         }
       );
-      await updateDoc(doc(db, "restaurantes", RESTAURANT_ID, "pedidos", chatPedido.id), {
+      await updateDoc(doc(db, "restaurantes", rid, "pedidos", chatPedido.id), {
         chatNoLeidoCliente: increment(1),
         ultimoMensaje: { id: msgRef.id, emisor: "admin", texto },
       });
       setTextoMsg("");
       if (chatPedido.uid) {
         const cuerpo = textoMsg.trim().slice(0, 120);
-        obtenerSuscripciones({ uid: chatPedido.uid }).then((subs) =>
+        obtenerSuscripciones({ uid: chatPedido.uid }, rid).then((subs) =>
           enviarNotificacionPush(
             `💬 Mensaje del restaurante (Pedido #${chatPedido.numeroPedido})`,
             cuerpo,
@@ -254,10 +267,10 @@ export default function PedidosPage() {
   };
 
   const cambiarEstado = async (pedido: Pedido, nuevoEstado: EstadoPedido) => {
-    const pedidoRef = doc(db, "restaurantes", RESTAURANT_ID, "pedidos", pedido.id);
+    const pedidoRef = doc(db, "restaurantes", rid, "pedidos", pedido.id);
     await updateDoc(pedidoRef, { estado: nuevoEstado });
     if (pedido.uid) {
-      obtenerSuscripciones({ uid: pedido.uid }).then((subs) =>
+      obtenerSuscripciones({ uid: pedido.uid }, rid).then((subs) =>
         enviarNotificacionPush(
           `Pedido #${pedido.numeroPedido}`,
           avisoEstado(nuevoEstado, pedido.tipo),
@@ -267,7 +280,7 @@ export default function PedidosPage() {
       );
     }
     if (nuevoEstado === "LISTO" && pedido.tipo === "DOMICILIO") {
-      obtenerSuscripciones({ tipo: "repartidor" }).then((subs) =>
+      obtenerSuscripciones({ tipo: "repartidor" }, rid).then((subs) =>
         enviarNotificacionPush(
           `🛵 Domicilio listo #${pedido.numeroPedido}`,
           "Hay un domicilio listo para entregar",
@@ -283,7 +296,7 @@ export default function PedidosPage() {
     router.push("/admin/login");
   };
 
-  if (!user) {
+  if (!user || !listo) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[#f6efdc]">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-amber-600"></div>

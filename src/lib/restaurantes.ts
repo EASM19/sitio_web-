@@ -2,6 +2,8 @@ import { collection, onSnapshot } from "firebase/firestore";
 import type { User } from "firebase/auth";
 import { db } from "./firebase";
 
+export const RESTAURANTE_DEFECTO = "restaurante1";
+
 export type RegistroRestaurante = {
   id: string;
   nombre: string;
