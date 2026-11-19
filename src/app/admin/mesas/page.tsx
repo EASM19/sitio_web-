@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { onAuthStateChanged, signOut, User } from "firebase/auth";
 import { auth, db } from "@/lib/firebase";
 import {
-  collection, query, orderBy, onSnapshot, updateDoc, deleteDoc, doc,
+  collection, query, orderBy, onSnapshot, updateDoc, deleteDoc, doc, getDoc,
 } from "firebase/firestore";
 import { QRCodeSVG } from "qrcode.react";
 import { useRouter } from "next/navigation";
@@ -36,6 +36,7 @@ function Estrellas({ n }: { n: number }) {
 export default function MesasPage() {
   const { rid, listo } = useRestauranteActual();
   const [user, setUser] = useState<User | null>(null);
+  const [slugRid, setSlugRid] = useState<string | null>(null);
   const [customUrl, setCustomUrl] = useState("");
   const [qrUrl, setQrUrl] = useState("");
   const [opiniones, setOpiniones] = useState<Opinion[]>([]);
@@ -43,6 +44,29 @@ export default function MesasPage() {
   const router = useRouter();
   useSesionActiva(user);
   useAvisosPedido(user);
+
+  useEffect(() => {
+    let ok = true;
+    getDoc(doc(db, "restaurantes", rid))
+      .then((s) => {
+        if (!ok) return;
+        setSlugRid(s.exists() ? (s.data().slug as string) : rid);
+      })
+      .catch(() => {});
+    return () => {
+      ok = false;
+    };
+  }, [rid]);
+
+  useEffect(() => {
+    const suf = slugRid === null ? "" : `?r=${slugRid || rid}`;
+    const host = window.location.hostname;
+    const base = host.includes("vercel.app")
+      ? window.location.origin
+      : `http://192.168.56.1:${window.location.port || "3000"}`;
+    const t = window.setTimeout(() => setQrUrl(`${base}/pedido-casa${suf}`), 0);
+    return () => window.clearTimeout(t);
+  }, [rid, slugRid, listo]);
 
   useEffect(() => {
     if (!user || !listo) return;
@@ -67,13 +91,6 @@ export default function MesasPage() {
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, (u) => {
-      const host = window.location.hostname;
-      if (host.includes("vercel.app")) {
-        setQrUrl(`${window.location.origin}/pedido-casa`);
-      } else {
-        const puerto = window.location.port || "3000";
-        setQrUrl(`http://192.168.56.1:${puerto}/pedido-casa`);
-      }
       if (!u) router.push("/admin/login");
       else setUser(u);
     });

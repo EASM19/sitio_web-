@@ -4,16 +4,16 @@ import { useState } from "react";
 import { addDoc, collection, serverTimestamp } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 
-const RESTAURANT_ID = "restaurante1";
-
 interface ModalOpinionProps {
   pedidoId: string;
   numeroPedido?: number;
+  restaurantId: string;
+  nombreRestaurante?: string;
   cliente?: string;
   onCerrar: () => void;
 }
 
-export default function ModalOpinion({ pedidoId, numeroPedido, cliente, onCerrar }: ModalOpinionProps) {
+export default function ModalOpinion({ pedidoId, numeroPedido, restaurantId, nombreRestaurante = "La Bóveda del Real", cliente, onCerrar }: ModalOpinionProps) {
   const [estrellas, setEstrellas] = useState(0);
   const [hover, setHover] = useState(0);
   const [enviando, setEnviando] = useState(false);
@@ -34,7 +34,7 @@ export default function ModalOpinion({ pedidoId, numeroPedido, cliente, onCerrar
     setEnviando(true);
     setError("");
     try {
-      await addDoc(collection(db, "restaurantes", RESTAURANT_ID, "opiniones"), {
+      await addDoc(collection(db, "restaurantes", restaurantId, "opiniones"), {
         estrellas,
         texto: "",
         pedidoId,
@@ -67,7 +67,7 @@ export default function ModalOpinion({ pedidoId, numeroPedido, cliente, onCerrar
           <div className="py-6">
             <p className="text-4xl mb-3">🙏</p>
             <h2 className="text-xl font-bold text-[#2b1d12]">¡Gracias por tu calificación!</h2>
-            <p className="text-sm text-gray-500 mt-2">Nos ayuda a mejorar La Bóveda del Real</p>
+            <p className="text-sm text-gray-500 mt-2">Nos ayuda a mejorar {nombreRestaurante}</p>
           </div>
         ) : (
           <>

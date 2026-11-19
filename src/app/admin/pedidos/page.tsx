@@ -254,7 +254,7 @@ export default function PedidosPage() {
           enviarNotificacionPush(
             `💬 Mensaje del restaurante (Pedido #${chatPedido.numeroPedido})`,
             cuerpo,
-            `/pedido?chat=${chatPedido.id}`,
+            `/pedido?chat=${chatPedido.id}&r=${rid}`,
             subs
           )
         );
@@ -274,7 +274,7 @@ export default function PedidosPage() {
         enviarNotificacionPush(
           `Pedido #${pedido.numeroPedido}`,
           avisoEstado(nuevoEstado, pedido.tipo),
-          `/pedido?pedido=${pedido.id}`,
+          `/pedido?pedido=${pedido.id}&r=${rid}`,
           subs
         )
       );

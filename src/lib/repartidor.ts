@@ -127,7 +127,7 @@ export async function cambiarEstadoRepartidor(
         enviarNotificacionPush(
           `Pedido #${captura.numero}`,
           cuerpo,
-          `/pedido?pedido=${pedidoId}`,
+          `/pedido?pedido=${pedidoId}&r=${rid}`,
           subs
         )
       );

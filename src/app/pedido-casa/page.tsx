@@ -15,6 +15,7 @@ import { sonarAlerta } from "@/lib/sound";
 import RelojHora from "@/components/RelojHora";
 import { MAX_NUM_PEDIDO_VALIDO } from "@/lib/pedidos";
 import { avisoEstado } from "@/lib/avisos";
+import { useRestaurantePublico } from "@/hooks/useRestaurantePublico";
 import type { Producto, Categoria, DetallePedido, Mensaje } from "@/types";
 
 type TipoPedido = "MESA" | "PARA_LLEVAR" | "DOMICILIO";
@@ -24,8 +25,6 @@ type PromptInstalar = Event & {
   prompt: () => Promise<void>;
   userChoice: Promise<{ outcome: "accepted" | "dismissed" }>;
 };
-
-const RESTAURANT_ID = "restaurante1";
 
 function obtenerAnonId(): string {
   try {
@@ -44,6 +43,7 @@ function obtenerAnonId(): string {
 }
 
 export default function PedidoCasaPage() {
+  const { rid, nombre: nombreRestaurante, disponible, listo } = useRestaurantePublico();
   const [productos, setProductos] = useState<Producto[]>([]);
   const [categorias, setCategorias] = useState<Categoria[]>([]);
   const [loading, setLoading] = useState(true);
@@ -102,12 +102,12 @@ export default function PedidoCasaPage() {
   };
 
   useEffect(() => {
-    if (!exito || !pedidoCreadoId) return;
+    if (!exito || !pedidoCreadoId || !listo) return;
     estadoExitoRef.current = "RECIBIDO";
     msgsExitoRef.current = null;
 
     const unsubPedido = onSnapshot(
-      doc(db, "restaurantes", RESTAURANT_ID, "pedidos", pedidoCreadoId),
+      doc(db, "restaurantes", rid, "pedidos", pedidoCreadoId),
       (d) => {
         if (!d.exists()) return;
         const est = d.data().estado as string;
@@ -125,7 +125,7 @@ export default function PedidoCasaPage() {
 
     const unsubMsgs = onSnapshot(
       query(
-        collection(db, "restaurantes", RESTAURANT_ID, "pedidos", pedidoCreadoId, "mensajes"),
+        collection(db, "restaurantes", rid, "pedidos", pedidoCreadoId, "mensajes"),
         orderBy("fechaCreacion", "asc")
       ),
       (snap) => {
@@ -158,7 +158,7 @@ export default function PedidoCasaPage() {
       unsubPedido();
       unsubMsgs();
     };
-  }, [exito, pedidoCreadoId]);
+  }, [exito, pedidoCreadoId, listo, rid]);
 
   useEffect(() => {
     inicioSplash.current = Date.now();
@@ -220,11 +220,12 @@ export default function PedidoCasaPage() {
   const mostrarInstalar = !appInstalada && (promptInstalar !== null || esIOS);
 
   useEffect(() => {
+    if (!listo) return;
     const unsub = onAuthStateChanged(auth, (u) => {
       setUser(u);
       setAuthLoading(false);
       if (u) {
-        suscribirsePush("cliente", u.uid);
+        suscribirsePush("cliente", u.uid, rid);
         if (sessionStorage.getItem("irCheckout") === "1") {
           sessionStorage.removeItem("irCheckout");
           setVista("checkout");
@@ -232,7 +233,7 @@ export default function PedidoCasaPage() {
       }
     });
     return () => unsub();
-  }, []);
+  }, [listo, rid]);
 
   useEffect(() => {
     if (!user) return;
@@ -240,7 +241,7 @@ export default function PedidoCasaPage() {
     (async () => {
       try {
         const snap = await getDoc(
-          doc(db, "restaurantes", RESTAURANT_ID, "clientes", user.uid)
+          doc(db, "restaurantes", rid, "clientes", user.uid)
         );
         if (cancelado || !snap.exists()) return;
         const d = snap.data();
@@ -258,13 +259,14 @@ export default function PedidoCasaPage() {
     return () => {
       cancelado = true;
     };
-  }, [user]);
+  }, [user, rid]);
 
   useEffect(() => {
+    if (!listo) return;
     async function cargarDatos() {
       try {
         const catQuery = query(
-          collection(db, "restaurantes", RESTAURANT_ID, "categorias"),
+          collection(db, "restaurantes", rid, "categorias"),
           where("estado", "==", "activa")
         );
         const catSnap = await getDocs(catQuery);
@@ -273,7 +275,7 @@ export default function PedidoCasaPage() {
         setCategorias(cats);
 
         const prodQuery = query(
-          collection(db, "restaurantes", RESTAURANT_ID, "productos"),
+          collection(db, "restaurantes", rid, "productos"),
           where("estado", "==", "activo")
         );
         const prodSnap = await getDocs(prodQuery);
@@ -285,7 +287,7 @@ export default function PedidoCasaPage() {
       }
     }
     cargarDatos();
-  }, []);
+  }, [listo, rid]);
 
   const iniciarCheckout = () => {
     if (authLoading) return;
@@ -385,7 +387,7 @@ export default function PedidoCasaPage() {
     setEnviando(true);
     setError("");
     try {
-      const ref = collection(db, "restaurantes", RESTAURANT_ID, "pedidos");
+      const ref = collection(db, "restaurantes", rid, "pedidos");
       const lastQ = query(
         ref,
         where("numeroPedido", "<", MAX_NUM_PEDIDO_VALIDO),
@@ -406,7 +408,7 @@ export default function PedidoCasaPage() {
       const anonId = esMesa ? obtenerAnonId() : "";
 
       const docRef = await addDoc(ref, {
-        restaurantId: RESTAURANT_ID,
+        restaurantId: rid,
         numeroPedido: next,
         mesaId: esMesa ? mesaNumero : "",
         mesaNumero: esMesa ? mesaNumero : "",
@@ -431,7 +433,7 @@ export default function PedidoCasaPage() {
 
       if (user) {
         await setDoc(
-          doc(db, "restaurantes", RESTAURANT_ID, "clientes", user.uid),
+          doc(db, "restaurantes", rid, "clientes", user.uid),
           {
             uid: user.uid,
             email: user.email || "",
@@ -510,6 +512,17 @@ export default function PedidoCasaPage() {
               Entrando...
             </span>
           </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!disponible) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[#f6efdc]">
+        <div className="bg-white rounded-2xl border-2 border-amber-300 p-6 max-w-sm text-center">
+          <p className="font-bold text-gray-800">Este restaurante no está disponible</p>
+          <p className="text-sm text-gray-500 mt-2">Inténtalo más tarde.</p>
         </div>
       </div>
     );
@@ -648,7 +661,7 @@ export default function PedidoCasaPage() {
       <header className="bg-[#2b1d12] text-[#f0e2c4] p-4 sticky top-0 z-10 shadow-lg border-b-4 border-[#a67c3d]">
         <div className="max-w-2xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3 min-w-0">
-            <h1 className="text-lg font-bold tracking-wide truncate">La Bóveda del Real</h1>
+            <h1 className="text-lg font-bold tracking-wide truncate">{nombreRestaurante}</h1>
           </div>
           <div className="flex items-center gap-2">
             {puedeRegresar && (

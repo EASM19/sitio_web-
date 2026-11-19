@@ -16,8 +16,7 @@ import { suscribirsePush, obtenerSuscripciones, enviarNotificacionPush } from "@
 import ModalOpinion from "@/components/ModalOpinion";
 import { esPedidoValido } from "@/lib/pedidos";
 import { avisoEstado, etiquetasProgreso, progresoPedido } from "@/lib/avisos";
-
-const RESTAURANT_ID = "restaurante1";
+import { useRestaurantePublico } from "@/hooks/useRestaurantePublico";
 
 const getEstadoColor = (estado: string) => {
   switch (estado) {
@@ -31,6 +30,7 @@ const getEstadoColor = (estado: string) => {
 };
 
 export default function PedidoPage() {
+  const { rid, disponible, listo } = useRestaurantePublico();
   const [numeroPedido, setNumeroPedido] = useState("");
   const [user, setUser] = useState<User | null>(null);
   const [authLoading, setAuthLoading] = useState(true);
@@ -106,21 +106,21 @@ export default function PedidoPage() {
   }, []);
 
   useEffect(() => {
-    if (!chatAbierto || !seleccionadoId || !pedidoSel) return;
+    if (!listo || !chatAbierto || !seleccionadoId || !pedidoSel) return;
     if ((pedidoSel.chatNoLeidoCliente || 0) > 0) {
-      updateDoc(doc(db, "restaurantes", RESTAURANT_ID, "pedidos", seleccionadoId), {
+      updateDoc(doc(db, "restaurantes", rid, "pedidos", seleccionadoId), {
         chatNoLeidoCliente: 0,
       });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [chatAbierto, seleccionadoId, pedidoSel?.chatNoLeidoCliente]);
+  }, [chatAbierto, seleccionadoId, pedidoSel?.chatNoLeidoCliente, listo, rid]);
 
   useEffect(() => {
     const criterio = user ? { campo: "uid", valor: user.uid } : anonId ? { campo: "anonId", valor: anonId } : null;
-    if (!criterio) return;
+    if (!listo || !criterio) return;
     primerSnapshot.current = true;
     const q = query(
-      collection(db, "restaurantes", RESTAURANT_ID, "pedidos"),
+      collection(db, "restaurantes", rid, "pedidos"),
       where(criterio.campo, "==", criterio.valor)
     );
     const unsub = onSnapshot(q, (snap) => {
@@ -181,15 +181,15 @@ export default function PedidoPage() {
     });
     return () => unsub();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user, anonId]);
+  }, [user, anonId, listo, rid]);
 
   useEffect(() => {
     pedidoSelIdRef.current = seleccionadoId;
     msgsConocidos.current = null;
-    if (!seleccionadoId) return;
+    if (!listo || !seleccionadoId) return;
 
     const pedidoUnsub = onSnapshot(
-      doc(db, "restaurantes", RESTAURANT_ID, "pedidos", seleccionadoId),
+      doc(db, "restaurantes", rid, "pedidos", seleccionadoId),
       (d) => {
         if (d.exists()) {
           setPedidoSel({
@@ -203,7 +203,7 @@ export default function PedidoPage() {
 
     const msgsUnsub = onSnapshot(
       query(
-        collection(db, "restaurantes", RESTAURANT_ID, "pedidos", seleccionadoId, "mensajes"),
+        collection(db, "restaurantes", rid, "pedidos", seleccionadoId, "mensajes"),
         orderBy("fechaCreacion", "asc")
       ),
       (snap) => {
@@ -236,7 +236,7 @@ export default function PedidoPage() {
       pedidoUnsub();
       msgsUnsub();
     };
-  }, [seleccionadoId]);
+  }, [seleccionadoId, listo, rid]);
 
   const buscarPedido = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -247,7 +247,7 @@ export default function PedidoPage() {
 
     try {
       const q = query(
-        collection(db, "restaurantes", RESTAURANT_ID, "pedidos"),
+        collection(db, "restaurantes", rid, "pedidos"),
         where("numeroPedido", "==", parseInt(numeroPedido))
       );
       const snap = await getDocs(q);
@@ -275,7 +275,7 @@ export default function PedidoPage() {
     try {
       const texto = textoMsg.trim();
       const msgRef = await addDoc(
-        collection(db, "restaurantes", RESTAURANT_ID, "pedidos", seleccionadoId, "mensajes"),
+        collection(db, "restaurantes", rid, "pedidos", seleccionadoId, "mensajes"),
         {
           emisor: "cliente",
           nombre: user?.displayName || user?.email || "Cliente",
@@ -284,7 +284,7 @@ export default function PedidoPage() {
           fechaCreacion: serverTimestamp(),
         }
       );
-      await updateDoc(doc(db, "restaurantes", RESTAURANT_ID, "pedidos", seleccionadoId), {
+      await updateDoc(doc(db, "restaurantes", rid, "pedidos", seleccionadoId), {
         chatNoLeidoAdmin: increment(1),
         ultimoMensaje: { id: msgRef.id, emisor: "cliente", texto },
       });
@@ -327,6 +327,17 @@ export default function PedidoPage() {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[#f6efdc]">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-amber-600"></div>
+      </div>
+    );
+  }
+
+  if (!disponible) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[#f6efdc]">
+        <div className="bg-white rounded-2xl border-2 border-amber-300 p-6 max-w-sm text-center">
+          <p className="font-bold text-gray-800">Este restaurante no está disponible</p>
+          <p className="text-sm text-gray-500 mt-2">Inténtalo más tarde.</p>
+        </div>
       </div>
     );
   }
@@ -683,6 +694,7 @@ export default function PedidoPage() {
           <ModalOpinion
             pedidoId={pedidoSel.id}
             numeroPedido={pedidoSel.numeroPedido}
+            restaurantId={rid}
             cliente={user?.displayName || user?.email || "Anónimo"}
             onCerrar={() => setOpinionPendiente(false)}
           />
