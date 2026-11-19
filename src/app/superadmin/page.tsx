@@ -13,6 +13,13 @@ import { consultarRol, usuarioRolRef } from "@/lib/roles";
 import type { RolUsuario, UsuarioRol } from "@/types";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { QRCodeCanvas } from "qrcode.react";
+import type { RegistroRestaurante } from "@/lib/restaurantes";
+import {
+  escucharRestaurantes,
+  generarSlug,
+  pedirAccionRestaurante,
+} from "@/lib/restaurantes";
 
 const ROL_LABELS: Record<RolUsuario, string> = {
   superadmin: "👑 Superadmin",
@@ -45,6 +52,24 @@ export default function SuperadminPage() {
   const [creando, setCreando] = useState(false);
   const [msgExito, setMsgExito] = useState("");
   const [eliminando, setEliminando] = useState<string | null>(null);
+
+  const [pestana, setPestana] = useState<"restaurantes" | "usuarios">("restaurantes");
+  const [restaurantes, setRestaurantes] = useState<RegistroRestaurante[]>([]);
+  const [formRestAbierto, setFormRestAbierto] = useState(false);
+  const [rNombre, setRNombre] = useState("");
+  const [rSlug, setRSlug] = useState("");
+  const [rSlugTocado, setRSlugTocado] = useState(false);
+  const [rEmail, setREmail] = useState("");
+  const [rPass, setRPass] = useState("");
+  const [rDuenoNombre, setRDuenoNombre] = useState("");
+  const [msgRest, setMsgRest] = useState<{ tipo: "ok" | "err"; texto: string } | null>(null);
+  const [accionCargando, setAccionCargando] = useState<string | null>(null);
+  const [qrRest, setQrRest] = useState<RegistroRestaurante | null>(null);
+  const qrCanvasRef = useRef<HTMLCanvasElement | null>(null);
+  const [duenoRest, setDuenoRest] = useState<RegistroRestaurante | null>(null);
+  const [dEmail, setDEmail] = useState("");
+  const [dPass, setDPass] = useState("");
+  const [dNombre, setDNombre] = useState("");
 
   const credsRef = useRef<{ email: string; password: string } | null>(null);
   const creandoRef = useRef(false);
@@ -102,6 +127,11 @@ export default function SuperadminPage() {
       );
     });
     return () => unsub();
+  }, [autorizado]);
+
+  useEffect(() => {
+    if (!autorizado) return;
+    return escucharRestaurantes(setRestaurantes);
   }, [autorizado]);
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -239,6 +269,137 @@ export default function SuperadminPage() {
     }
   };
 
+  const ejecutarAccionRest = async (
+    clave: string,
+    body: Record<string, unknown>,
+    exito: string
+  ): Promise<boolean> => {
+    if (!user || accionCargando) return false;
+    setAccionCargando(clave);
+    setMsgRest(null);
+    const r = await pedirAccionRestaurante(user, body);
+    setAccionCargando(null);
+    if (!r.ok) {
+      setMsgRest({
+        tipo: "err",
+        texto: r.data.error || "No se pudo completar la acción.",
+      });
+      return false;
+    }
+    setMsgRest({ tipo: "ok", texto: exito });
+    return true;
+  };
+
+  const crearRestaurante = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (accionCargando) return;
+    const nombre = rNombre.trim();
+    const slug = rSlug.trim().toLowerCase();
+    if (nombre.length < 3) {
+      setMsgRest({ tipo: "err", texto: "El nombre debe tener al menos 3 caracteres" });
+      return;
+    }
+    if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug)) {
+      setMsgRest({ tipo: "err", texto: "Slug inválido: letras, números y guiones" });
+      return;
+    }
+    if (rEmail && rPass && rPass.length < 6) {
+      setMsgRest({ tipo: "err", texto: "La contraseña debe tener al menos 6 caracteres" });
+      return;
+    }
+    const ok = await ejecutarAccionRest(
+      "crear",
+      {
+        accion: "crear",
+        nombre,
+        slug,
+        ...(rEmail ? { email: rEmail.trim().toLowerCase() } : {}),
+        ...(rPass ? { password: rPass } : {}),
+        ...(rDuenoNombre ? { duenoNombre: rDuenoNombre.trim() } : {}),
+      },
+      `Restaurante creado: ${nombre}`
+    );
+    if (ok) {
+      setFormRestAbierto(false);
+      setRNombre("");
+      setRSlug("");
+      setRSlugTocado(false);
+      setREmail("");
+      setRPass("");
+      setRDuenoNombre("");
+    }
+  };
+
+  const toggleRestaurante = async (r: RegistroRestaurante) => {
+    if (accionCargando) return;
+    if (r.activo !== false) {
+      const ok = window.confirm(
+        `¿Desactivar "${r.nombre}"? No se perderá su historial; podrás reactivarlo cuando quieras.`
+      );
+      if (!ok) return;
+    }
+    await ejecutarAccionRest(
+      `toggle:${r.id}`,
+      { accion: "toggle", rid: r.id },
+      r.activo !== false
+        ? `Restaurante desactivado: ${r.nombre}`
+        : `Restaurante activado: ${r.nombre}`
+    );
+  };
+
+  const renombrarRestaurante = async (r: RegistroRestaurante) => {
+    if (accionCargando) return;
+    const nuevo = window.prompt("Nuevo nombre del restaurante", r.nombre);
+    if (!nuevo) return;
+    const limpio = nuevo.trim();
+    if (limpio.length < 3 || limpio === r.nombre) return;
+    await ejecutarAccionRest(
+      `upd:${r.id}`,
+      { accion: "actualizar", rid: r.id, nombre: limpio },
+      `Nombre actualizado: ${limpio}`
+    );
+  };
+
+  const asignarDueno = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!duenoRest || accionCargando) return;
+    const email = dEmail.trim().toLowerCase();
+    if (!email.includes("@")) {
+      setMsgRest({ tipo: "err", texto: "Correo inválido" });
+      return;
+    }
+    if (dPass && dPass.length < 6) {
+      setMsgRest({ tipo: "err", texto: "La contraseña debe tener al menos 6 caracteres" });
+      return;
+    }
+    const ok = await ejecutarAccionRest(
+      `dueno:${duenoRest.id}`,
+      {
+        accion: "asignar-dueno",
+        rid: duenoRest.id,
+        email,
+        ...(dPass ? { password: dPass } : {}),
+        ...(dNombre ? { nombre: dNombre.trim() } : {}),
+      },
+      `Dueño asignado: ${email}`
+    );
+    if (ok) {
+      setDuenoRest(null);
+      setDEmail("");
+      setDPass("");
+      setDNombre("");
+    }
+  };
+
+  const descargarQR = () => {
+    const canvas = qrCanvasRef.current;
+    if (!canvas || !qrRest) return;
+    const a = document.createElement("a");
+    a.href = canvas.toDataURL("image/png");
+    a.download = `qr-${qrRest.slug}.png`;
+    a.click();
+  };
+
   const handleLogout = async () => {
     credsRef.current = null;
     await signOut(auth);
@@ -328,6 +489,306 @@ export default function SuperadminPage() {
       </header>
 
       <main className="max-w-5xl mx-auto p-4 space-y-6">
+        <div className="flex gap-2">
+          <button
+            onClick={() => setPestana("restaurantes")}
+            className={`px-4 py-2 rounded-xl font-bold text-sm transition ${
+              pestana === "restaurantes"
+                ? "bg-purple-800 text-white"
+                : "bg-white border border-gray-200 text-gray-600 hover:bg-gray-50"
+            }`}
+          >
+            🍽️ Restaurantes ({restaurantes.length})
+          </button>
+          <button
+            onClick={() => setPestana("usuarios")}
+            className={`px-4 py-2 rounded-xl font-bold text-sm transition ${
+              pestana === "usuarios"
+                ? "bg-purple-800 text-white"
+                : "bg-white border border-gray-200 text-gray-600 hover:bg-gray-50"
+            }`}
+          >
+            👤 Cuentas ({usuarios.length})
+          </button>
+        </div>
+
+        {pestana === "restaurantes" && (
+          <>
+            {msgRest && (
+              <p
+                className={`text-sm font-bold ${
+                  msgRest.tipo === "ok" ? "text-green-600" : "text-amber-600"
+                }`}
+              >
+                {msgRest.tipo === "ok" ? "✅ " : "⚠️ "}
+                {msgRest.texto}
+              </p>
+            )}
+
+            <div className="bg-white rounded-xl border border-gray-200 p-5 shadow-sm">
+              <div className="flex justify-between items-center gap-3">
+                <div>
+                  <h2 className="font-bold text-gray-800">Gestión de restaurantes</h2>
+                  <p className="text-xs text-gray-500">
+                    Alta, edición, activación, dueño y QR de cada restaurante
+                  </p>
+                </div>
+                <button
+                  onClick={() => setFormRestAbierto(!formRestAbierto)}
+                  className="bg-purple-800 text-white px-4 py-2 rounded-xl font-bold text-sm hover:bg-purple-900 transition shrink-0"
+                >
+                  {formRestAbierto ? "Cancelar" : "+ Nuevo restaurante"}
+                </button>
+              </div>
+              {formRestAbierto && (
+                <form
+                  onSubmit={crearRestaurante}
+                  className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-4 pt-4 border-t border-gray-100"
+                >
+                  <input
+                    type="text"
+                    value={rNombre}
+                    onChange={(e) => {
+                      setRNombre(e.target.value);
+                      if (!rSlugTocado) setRSlug(generarSlug(e.target.value));
+                    }}
+                    placeholder="Nombre del restaurante"
+                    required
+                    className="px-3 py-2.5 border-2 border-gray-200 rounded-xl text-sm outline-none focus:border-purple-400"
+                    style={{ color: "#1f2937" }}
+                  />
+                  <input
+                    type="text"
+                    value={rSlug}
+                    onChange={(e) => {
+                      setRSlugTocado(true);
+                      setRSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ""));
+                    }}
+                    placeholder="slug-del-restaurante"
+                    required
+                    className="px-3 py-2.5 border-2 border-gray-200 rounded-xl text-sm outline-none focus:border-purple-400 font-mono"
+                    style={{ color: "#1f2937" }}
+                  />
+                  <input
+                    type="text"
+                    value={rDuenoNombre}
+                    onChange={(e) => setRDuenoNombre(e.target.value)}
+                    placeholder="Nombre del dueño (opcional)"
+                    className="px-3 py-2.5 border-2 border-gray-200 rounded-xl text-sm outline-none focus:border-purple-400"
+                    style={{ color: "#1f2937" }}
+                  />
+                  <input
+                    type="email"
+                    value={rEmail}
+                    onChange={(e) => setREmail(e.target.value)}
+                    placeholder="Correo del dueño (opcional)"
+                    className="px-3 py-2.5 border-2 border-gray-200 rounded-xl text-sm outline-none focus:border-purple-400"
+                    style={{ color: "#1f2937" }}
+                  />
+                  <input
+                    type="password"
+                    value={rPass}
+                    onChange={(e) => setRPass(e.target.value)}
+                    placeholder="Contraseña (si la cuenta es nueva)"
+                    minLength={6}
+                    className="px-3 py-2.5 border-2 border-gray-200 rounded-xl text-sm outline-none focus:border-purple-400"
+                    style={{ color: "#1f2937" }}
+                  />
+                  <button
+                    type="submit"
+                    disabled={accionCargando !== null}
+                    className="bg-purple-800 text-white py-2.5 rounded-xl font-bold hover:bg-purple-900 transition disabled:opacity-50 text-sm"
+                  >
+                    {accionCargando === "crear" ? "Creando..." : "Crear restaurante"}
+                  </button>
+                  <p className="text-xs text-gray-400 sm:col-span-2">
+                    El slug forma la URL del QR (…/pedido-casa?r=slug) y no se cambia después.
+                  </p>
+                </form>
+              )}
+            </div>
+
+            <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+              <div className="px-5 py-4 border-b border-gray-100 flex justify-between items-center">
+                <h2 className="font-bold text-gray-800">Lista ({restaurantes.length})</h2>
+                <span className="text-xs text-gray-400">
+                  Desactivar conserva el historial
+                </span>
+              </div>
+              <div className="divide-y divide-gray-50">
+                {restaurantes.length === 0 ? (
+                  <p className="text-sm text-gray-400 italic text-center py-6">
+                    Sin restaurantes todavía
+                  </p>
+                ) : (
+                  restaurantes.map((r) => (
+                    <div key={r.id} className="px-5 py-3 flex flex-wrap items-center gap-3">
+                      <div className="min-w-0 flex-1">
+                        <p className="font-bold text-sm text-gray-800 truncate">
+                          {r.nombre}
+                          <span
+                            className={`ml-2 text-xs font-bold px-2 py-0.5 rounded-full ${
+                              r.activo === false
+                                ? "bg-red-100 text-red-600"
+                                : "bg-green-100 text-green-700"
+                            }`}
+                          >
+                            {r.activo === false ? "Inactivo" : "Activo"}
+                          </span>
+                        </p>
+                        <p className="text-xs text-gray-500 truncate font-mono">
+                          /{r.slug} · {r.duenoEmail || "sin dueño asignado"}
+                        </p>
+                      </div>
+                      <button
+                        onClick={() => setQrRest(r)}
+                        className="text-xs font-bold px-3 py-1.5 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50"
+                      >
+                        🔗 QR
+                      </button>
+                      <button
+                        onClick={() => renombrarRestaurante(r)}
+                        disabled={accionCargando !== null}
+                        className="text-xs font-bold px-3 py-1.5 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 disabled:opacity-50"
+                      >
+                        ✏️ Editar
+                      </button>
+                      <button
+                        onClick={() => {
+                          setDuenoRest(r);
+                          setDEmail("");
+                          setDPass("");
+                          setDNombre("");
+                        }}
+                        className="text-xs font-bold px-3 py-1.5 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50"
+                      >
+                        👤 Dueño
+                      </button>
+                      <button
+                        onClick={() => toggleRestaurante(r)}
+                        disabled={accionCargando !== null}
+                        className={`text-xs font-bold px-3 py-1.5 rounded-lg border disabled:opacity-50 ${
+                          r.activo === false
+                            ? "border-green-200 text-green-700 hover:bg-green-50"
+                            : "border-amber-200 text-amber-700 hover:bg-amber-50"
+                        }`}
+                      >
+                        {accionCargando === `toggle:${r.id}`
+                          ? "..."
+                          : r.activo === false
+                          ? "▶ Activar"
+                          : "⏸ Desactivar"}
+                      </button>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+
+            {duenoRest && (
+              <div className="bg-white rounded-xl border-2 border-purple-300 p-5 shadow-sm">
+                <h2 className="font-bold text-gray-800 mb-1">
+                  Asignar dueño de {duenoRest.nombre}
+                </h2>
+                <p className="text-xs text-gray-500 mb-4">
+                  Si el correo ya tiene cuenta se asigna directo; si no, se crea con la
+                  contraseña que escribas. El dueño anterior queda desactivado.
+                </p>
+                <form onSubmit={asignarDueno} className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <input
+                    type="email"
+                    value={dEmail}
+                    onChange={(e) => setDEmail(e.target.value)}
+                    placeholder="Correo del nuevo dueño"
+                    required
+                    className="px-3 py-2.5 border-2 border-gray-200 rounded-xl text-sm outline-none focus:border-purple-400"
+                    style={{ color: "#1f2937" }}
+                  />
+                  <input
+                    type="text"
+                    value={dNombre}
+                    onChange={(e) => setDNombre(e.target.value)}
+                    placeholder="Nombre (opcional)"
+                    className="px-3 py-2.5 border-2 border-gray-200 rounded-xl text-sm outline-none focus:border-purple-400"
+                    style={{ color: "#1f2937" }}
+                  />
+                  <input
+                    type="password"
+                    value={dPass}
+                    onChange={(e) => setDPass(e.target.value)}
+                    placeholder="Contraseña (si es cuenta nueva)"
+                    minLength={6}
+                    className="px-3 py-2.5 border-2 border-gray-200 rounded-xl text-sm outline-none focus:border-purple-400"
+                    style={{ color: "#1f2937" }}
+                  />
+                  <div className="flex gap-2">
+                    <button
+                      type="submit"
+                      disabled={accionCargando !== null}
+                      className="bg-purple-800 text-white px-5 py-2.5 rounded-xl font-bold text-sm hover:bg-purple-900 transition disabled:opacity-50"
+                    >
+                      {accionCargando === `dueno:${duenoRest.id}` ? "Asignando..." : "Asignar"}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setDuenoRest(null)}
+                      className="bg-gray-100 text-gray-700 px-5 py-2.5 rounded-xl font-bold text-sm hover:bg-gray-200"
+                    >
+                      Cancelar
+                    </button>
+                  </div>
+                </form>
+              </div>
+            )}
+
+            {qrRest && (
+              <div
+                className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+                onClick={() => setQrRest(null)}
+              >
+                <div
+                  className="bg-white rounded-2xl p-6 max-w-sm w-full text-center shadow-2xl"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <h3 className="font-bold text-gray-800 mb-1">QR de {qrRest.nombre}</h3>
+                  <p className="text-xs text-gray-500 mb-4 break-all">
+                    {typeof window !== "undefined" ? window.location.origin : ""}
+                    /pedido-casa?r={qrRest.slug}
+                  </p>
+                  <div className="bg-gray-50 inline-block p-4 rounded-2xl border border-gray-100 mb-4">
+                    <QRCodeCanvas
+                      ref={qrCanvasRef}
+                      value={`${
+                        typeof window !== "undefined" ? window.location.origin : ""
+                      }/pedido-casa?r=${qrRest.slug}`}
+                      size={288}
+                    />
+                  </div>
+                  <div className="flex gap-3 justify-center">
+                    <button
+                      onClick={descargarQR}
+                      className="bg-purple-800 text-white px-5 py-2.5 rounded-xl font-bold text-sm hover:bg-purple-900"
+                    >
+                      ⬇️ Descargar PNG
+                    </button>
+                    <button
+                      onClick={() => setQrRest(null)}
+                      className="bg-gray-100 text-gray-700 px-5 py-2.5 rounded-xl font-bold text-sm hover:bg-gray-200"
+                    >
+                      Cerrar
+                    </button>
+                  </div>
+                  <p className="text-[11px] text-gray-400 mt-3">
+                    Imprímelo y pégalo en las mesas.
+                  </p>
+                </div>
+              </div>
+            )}
+          </>
+        )}
+
+        {pestana === "usuarios" && (
+          <>
         <div className="bg-white rounded-xl border border-gray-200 p-5 shadow-sm">
           <h2 className="font-bold text-gray-800 mb-1">Crear cuenta</h2>
           <p className="text-xs text-gray-500 mb-4">
@@ -450,6 +911,8 @@ export default function SuperadminPage() {
             )}
           </div>
         </div>
+          </>
+        )}
       </main>
     </div>
   );
