@@ -1,0 +1,38 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Registro de restaurantes: lectura pública, escritura autenticado (como antes).
+    match /restaurantes/{restaurantId} {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+
+    // Escritura de membresías restringida al superadmin del restaurante.
+    function esSuperadmin(restaurantId) {
+      return request.auth != null &&
+             get(
+               /databases/$(database)/documents/restaurantes/$(restaurantId)/usuarios/$(request.auth.uid)
+             ).exists() &&
+             get(
+               /databases/$(database)/documents/restaurantes/$(restaurantId)/usuarios/$(request.auth.uid)
+             ).data().rol == 'superadmin';
+    }
+
+    match /restaurantes/{restaurantId}/usuarios/{userId} {
+      allow write: if esSuperadmin(restaurantId);
+    }
+
+    // Contenido del restaurante: lectura pública, escritura autenticada (como antes).
+    match /restaurantes/{restaurantId}/{document=**} {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+
+    // Pedidos: creación pública (como antes), actualización/eliminación autenticada.
+    match /restaurantes/{restaurantId}/pedidos/{pedidoId} {
+      allow read: if true;
+      allow create: if true;
+      allow update, delete: if request.auth != null;
+    }
+  }
+}
