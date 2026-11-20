@@ -243,7 +243,20 @@ export async function POST(req: Request) {
             uid = uidHuerfano;
             reparado = true;
           } catch {
-            // si no se puede reparar, se crea una cuenta nueva
+            // El rol existe pero su cuenta de Auth ya no: se recrea con el
+            // mismo uid para no duplicar el registro del superadmin.
+            try {
+              await auth.createUser({
+                uid: uidHuerfano,
+                email,
+                password,
+                displayName: nombre,
+              });
+              uid = uidHuerfano;
+              reparado = true;
+            } catch {
+              // si no se puede reparar, se crea una cuenta nueva
+            }
           }
         }
         if (!uid) {
