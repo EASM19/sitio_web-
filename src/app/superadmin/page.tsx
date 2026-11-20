@@ -2,11 +2,10 @@
 
 import { useEffect, useRef, useState } from "react";
 import {
-  createUserWithEmailAndPassword, onAuthStateChanged, signInWithEmailAndPassword,
-  signOut, updateProfile, User,
+  onAuthStateChanged, signInWithEmailAndPassword, signOut, User,
 } from "firebase/auth";
 import {
-  collection, onSnapshot, orderBy, query, serverTimestamp, setDoc, updateDoc,
+  collection, onSnapshot, orderBy, query, updateDoc,
 } from "firebase/firestore";
 import { auth, db } from "@/lib/firebase";
 import { consultarRol, usuarioRolRef } from "@/lib/roles";
@@ -74,8 +73,6 @@ export default function SuperadminPage() {
   const [dPass, setDPass] = useState("");
   const [dNombre, setDNombre] = useState("");
 
-  const credsRef = useRef<{ email: string; password: string } | null>(null);
-  const creandoRef = useRef(false);
   const router = useRouter();
 
   useEffect(() => {
@@ -86,7 +83,6 @@ export default function SuperadminPage() {
         setVerificando(false);
         return;
       }
-      if (creandoRef.current) return;
       const r = await consultarRol(u.uid);
       if (r.estado === "error") {
         console.error("Verificación de rol falló:", r.codigo);
@@ -143,7 +139,6 @@ export default function SuperadminPage() {
     setError("");
     try {
       const cred = await signInWithEmailAndPassword(auth, email.trim(), password);
-      credsRef.current = { email: email.trim(), password };
       setPassword("");
       const r = await consultarRol(cred.user.uid);
       if (r.estado === "error") {
@@ -170,69 +165,42 @@ export default function SuperadminPage() {
 
   const crearUsuario = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (creando) return;
+    if (creando || !user) return;
     setMsgExito("");
     setError("");
+    if (nuevoNombre.trim().length < 2) {
+      setError("Escribe el nombre de la persona");
+      return;
+    }
     if (nuevoPass.length < 6) {
       setError("La contraseña debe tener al menos 6 caracteres");
       return;
     }
     setCreando(true);
-    creandoRef.current = true;
-    try {
-      const cred = await createUserWithEmailAndPassword(
-        auth, nuevoEmail.trim(), nuevoPass
-      );
-      try {
-        await updateProfile(cred.user, { displayName: nuevoNombre.trim() });
-      } catch {
-        // perfil opcional
-      }
-      await setDoc(usuarioRolRef(cred.user.uid), {
-        nombre: nuevoNombre.trim(),
-        email: nuevoEmail.trim(),
-        rol: nuevoRol,
-        telefono: nuevoTel.trim(),
-        activo: true,
-        ...(nuevoRol !== "superadmin" ? { restaurantId: "restaurante1" } : {}),
-        creado: serverTimestamp(),
-      });
-      creandoRef.current = false;
-      await signOut(auth);
-      if (credsRef.current) {
-        await signInWithEmailAndPassword(
-          auth, credsRef.current.email, credsRef.current.password
-        );
-      }
-      setMsgExito(`Cuenta creada: ${nuevoEmail.trim()} (${ROL_LABELS[nuevoRol]})`);
-      setNuevoNombre("");
-      setNuevoEmail("");
-      setNuevoPass("");
-      setNuevoTel("");
-      setNuevoRol("repartidor");
-    } catch (err) {
-      const code = (err as { code?: string })?.code;
-      if (code === "auth/email-already-in-use") {
-        setError("Ese correo ya está registrado");
-      } else if (code === "auth/invalid-email") {
-        setError("Correo inválido");
-      } else {
-        setError("No se pudo crear la cuenta. Intenta de nuevo.");
-      }
-      const actual = auth.currentUser;
-      if (!actual && credsRef.current) {
-        try {
-          await signInWithEmailAndPassword(
-            auth, credsRef.current.email, credsRef.current.password
-          );
-        } catch {
-          setError("Sesión expirada. Vuelve a iniciar sesión.");
-        }
-      }
-    } finally {
-      creandoRef.current = false;
-      setCreando(false);
+    const email = nuevoEmail.trim().toLowerCase();
+    const r = await pedirAccionRestaurante(user, {
+      accion: "crear-cuenta",
+      nombre: nuevoNombre.trim(),
+      email,
+      telefono: nuevoTel.trim(),
+      rol: nuevoRol,
+      password: nuevoPass,
+    });
+    setCreando(false);
+    if (!r.ok) {
+      setError(r.data.error || "No se pudo crear la cuenta. Intenta de nuevo.");
+      return;
     }
+    setMsgExito(
+      r.data.creado || r.data.reparado
+        ? `Cuenta creada: ${email} (${ROL_LABELS[nuevoRol]})`
+        : `El correo ${email} ya existía: se le asignó el rol ${ROL_LABELS[nuevoRol]} y entra con su contraseña actual.`
+    );
+    setNuevoNombre("");
+    setNuevoEmail("");
+    setNuevoPass("");
+    setNuevoTel("");
+    setNuevoRol("repartidor");
   };
 
   const alternarActivo = async (u: UsuarioRol) => {
@@ -452,7 +420,6 @@ export default function SuperadminPage() {
   };
 
   const handleLogout = async () => {
-    credsRef.current = null;
     await signOut(auth);
     router.push("/superadmin");
   };
@@ -524,7 +491,7 @@ export default function SuperadminPage() {
           </div>
           <div className="flex items-center gap-4">
             <Link
-              href="/admin/pedidos?r=restaurante1"
+              href="/admin/pedidos"
               className="text-gray-600 hover:text-gray-800 font-medium text-sm"
             >
               🏪 Panel administrativo

@@ -51,6 +51,8 @@ export type ResultadoApi = {
     uid?: string;
     eliminados?: number;
     cuentasBorradas?: number;
+    creado?: boolean;
+    reparado?: boolean;
   };
 };
 

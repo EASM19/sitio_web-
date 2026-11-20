@@ -4,12 +4,27 @@ import { useEffect, useState } from "react";
 import { RESTAURANTE_DEFECTO } from "@/lib/restaurantes";
 
 const CLAVE = "restauranteActual";
+const EVENTO = "restauranteActualCambiado";
 
 export function fijarRestaurante(rid: string) {
   try {
     localStorage.setItem(CLAVE, rid);
   } catch {
     // almacenamiento no disponible
+  }
+  try {
+    window.dispatchEvent(new CustomEvent<string>(EVENTO, { detail: rid }));
+  } catch {
+    // entorno sin window
+  }
+}
+
+export function restauranteGuardado(): string | null {
+  try {
+    const v = localStorage.getItem(CLAVE);
+    return v && /^[a-z0-9-]{1,50}$/i.test(v) ? v : null;
+  } catch {
+    return null;
   }
 }
 
@@ -36,6 +51,15 @@ export function useRestauranteActual(): { rid: string; listo: boolean } {
       setListo(true);
     }, 0);
     return () => window.clearTimeout(t);
+  }, []);
+
+  useEffect(() => {
+    const alCambiar = (e: Event) => {
+      const valor = (e as CustomEvent<string>).detail;
+      if (valor && /^[a-z0-9-]{1,50}$/i.test(valor)) setRid(valor);
+    };
+    window.addEventListener(EVENTO, alCambiar);
+    return () => window.removeEventListener(EVENTO, alCambiar);
   }, []);
 
   return { rid, listo };

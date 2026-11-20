@@ -16,7 +16,8 @@ import { useSesionActiva } from "@/hooks/useSesionActiva";
 import { esPedidoValido } from "@/lib/pedidos";
 import { avisoEstado, siguienteEstadoAdmin } from "@/lib/avisos";
 import { consultarRol, consultarRolEn } from "@/lib/roles";
-import { useRestauranteActual } from "@/hooks/useRestauranteActual";
+import { useRestauranteActual, fijarRestaurante } from "@/hooks/useRestauranteActual";
+import { escucharRestaurantes, type RegistroRestaurante } from "@/lib/restaurantes";
 
 const ESTADOS: EstadoPedido[] = ["RECIBIDO", "PREPARANDO", "LISTO", "EN_CAMINO", "ENTREGADO"];
 
@@ -85,10 +86,16 @@ export default function PedidosPage() {
   const [semanaSel, setSemanaSel] = useState<number | null>(null);
   const [fechasAbiertas, setFechasAbiertas] = useState<Set<string>>(new Set());
   const [esSuperadmin, setEsSuperadmin] = useState(false);
+  const [restaurantes, setRestaurantes] = useState<RegistroRestaurante[]>([]);
   const router = useRouter();
   useSesionActiva(user);
 
   const { rid, listo } = useRestauranteActual();
+
+  useEffect(() => {
+    if (!esSuperadmin) return;
+    return escucharRestaurantes(setRestaurantes);
+  }, [esSuperadmin]);
 
   useEffect(() => {
     if (!listo) return;
@@ -323,8 +330,8 @@ export default function PedidosPage() {
   return (
     <div className="min-h-screen bg-[#f6efdc]">
       <header className="bg-white/80 backdrop-blur border-b border-gray-200 sticky top-0 z-10">
-        <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
-          <div className="flex items-center gap-6">
+        <div className="max-w-7xl mx-auto px-4 py-3 flex flex-wrap items-center justify-between gap-3">
+          <div className="flex flex-wrap items-center gap-6">
             <Link href="/admin/pedidos" className="text-amber-800 font-bold text-lg">Pedidos</Link>
             <Link href="/admin/productos" className="text-gray-500 hover:text-gray-700 font-medium">Productos</Link>
             <Link href="/admin/categorias" className="text-gray-500 hover:text-gray-700 font-medium">Categorías</Link>
@@ -337,6 +344,29 @@ export default function PedidosPage() {
             )}
           </div>
           <div className="flex items-center gap-3">
+            {esSuperadmin && (
+              <select
+                value={restaurantes.some((r) => r.id === rid) ? rid : ""}
+                onChange={(e) => {
+                  if (!e.target.value) return;
+                  fijarRestaurante(e.target.value);
+                  router.push(`/admin/pedidos?r=${encodeURIComponent(e.target.value)}`);
+                }}
+                title="Restaurante que estás administrando"
+                className="max-w-[190px] px-2 py-1.5 border-2 border-purple-200 rounded-lg text-xs font-bold bg-white"
+                style={{ color: "#1f2937" }}
+              >
+                {!restaurantes.some((r) => r.id === rid) && (
+                  <option value="">Elige restaurante…</option>
+                )}
+                {restaurantes.map((r) => (
+                  <option key={r.id} value={r.id}>
+                    {r.nombre}
+                    {r.activo === false ? " (inactivo)" : ""}
+                  </option>
+                ))}
+              </select>
+            )}
             <div className="relative">
               <button
                 onClick={() => setBellAbierto((v) => !v)}

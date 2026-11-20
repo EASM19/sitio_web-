@@ -193,6 +193,85 @@ export async function POST(req: Request) {
       return Response.json({ ok: true, activo });
     }
 
+    if (accion === "crear-cuenta") {
+      const nombre = str(body?.nombre);
+      const email = str(body?.email, 254).toLowerCase();
+      const telefono = str(body?.telefono, 40);
+      const rol = str(body?.rol, 20);
+      const password = typeof body?.password === "string" ? body.password : "";
+      if (nombre.length < 2) return error("Escribe el nombre de la persona", 400);
+      if (!email.includes("@") || email.length < 5) return error("Correo inválido", 400);
+      if (rol !== "superadmin" && rol !== "dueno" && rol !== "repartidor") {
+        return error("Rol inválido", 400);
+      }
+      if (password.length < 6) {
+        return error("La contraseña debe tener al menos 6 caracteres", 400);
+      }
+
+      let uid = "";
+      let creado = false;
+      let reparado = false;
+      try {
+        const existente = await auth.getUserByEmail(email);
+        uid = existente.uid;
+        const tienePassword = existente.providerData.some(
+          (p) => p.providerId === "password"
+        );
+        // Cuentas sin contraseña (p. ej. creadas solo en Firestore o con
+        // Google) no pueden entrar por /admin/login: se les habilita el acceso.
+        if (!tienePassword) {
+          await auth.updateUser(uid, { email, password, displayName: nombre });
+          reparado = true;
+        }
+      } catch (e) {
+        if ((e as { code?: string }).code !== "auth/user-not-found") throw e;
+        // Puede existir un rol con ese correo cuya cuenta de Auth quedó sin
+        // email (cuenta huérfana): se repara en lugar de duplicarla.
+        const huerfano = await db
+          .collection(`restaurantes/${RESTAURANT_ID}/usuarios`)
+          .where("email", "==", email)
+          .limit(1)
+          .get();
+        const uidHuerfano = huerfano.empty ? "" : huerfano.docs[0].id;
+        if (uidHuerfano) {
+          try {
+            await auth.updateUser(uidHuerfano, {
+              email,
+              password,
+              displayName: nombre,
+            });
+            uid = uidHuerfano;
+            reparado = true;
+          } catch {
+            // si no se puede reparar, se crea una cuenta nueva
+          }
+        }
+        if (!uid) {
+          const nuevo = await auth.createUser({
+            email,
+            password,
+            displayName: nombre,
+          });
+          uid = nuevo.uid;
+          creado = true;
+        }
+      }
+
+      await db.doc(`restaurantes/${RESTAURANT_ID}/usuarios/${uid}`).set(
+        {
+          nombre,
+          email,
+          rol,
+          telefono,
+          activo: true,
+          ...(rol !== "superadmin" ? { restaurantId: RESTAURANT_ID } : {}),
+          creado: FieldValue.serverTimestamp(),
+        },
+        { merge: true }
+      );
+      return Response.json({ ok: true, uid, creado, reparado });
+    }
+
     if (accion === "asignar-dueno") {
       const rid = str(body?.rid, 50);
       const email = str(body?.email, 254).toLowerCase();

@@ -8,7 +8,7 @@ import { pedirPermisoNotificaciones } from "@/lib/notif";
 import { desbloquearAudio } from "@/lib/sound";
 import { suscribirsePush } from "@/lib/push";
 import { consultarMembresias } from "@/lib/roles";
-import { fijarRestaurante } from "@/hooks/useRestauranteActual";
+import { fijarRestaurante, restauranteGuardado } from "@/hooks/useRestauranteActual";
 import { RESTAURANTE_DEFECTO } from "@/lib/restaurantes";
 
 export default function AdminLoginPage() {
@@ -61,7 +61,12 @@ export default function AdminLoginPage() {
         router.push("/repartidor");
         return;
       }
-      const ridPanel = dueno?.rid || RESTAURANTE_DEFECTO;
+      // Un superadmin puede entrar al panel de cualquier restaurante: se
+      // respeta el último que eligió; si no, el suyo o el de la plataforma.
+      const ridPanel =
+        dueno?.rid ||
+        (superadmin ? restauranteGuardado() : null) ||
+        RESTAURANTE_DEFECTO;
       fijarRestaurante(ridPanel);
       pedirPermisoNotificaciones().then((p) => {
         if (p === "granted") {
