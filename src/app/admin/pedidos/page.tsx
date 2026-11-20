@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { onAuthStateChanged, signOut, User } from "firebase/auth";
 import {
-  collection, query, orderBy, onSnapshot, doc, updateDoc, addDoc, serverTimestamp, increment,
+  collection, query, orderBy, onSnapshot, doc, getDoc, updateDoc, addDoc, serverTimestamp, increment,
 } from "firebase/firestore";
 import { auth, db } from "@/lib/firebase";
 import type { Pedido, EstadoPedido, Mensaje } from "@/types";
@@ -87,6 +87,7 @@ export default function PedidosPage() {
   const [fechasAbiertas, setFechasAbiertas] = useState<Set<string>>(new Set());
   const [esSuperadmin, setEsSuperadmin] = useState(false);
   const [restaurantes, setRestaurantes] = useState<RegistroRestaurante[]>([]);
+  const [nombreRest, setNombreRest] = useState("");
   const router = useRouter();
   useSesionActiva(user);
 
@@ -96,6 +97,21 @@ export default function PedidosPage() {
     if (!esSuperadmin) return;
     return escucharRestaurantes(setRestaurantes);
   }, [esSuperadmin]);
+
+  useEffect(() => {
+    let vigente = true;
+    getDoc(doc(db, "restaurantes", rid))
+      .then((s) => {
+        if (!vigente) return;
+        setNombreRest(s.exists() ? String(s.data().nombre || rid) : rid);
+      })
+      .catch(() => {
+        if (vigente) setNombreRest(rid);
+      });
+    return () => {
+      vigente = false;
+    };
+  }, [rid]);
 
   useEffect(() => {
     if (!listo) return;
@@ -344,6 +360,14 @@ export default function PedidosPage() {
             )}
           </div>
           <div className="flex items-center gap-3">
+            {!esSuperadmin && nombreRest && (
+              <span
+                className="max-w-[170px] truncate text-xs font-bold text-gray-600"
+                title={nombreRest}
+              >
+                🏪 {nombreRest}
+              </span>
+            )}
             {esSuperadmin && (
               <select
                 value={restaurantes.some((r) => r.id === rid) ? rid : ""}
