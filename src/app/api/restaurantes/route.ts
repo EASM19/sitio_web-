@@ -241,6 +241,73 @@ export async function POST(req: Request) {
       return Response.json({ ok: true, uid });
     }
 
+    if (accion === "eliminar") {
+      const rid = str(body?.rid, 50);
+      if (!rid || !SLUG_RE.test(rid)) return error("Identificador inválido", 400);
+      if (rid === RESTAURANT_ID) {
+        return error(
+          "No se puede eliminar el restaurante por defecto de la plataforma",
+          400
+        );
+      }
+
+      const refRegistro = db.doc(`restaurantes/${rid}`);
+      const snapRegistro = await refRegistro.get();
+      if (!snapRegistro.exists) return error("Restaurante no encontrado", 404);
+
+      // Cuentas del restaurante que podrían quedar huérfanas.
+      const snapUsuarios = await refRegistro.collection("usuarios").get();
+      const uids = new Set<string>();
+      const duenoUid = snapRegistro.data()?.duenoUid;
+      if (typeof duenoUid === "string" && duenoUid) uids.add(duenoUid);
+      snapUsuarios.forEach((d) => {
+        // Los superadmin nunca se borran: administran la plataforma.
+        if (d.data()?.rol !== "superadmin") uids.add(d.id);
+      });
+      uids.delete(decoded.uid);
+
+      // Solo se borra el Auth si la cuenta no pertenece a otro restaurante.
+      const otros = await db.collection("restaurantes").get();
+      const otrosRids = otros.docs.map((d) => d.id).filter((id) => id !== rid);
+      const aBorrarAuth: string[] = [];
+      for (const uid of uids) {
+        let enOtro = false;
+        for (const otro of otrosRids) {
+          const membresia = await db
+            .doc(`restaurantes/${otro}/usuarios/${uid}`)
+            .get();
+          if (membresia.exists) {
+            enOtro = true;
+            break;
+          }
+        }
+        if (!enOtro) aBorrarAuth.push(uid);
+      }
+
+      // Borra el documento y todas sus subcolecciones
+      // (usuarios, categorias, productos, pedidos + mensajes, opiniones,
+      // clientes, push, ...).
+      await db.recursiveDelete(refRegistro);
+
+      let cuentasBorradas = 0;
+      if (aBorrarAuth.length > 0) {
+        const resultado = await auth.deleteUsers(aBorrarAuth);
+        cuentasBorradas = resultado.successCount;
+        if (resultado.failureCount > 0) {
+          console.error(
+            "No se pudieron borrar algunas cuentas:",
+            resultado.errors
+          );
+        }
+      }
+
+      return Response.json({
+        ok: true,
+        eliminados: snapUsuarios.size,
+        cuentasBorradas,
+      });
+    }
+
     return error("Acción no reconocida", 400);
   } catch (err) {
     console.error("Error en /api/restaurantes:", err);

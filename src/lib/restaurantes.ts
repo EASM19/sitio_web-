@@ -44,7 +44,14 @@ export function escucharRestaurantes(
 export type ResultadoApi = {
   ok: boolean;
   status: number;
-  data: { error?: string; rid?: string; activo?: boolean; uid?: string };
+  data: {
+    error?: string;
+    rid?: string;
+    activo?: boolean;
+    uid?: string;
+    eliminados?: number;
+    cuentasBorradas?: number;
+  };
 };
 
 export async function pedirAccionRestaurante(

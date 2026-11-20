@@ -66,6 +66,9 @@ export default function SuperadminPage() {
   const [accionCargando, setAccionCargando] = useState<string | null>(null);
   const [qrRest, setQrRest] = useState<RegistroRestaurante | null>(null);
   const qrCanvasRef = useRef<HTMLCanvasElement | null>(null);
+  const [borrarRest, setBorrarRest] = useState<RegistroRestaurante | null>(null);
+  const [confirmSlug, setConfirmSlug] = useState("");
+  const [borrando, setBorrando] = useState(false);
   const [duenoRest, setDuenoRest] = useState<RegistroRestaurante | null>(null);
   const [dEmail, setDEmail] = useState("");
   const [dPass, setDPass] = useState("");
@@ -327,6 +330,14 @@ export default function SuperadminPage() {
       setREmail("");
       setRPass("");
       setRDuenoNombre("");
+      // Muestra de inmediato el QR propio del restaurante recién creado.
+      setQrRest({
+        id: slug,
+        nombre,
+        slug,
+        activo: true,
+        duenoEmail: rEmail.trim().toLowerCase() || null,
+      });
     }
   };
 
@@ -345,6 +356,46 @@ export default function SuperadminPage() {
         ? `Restaurante desactivado: ${r.nombre}`
         : `Restaurante activado: ${r.nombre}`
     );
+  };
+
+  const eliminarRestaurante = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!user || !borrarRest || borrando) return;
+    if (confirmSlug.trim().toLowerCase() !== (borrarRest.slug || borrarRest.id).toLowerCase()) {
+      setMsgRest({ tipo: "err", texto: "El slug no coincide. No se borró nada." });
+      return;
+    }
+    setBorrando(true);
+    setMsgRest(null);
+    const r = await pedirAccionRestaurante(user, {
+      accion: "eliminar",
+      rid: borrarRest.id,
+    });
+    setBorrando(false);
+    if (!r.ok) {
+      setMsgRest({
+        tipo: "err",
+        texto: r.data.error || "No se pudo eliminar el restaurante.",
+      });
+      return;
+    }
+    setMsgRest({
+      tipo: "ok",
+      texto: `Restaurante eliminado: ${borrarRest.nombre}${
+        r.data.cuentasBorradas
+          ? ` (${r.data.cuentasBorradas} cuenta(s) de acceso borrada(s))`
+          : ""
+      }`,
+    });
+    try {
+      if (localStorage.getItem("restauranteActual") === borrarRest.id) {
+        localStorage.removeItem("restauranteActual");
+      }
+    } catch {
+      // almacenamiento no disponible
+    }
+    setBorrarRest(null);
+    setConfirmSlug("");
   };
 
   const renombrarRestaurante = async (r: RegistroRestaurante) => {
@@ -396,7 +447,7 @@ export default function SuperadminPage() {
     if (!canvas || !qrRest) return;
     const a = document.createElement("a");
     a.href = canvas.toDataURL("image/png");
-    a.download = `qr-${qrRest.slug}.png`;
+    a.download = `qr-${qrRest.slug || qrRest.id}.png`;
     a.click();
   };
 
@@ -489,7 +540,7 @@ export default function SuperadminPage() {
       </header>
 
       <main className="max-w-5xl mx-auto p-4 space-y-6">
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <button
             onClick={() => setPestana("restaurantes")}
             className={`px-4 py-2 rounded-xl font-bold text-sm transition ${
@@ -526,8 +577,8 @@ export default function SuperadminPage() {
             )}
 
             <div className="bg-white rounded-xl border border-gray-200 p-5 shadow-sm">
-              <div className="flex justify-between items-center gap-3">
-                <div>
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div className="min-w-0">
                   <h2 className="font-bold text-gray-800">Gestión de restaurantes</h2>
                   <p className="text-xs text-gray-500">
                     Alta, edición, activación, dueño y QR de cada restaurante
@@ -535,7 +586,7 @@ export default function SuperadminPage() {
                 </div>
                 <button
                   onClick={() => setFormRestAbierto(!formRestAbierto)}
-                  className="bg-purple-800 text-white px-4 py-2 rounded-xl font-bold text-sm hover:bg-purple-900 transition shrink-0"
+                  className="bg-purple-800 text-white px-4 py-2 rounded-xl font-bold text-sm hover:bg-purple-900 transition w-full sm:w-auto shrink-0"
                 >
                   {formRestAbierto ? "Cancelar" : "+ Nuevo restaurante"}
                 </button>
@@ -622,7 +673,10 @@ export default function SuperadminPage() {
                   </p>
                 ) : (
                   restaurantes.map((r) => (
-                    <div key={r.id} className="px-5 py-3 flex flex-wrap items-center gap-3">
+                    <div
+                      key={r.id}
+                      className="px-5 py-3 flex flex-col sm:flex-row sm:items-center gap-3"
+                    >
                       <div className="min-w-0 flex-1">
                         <p className="font-bold text-sm text-gray-800 truncate">
                           {r.nombre}
@@ -640,51 +694,64 @@ export default function SuperadminPage() {
                           /{r.slug} · {r.duenoEmail || "sin dueño asignado"}
                         </p>
                       </div>
-                      <Link
-                        href={`/admin/pedidos?r=${r.id}`}
-                        className="text-xs font-bold px-3 py-1.5 rounded-lg bg-purple-800 text-white hover:bg-purple-900"
-                      >
-                        🚀 Abrir panel
-                      </Link>
-                      <button
-                        onClick={() => setQrRest(r)}
-                        className="text-xs font-bold px-3 py-1.5 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50"
-                      >
-                        🔗 QR
-                      </button>
-                      <button
-                        onClick={() => renombrarRestaurante(r)}
-                        disabled={accionCargando !== null}
-                        className="text-xs font-bold px-3 py-1.5 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 disabled:opacity-50"
-                      >
-                        ✏️ Editar
-                      </button>
-                      <button
-                        onClick={() => {
-                          setDuenoRest(r);
-                          setDEmail("");
-                          setDPass("");
-                          setDNombre("");
-                        }}
-                        className="text-xs font-bold px-3 py-1.5 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50"
-                      >
-                        👤 Dueño
-                      </button>
-                      <button
-                        onClick={() => toggleRestaurante(r)}
-                        disabled={accionCargando !== null}
-                        className={`text-xs font-bold px-3 py-1.5 rounded-lg border disabled:opacity-50 ${
-                          r.activo === false
-                            ? "border-green-200 text-green-700 hover:bg-green-50"
-                            : "border-amber-200 text-amber-700 hover:bg-amber-50"
-                        }`}
-                      >
-                        {accionCargando === `toggle:${r.id}`
-                          ? "..."
-                          : r.activo === false
-                          ? "▶ Activar"
-                          : "⏸ Desactivar"}
-                      </button>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <Link
+                          href={`/admin/pedidos?r=${r.id}`}
+                          className="text-xs font-bold px-3 py-1.5 rounded-lg bg-purple-800 text-white hover:bg-purple-900"
+                        >
+                          🚀 Abrir panel
+                        </Link>
+                        <button
+                          onClick={() => setQrRest(r)}
+                          className="text-xs font-bold px-3 py-1.5 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50"
+                        >
+                          🔗 QR
+                        </button>
+                        <button
+                          onClick={() => renombrarRestaurante(r)}
+                          disabled={accionCargando !== null}
+                          className="text-xs font-bold px-3 py-1.5 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 disabled:opacity-50"
+                        >
+                          ✏️ Editar
+                        </button>
+                        <button
+                          onClick={() => {
+                            setDuenoRest(r);
+                            setDEmail("");
+                            setDPass("");
+                            setDNombre("");
+                          }}
+                          className="text-xs font-bold px-3 py-1.5 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50"
+                        >
+                          👤 Dueño
+                        </button>
+                        <button
+                          onClick={() => toggleRestaurante(r)}
+                          disabled={accionCargando !== null}
+                          className={`text-xs font-bold px-3 py-1.5 rounded-lg border disabled:opacity-50 ${
+                            r.activo === false
+                              ? "border-green-200 text-green-700 hover:bg-green-50"
+                              : "border-amber-200 text-amber-700 hover:bg-amber-50"
+                          }`}
+                        >
+                          {accionCargando === `toggle:${r.id}`
+                            ? "..."
+                            : r.activo === false
+                            ? "▶ Activar"
+                            : "⏸ Desactivar"}
+                        </button>
+                        {r.activo === false && (
+                          <button
+                            onClick={() => {
+                              setBorrarRest(r);
+                              setConfirmSlug("");
+                            }}
+                            className="text-xs font-bold px-3 py-1.5 rounded-lg border border-red-200 text-red-600 hover:bg-red-50"
+                          >
+                            🗑 Borrar
+                          </button>
+                        )}
+                      </div>
                     </div>
                   ))
                 )}
@@ -753,24 +820,25 @@ export default function SuperadminPage() {
                 onClick={() => setQrRest(null)}
               >
                 <div
-                  className="bg-white rounded-2xl p-6 max-w-sm w-full text-center shadow-2xl"
+                  className="bg-white rounded-2xl p-4 sm:p-6 w-full max-w-sm text-center shadow-2xl"
                   onClick={(e) => e.stopPropagation()}
                 >
                   <h3 className="font-bold text-gray-800 mb-1">QR de {qrRest.nombre}</h3>
                   <p className="text-xs text-gray-500 mb-4 break-all">
                     {typeof window !== "undefined" ? window.location.origin : ""}
-                    /pedido-casa?r={qrRest.slug}
+                    /pedido-casa?r={qrRest.slug || qrRest.id}
                   </p>
-                  <div className="bg-gray-50 inline-block p-4 rounded-2xl border border-gray-100 mb-4">
+                  <div className="bg-gray-50 w-full max-w-[320px] mx-auto p-3 sm:p-4 rounded-2xl border border-gray-100 mb-4">
                     <QRCodeCanvas
                       ref={qrCanvasRef}
                       value={`${
                         typeof window !== "undefined" ? window.location.origin : ""
-                      }/pedido-casa?r=${qrRest.slug}`}
+                      }/pedido-casa?r=${qrRest.slug || qrRest.id}`}
                       size={288}
+                      className="w-full h-auto"
                     />
                   </div>
-                  <div className="flex gap-3 justify-center">
+                  <div className="flex flex-wrap gap-3 justify-center">
                     <button
                       onClick={descargarQR}
                       className="bg-purple-800 text-white px-5 py-2.5 rounded-xl font-bold text-sm hover:bg-purple-900"
@@ -785,8 +853,70 @@ export default function SuperadminPage() {
                     </button>
                   </div>
                   <p className="text-[11px] text-gray-400 mt-3">
-                    Imprímelo y pégalo en las mesas.
+                    Cada restaurante tiene su propio QR (…?r={qrRest.slug || qrRest.id}).
                   </p>
+                </div>
+              </div>
+            )}
+
+            {borrarRest && (
+              <div
+                className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+                onClick={() => {
+                  if (!borrando) setBorrarRest(null);
+                }}
+              >
+                <div
+                  className="bg-white rounded-2xl p-4 sm:p-6 w-full max-w-md shadow-2xl"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <h3 className="font-bold text-red-700 text-lg mb-1">
+                    🗑 Borrar {borrarRest.nombre}
+                  </h3>
+                  <p className="text-sm text-gray-600 mb-3">
+                    Se borrará de forma permanente: el menú (categorías y productos),
+                    pedidos y mensajes, opiniones, clientes, notificaciones y las cuentas
+                    de este restaurante. El correo del dueño también se elimina si no se
+                    usa en otro restaurante.
+                  </p>
+                  <p className="text-xs text-gray-500 mb-2">
+                    Escribe{" "}
+                    <span className="font-mono font-bold">
+                      {borrarRest.slug || borrarRest.id}
+                    </span>{" "}
+                    para confirmar:
+                  </p>
+                  <form onSubmit={eliminarRestaurante} className="space-y-3">
+                    <input
+                      type="text"
+                      value={confirmSlug}
+                      onChange={(e) => setConfirmSlug(e.target.value)}
+                      placeholder={borrarRest.slug || borrarRest.id}
+                      className="w-full px-3 py-2.5 border-2 border-gray-200 rounded-xl text-sm outline-none focus:border-red-400 font-mono"
+                      style={{ color: "#1f2937" }}
+                    />
+                    <div className="flex flex-wrap gap-3 justify-center">
+                      <button
+                        type="submit"
+                        disabled={
+                          borrando ||
+                          confirmSlug.trim().toLowerCase() !==
+                            (borrarRest.slug || borrarRest.id).toLowerCase()
+                        }
+                        className="bg-red-600 text-white px-5 py-2.5 rounded-xl font-bold text-sm hover:bg-red-700 disabled:opacity-50"
+                      >
+                        {borrando ? "Borrando..." : "🗑 Borrar definitivamente"}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setBorrarRest(null)}
+                        disabled={borrando}
+                        className="bg-gray-100 text-gray-700 px-5 py-2.5 rounded-xl font-bold text-sm hover:bg-gray-200 disabled:opacity-50"
+                      >
+                        Cancelar
+                      </button>
+                    </div>
+                  </form>
                 </div>
               </div>
             )}

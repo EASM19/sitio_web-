@@ -36,37 +36,50 @@ function Estrellas({ n }: { n: number }) {
 export default function MesasPage() {
   const { rid, listo } = useRestauranteActual();
   const [user, setUser] = useState<User | null>(null);
-  const [slugRid, setSlugRid] = useState<string | null>(null);
+  const [registro, setRegistro] = useState<{ rid: string; slug: string } | null>(null);
+  const [slugError, setSlugError] = useState(false);
   const [customUrl, setCustomUrl] = useState("");
-  const [qrUrl, setQrUrl] = useState("");
+  const [qr, setQr] = useState<{ slug: string; url: string } | null>(null);
   const [opiniones, setOpiniones] = useState<Opinion[]>([]);
   const [verOpiniones, setVerOpiniones] = useState(false);
   const router = useRouter();
   useSesionActiva(user);
   useAvisosPedido(user);
 
+  const slugActual = registro && registro.rid === rid ? registro.slug : null;
+  const qrUrl = qr && qr.slug === slugActual ? qr.url : "";
+
   useEffect(() => {
     let ok = true;
     getDoc(doc(db, "restaurantes", rid))
       .then((s) => {
         if (!ok) return;
-        setSlugRid(s.exists() ? (s.data().slug as string) : rid);
+        setRegistro({
+          rid,
+          slug: s.exists() ? String(s.data().slug || rid) : rid,
+        });
+        setSlugError(false);
       })
-      .catch(() => {});
+      .catch(() => {
+        if (ok) setSlugError(true);
+      });
     return () => {
       ok = false;
     };
   }, [rid]);
 
   useEffect(() => {
-    const suf = slugRid === null ? "" : `?r=${slugRid || rid}`;
+    if (!slugActual) return;
     const host = window.location.hostname;
     const base = host.includes("vercel.app")
       ? window.location.origin
       : `http://192.168.56.1:${window.location.port || "3000"}`;
-    const t = window.setTimeout(() => setQrUrl(`${base}/pedido-casa${suf}`), 0);
+    const t = window.setTimeout(
+      () => setQr({ slug: slugActual, url: `${base}/pedido-casa?r=${slugActual}` }),
+      0
+    );
     return () => window.clearTimeout(t);
-  }, [rid, slugRid, listo]);
+  }, [slugActual]);
 
   useEffect(() => {
     if (!user || !listo) return;
@@ -131,38 +144,51 @@ export default function MesasPage() {
           <p className="text-gray-500">Imprímelo y pégalo en las mesas o publícalo en redes sociales</p>
         </div>
 
-        <div className="bg-white rounded-2xl p-8 shadow-sm border border-gray-100 text-center">
-          <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700 mb-1">URL del QR</label>
-            <input
-              type="text"
-              value={customUrl || qrUrl}
-              onChange={(e) => setCustomUrl(e.target.value)}
-              className="w-full px-4 py-2 border-2 border-gray-200 rounded-xl text-sm outline-none focus:border-amber-500"
-              style={{ color: "#1f2937" }}
-            />
-            <p className="text-xs text-gray-400 mt-1">Para probar desde tu celular usa la IP de tu red. Para producción usa la URL de Vercel.</p>
-          </div>
-          <div className="bg-gray-50 inline-block p-6 rounded-2xl border border-gray-200 mb-4">
-            <QRCodeSVG value={customUrl || qrUrl} size={220} />
-          </div>
-          <p className="text-sm text-gray-500 break-all mb-4">{customUrl || qrUrl}</p>
-          <div className="flex gap-3 justify-center">
-            <a
-              href={customUrl || qrUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="bg-amber-800 text-white px-6 py-3 rounded-xl font-bold shadow"
-            >
-              Probar como cliente
-            </a>
-            <Link
-              href="/admin/seed"
-              className="bg-gray-100 text-gray-700 px-6 py-3 rounded-xl font-bold hover:bg-gray-200"
-            >
-              Datos de prueba
-            </Link>
-          </div>
+        <div className="bg-white rounded-2xl p-4 sm:p-8 shadow-sm border border-gray-100 text-center">
+          {slugError ? (
+            <p className="text-red-600 font-bold py-8">
+              No se pudo obtener el enlace de este restaurante. Recarga la página.
+            </p>
+          ) : !slugActual || !qrUrl ? (
+            <div className="py-10 flex flex-col items-center gap-3">
+              <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-amber-600" />
+              <p className="text-sm text-gray-500">Cargando enlace del restaurante…</p>
+            </div>
+          ) : (
+            <>
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-1">URL del QR</label>
+                <input
+                  type="text"
+                  value={customUrl || qrUrl}
+                  onChange={(e) => setCustomUrl(e.target.value)}
+                  className="w-full px-4 py-2 border-2 border-gray-200 rounded-xl text-sm outline-none focus:border-amber-500"
+                  style={{ color: "#1f2937" }}
+                />
+                <p className="text-xs text-gray-400 mt-1">Para probar desde tu celular usa la IP de tu red. Para producción usa la URL de Vercel.</p>
+              </div>
+              <div className="bg-gray-50 w-full max-w-[280px] mx-auto p-3 sm:p-6 rounded-2xl border border-gray-200 mb-4">
+                <QRCodeSVG value={customUrl || qrUrl} size={220} className="w-full h-auto" />
+              </div>
+              <p className="text-sm text-gray-500 break-all mb-4">{customUrl || qrUrl}</p>
+              <div className="flex flex-wrap gap-3 justify-center">
+                <a
+                  href={customUrl || qrUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="bg-amber-800 text-white px-6 py-3 rounded-xl font-bold shadow"
+                >
+                  Probar como cliente
+                </a>
+                <Link
+                  href="/admin/seed"
+                  className="bg-gray-100 text-gray-700 px-6 py-3 rounded-xl font-bold hover:bg-gray-200"
+                >
+                  Datos de prueba
+                </Link>
+              </div>
+            </>
+          )}
         </div>
 
         <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 mt-4">
