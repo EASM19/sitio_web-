@@ -53,6 +53,7 @@ export type ResultadoApi = {
     cuentasBorradas?: number;
     creado?: boolean;
     reparado?: boolean;
+    migrados?: number;
   };
 };
 

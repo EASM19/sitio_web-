@@ -191,10 +191,13 @@ export default function SuperadminPage() {
       setError(r.data.error || "No se pudo crear la cuenta. Intenta de nuevo.");
       return;
     }
+    const avisoMigracion = r.data.migrados
+      ? ` Se movieron ${r.data.migrados} rol(es) antiguo(s) a esta cuenta.`
+      : "";
     setMsgExito(
-      r.data.creado || r.data.reparado
+      (r.data.creado || r.data.reparado
         ? `Cuenta creada: ${email} (${ROL_LABELS[nuevoRol]})`
-        : `El correo ${email} ya existía: se le asignó el rol ${ROL_LABELS[nuevoRol]} y entra con su contraseña actual.`
+        : `El correo ${email} ya existía: se le asignó el rol ${ROL_LABELS[nuevoRol]} y entra con su contraseña actual.`) + avisoMigracion
     );
     setNuevoNombre("");
     setNuevoEmail("");

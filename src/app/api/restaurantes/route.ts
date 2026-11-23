@@ -50,6 +50,31 @@ async function asegurarUsuario(
   }
 }
 
+// Los roles se guardan por uid. Si el mismo correo tiene un rol colgado de un
+// uid antiguo (cuenta de Auth borrada o sin email), se mueve al uid real para
+// que esa persona pueda entrar. Solo se toca la colección de la plataforma;
+// los dueños de cada restaurante se gestionan con "asignar-dueno".
+async function migrarRolPlataformaPorCorreo(
+  db: ReturnType<typeof getFirestore>,
+  email: string,
+  uid: string
+): Promise<number> {
+  const regs = await db
+    .collection(`restaurantes/${RESTAURANT_ID}/usuarios`)
+    .where("email", "==", email)
+    .get();
+  let migrados = 0;
+  for (const reg of regs.docs) {
+    if (reg.id === uid) continue;
+    const destino = db.doc(`restaurantes/${RESTAURANT_ID}/usuarios/${uid}`);
+    const existe = await destino.get();
+    if (!existe.exists) await destino.set(reg.data(), { merge: true });
+    await reg.ref.delete();
+    migrados++;
+  }
+  return migrados;
+}
+
 export async function POST(req: Request) {
   try {
     let body: Record<string, unknown> | null = null;
@@ -270,6 +295,7 @@ export async function POST(req: Request) {
         }
       }
 
+      const migrados = await migrarRolPlataformaPorCorreo(db, email, uid);
       await db.doc(`restaurantes/${RESTAURANT_ID}/usuarios/${uid}`).set(
         {
           nombre,
@@ -282,7 +308,7 @@ export async function POST(req: Request) {
         },
         { merge: true }
       );
-      return Response.json({ ok: true, uid, creado, reparado });
+      return Response.json({ ok: true, uid, creado, reparado, migrados });
     }
 
     if (accion === "asignar-dueno") {
