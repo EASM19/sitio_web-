@@ -52,21 +52,21 @@ async function asegurarUsuario(
 
 // Los roles se guardan por uid. Si el mismo correo tiene un rol colgado de un
 // uid antiguo (cuenta de Auth borrada o sin email), se mueve al uid real para
-// que esa persona pueda entrar. Solo se toca la colección de la plataforma;
-// los dueños de cada restaurante se gestionan con "asignar-dueno".
-async function migrarRolPlataformaPorCorreo(
+// que esa persona pueda entrar, dentro del restaurante indicado.
+async function migrarRolPorCorreo(
   db: ReturnType<typeof getFirestore>,
+  rid: string,
   email: string,
   uid: string
 ): Promise<number> {
   const regs = await db
-    .collection(`restaurantes/${RESTAURANT_ID}/usuarios`)
+    .collection(`restaurantes/${rid}/usuarios`)
     .where("email", "==", email)
     .get();
   let migrados = 0;
   for (const reg of regs.docs) {
     if (reg.id === uid) continue;
-    const destino = db.doc(`restaurantes/${RESTAURANT_ID}/usuarios/${uid}`);
+    const destino = db.doc(`restaurantes/${rid}/usuarios/${uid}`);
     const existe = await destino.get();
     if (!existe.exists) await destino.set(reg.data(), { merge: true });
     await reg.ref.delete();
@@ -232,6 +232,14 @@ export async function POST(req: Request) {
       if (password.length < 6) {
         return error("La contraseña debe tener al menos 6 caracteres", 400);
       }
+      const ridSolicitado = str(body?.rid, 50).toLowerCase();
+      const rid =
+        rol === "superadmin" ? RESTAURANT_ID : ridSolicitado || RESTAURANT_ID;
+      if (!SLUG_RE.test(rid)) return error("Restaurante inválido", 400);
+      if (rid !== RESTAURANT_ID) {
+        const existeRid = await db.doc(`restaurantes/${rid}`).get();
+        if (!existeRid.exists) return error("Restaurante no encontrado", 404);
+      }
 
       let uid = "";
       let creado = false;
@@ -253,7 +261,7 @@ export async function POST(req: Request) {
         // Puede existir un rol con ese correo cuya cuenta de Auth quedó sin
         // email (cuenta huérfana): se repara en lugar de duplicarla.
         const huerfano = await db
-          .collection(`restaurantes/${RESTAURANT_ID}/usuarios`)
+          .collection(`restaurantes/${rid}/usuarios`)
           .where("email", "==", email)
           .limit(1)
           .get();
@@ -295,20 +303,39 @@ export async function POST(req: Request) {
         }
       }
 
-      const migrados = await migrarRolPlataformaPorCorreo(db, email, uid);
-      await db.doc(`restaurantes/${RESTAURANT_ID}/usuarios/${uid}`).set(
+      const migrados = await migrarRolPorCorreo(db, rid, email, uid);
+      await db.doc(`restaurantes/${rid}/usuarios/${uid}`).set(
         {
           nombre,
           email,
           rol,
           telefono,
           activo: true,
-          ...(rol !== "superadmin" ? { restaurantId: RESTAURANT_ID } : {}),
+          ...(rol !== "superadmin" ? { restaurantId: rid } : {}),
           creado: FieldValue.serverTimestamp(),
         },
         { merge: true }
       );
-      return Response.json({ ok: true, uid, creado, reparado, migrados });
+      if (rol === "dueno") {
+        await db.runTransaction(async (t) => {
+          const refRegistro = db.doc(`restaurantes/${rid}`);
+          const snapRegistro = await t.get(refRegistro);
+          if (!snapRegistro.exists) return;
+          const anterior = snapRegistro.data()?.duenoUid as string | undefined;
+          if (anterior && anterior !== uid) {
+            const snapAnterior = await t.get(
+              db.doc(`restaurantes/${rid}/usuarios/${anterior}`)
+            );
+            if (snapAnterior.exists) {
+              t.update(db.doc(`restaurantes/${rid}/usuarios/${anterior}`), {
+                activo: false,
+              });
+            }
+          }
+          t.update(refRegistro, { duenoUid: uid, duenoEmail: email });
+        });
+      }
+      return Response.json({ ok: true, uid, rid, creado, reparado, migrados });
     }
 
     if (accion === "asignar-dueno") {

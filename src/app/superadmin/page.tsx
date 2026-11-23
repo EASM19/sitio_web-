@@ -18,6 +18,7 @@ import {
   escucharRestaurantes,
   generarSlug,
   pedirAccionRestaurante,
+  RESTAURANTE_DEFECTO,
 } from "@/lib/restaurantes";
 
 const ROL_LABELS: Record<RolUsuario, string> = {
@@ -47,6 +48,7 @@ export default function SuperadminPage() {
   const [nuevoEmail, setNuevoEmail] = useState("");
   const [nuevoPass, setNuevoPass] = useState("");
   const [nuevoRol, setNuevoRol] = useState<RolUsuario>("repartidor");
+  const [nuevoRid, setNuevoRid] = useState(RESTAURANTE_DEFECTO);
   const [nuevoTel, setNuevoTel] = useState("");
   const [creando, setCreando] = useState(false);
   const [msgExito, setMsgExito] = useState("");
@@ -184,6 +186,7 @@ export default function SuperadminPage() {
       email,
       telefono: nuevoTel.trim(),
       rol: nuevoRol,
+      rid: nuevoRol === "superadmin" ? RESTAURANTE_DEFECTO : nuevoRid,
       password: nuevoPass,
     });
     setCreando(false);
@@ -194,10 +197,13 @@ export default function SuperadminPage() {
     const avisoMigracion = r.data.migrados
       ? ` Se movieron ${r.data.migrados} rol(es) antiguo(s) a esta cuenta.`
       : "";
+    const destino =
+      restaurantes.find((x) => x.id === r.data.rid)?.nombre || r.data.rid || "";
+    const sufijoDestino = destino ? ` en ${destino}` : "";
     setMsgExito(
       (r.data.creado || r.data.reparado
-        ? `Cuenta creada: ${email} (${ROL_LABELS[nuevoRol]})`
-        : `El correo ${email} ya existía: se le asignó el rol ${ROL_LABELS[nuevoRol]} y entra con su contraseña actual.`) + avisoMigracion
+        ? `Cuenta creada: ${email} (${ROL_LABELS[nuevoRol]})${sufijoDestino}`
+        : `El correo ${email} ya existía: se le asignó el rol ${ROL_LABELS[nuevoRol]}${sufijoDestino} y entra con su contraseña actual.`) + avisoMigracion
     );
     setNuevoNombre("");
     setNuevoEmail("");
@@ -947,6 +953,24 @@ export default function SuperadminPage() {
               <option value="dueno">🏪 Dueño</option>
               <option value="superadmin">👑 Superadmin</option>
             </select>
+            {nuevoRol !== "superadmin" && (
+              <select
+                value={nuevoRid}
+                onChange={(e) => setNuevoRid(e.target.value)}
+                aria-label="Restaurante"
+                className="px-3 py-2.5 border-2 border-gray-200 rounded-xl text-sm outline-none focus:border-purple-400 bg-white"
+                style={{ color: "#1f2937" }}
+              >
+                {restaurantes.map((r) => (
+                  <option key={r.id} value={r.id}>
+                    🏪 {r.nombre}
+                  </option>
+                ))}
+                {!restaurantes.some((r) => r.id === nuevoRid) && (
+                  <option value={nuevoRid}>{nuevoRid}</option>
+                )}
+              </select>
+            )}
             <button
               type="submit"
               disabled={creando}
