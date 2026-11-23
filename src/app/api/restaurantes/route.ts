@@ -75,6 +75,36 @@ async function migrarRolPorCorreo(
   return migrados;
 }
 
+// Un dueño/repartidor pertenece a un solo restaurante: si el mismo correo tenía
+// membresías activas en otros, se desactivan para evitar accesos cruzados.
+async function desactivarOtrosRolesPorCorreo(
+  db: ReturnType<typeof getFirestore>,
+  rid: string,
+  email: string
+): Promise<void> {
+  const regs = await db.collection("restaurantes").get();
+  for (const reg of regs.docs) {
+    if (reg.id === rid) continue;
+    const miembros = await reg.ref
+      .collection("usuarios")
+      .where("email", "==", email)
+      .get();
+    for (const m of miembros.docs) {
+      const datos = m.data();
+      if (
+        (datos.rol !== "dueno" && datos.rol !== "repartidor") ||
+        datos.activo === false
+      ) {
+        continue;
+      }
+      await m.ref.update({ activo: false });
+      if (datos.rol === "dueno" && reg.data()?.duenoUid === m.id) {
+        await reg.ref.update({ duenoUid: null, duenoEmail: null });
+      }
+    }
+  }
+}
+
 export async function POST(req: Request) {
   try {
     let body: Record<string, unknown> | null = null;
@@ -316,6 +346,9 @@ export async function POST(req: Request) {
         },
         { merge: true }
       );
+      if (rol !== "superadmin") {
+        await desactivarOtrosRolesPorCorreo(db, rid, email);
+      }
       if (rol === "dueno") {
         await db.runTransaction(async (t) => {
           const refRegistro = db.doc(`restaurantes/${rid}`);
