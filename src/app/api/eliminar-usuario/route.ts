@@ -3,6 +3,7 @@ import { getAuth } from "firebase-admin/auth";
 import { getFirestore } from "firebase-admin/firestore";
 
 const RESTAURANT_ID = "restaurante1";
+const RID_RE = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 
 function adminApp() {
   const existente = getApps()[0];
@@ -26,16 +27,17 @@ function adminApp() {
 
 export async function POST(req: Request) {
   try {
-    let body: { uid?: string } | null = null;
+    let body: { uid?: string; rid?: string } | null = null;
     try {
       body = await req.json();
     } catch {
       body = null;
     }
     const uidObjetivo = body?.uid;
+    const rid = typeof body?.rid === "string" ? body.rid : RESTAURANT_ID;
     const authHeader = req.headers.get("authorization") || "";
     const idToken = authHeader.startsWith("Bearer ") ? authHeader.slice(7) : "";
-    if (!uidObjetivo || !idToken) {
+    if (!uidObjetivo || !idToken || !RID_RE.test(rid)) {
       return Response.json({ error: "Solicitud incompleta" }, { status: 400 });
     }
 
@@ -76,7 +78,7 @@ export async function POST(req: Request) {
       return Response.json({ error: "No puedes eliminar tu propia cuenta" }, { status: 400 });
     }
 
-    const refObjetivo = db.doc(`restaurantes/${RESTAURANT_ID}/usuarios/${uidObjetivo}`);
+    const refObjetivo = db.doc(`restaurantes/${rid}/usuarios/${uidObjetivo}`);
     const snapObjetivo = await refObjetivo.get();
     if (!snapObjetivo.exists) {
       return Response.json({ error: "La cuenta no existe" }, { status: 404 });
@@ -102,7 +104,18 @@ export async function POST(req: Request) {
       }
     }
 
-    await refObjetivo.delete();
+    // Borra la membresía en todos los restaurantes y limpia referencias de dueño.
+    const regs = await db.collection("restaurantes").get();
+    for (const reg of regs.docs) {
+      const refMiembro = reg.ref.collection("usuarios").doc(uidObjetivo);
+      const snapMiembro = await refMiembro.get();
+      if (!snapMiembro.exists) continue;
+      const eraDueno = snapMiembro.data()?.rol === "dueno";
+      await refMiembro.delete();
+      if (eraDueno && reg.data()?.duenoUid === uidObjetivo) {
+        await reg.ref.update({ duenoUid: null, duenoEmail: null });
+      }
+    }
     return Response.json({ ok: true });
   } catch (err) {
     console.error("Error en /api/eliminar-usuario:", err);

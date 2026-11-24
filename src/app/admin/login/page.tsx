@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { signInWithEmailAndPassword, signOut } from "firebase/auth";
+import { signInWithEmailAndPassword } from "firebase/auth";
 import { auth } from "@/lib/firebase";
 import { useRouter } from "next/navigation";
 import { pedirPermisoNotificaciones } from "@/lib/notif";
@@ -26,7 +26,6 @@ export default function AdminLoginPage() {
       const cred = await signInWithEmailAndPassword(auth, email, password);
       const membresias = await consultarMembresias(cred.user.uid);
       if (membresias === null) {
-        await signOut(auth);
         setError(
           "No se pudo verificar tu cuenta (problema de conexión). Intenta de nuevo."
         );
@@ -42,7 +41,6 @@ export default function AdminLoginPage() {
         (m) => m.rol === "repartidor" && m.activo !== false
       );
       if (!superadmin && !dueno && !repartidor) {
-        await signOut(auth);
         setError(
           membresias.length > 0
             ? "Esta cuenta está desactivada"

@@ -4,7 +4,8 @@ import { useEffect, useState } from "react";
 import {
   onAuthStateChanged, signInWithEmailAndPassword, signOut, User,
 } from "firebase/auth";
-import { auth } from "@/lib/firebase";
+import { auth, db } from "@/lib/firebase";
+import { doc, getDoc } from "firebase/firestore";
 import { consultarMembresias } from "@/lib/roles";
 import {
   aceptarPedido, cambiarEstadoRepartidor, escucharDomiciliosListos, escucharMisEntregas,
@@ -28,6 +29,7 @@ export default function RepartidorPage() {
   const [autorizado, setAutorizado] = useState(false);
   const [verificando, setVerificando] = useState(true);
   const [ridPropio, setRidPropio] = useState<string | null>(null);
+  const [nombreRest, setNombreRest] = useState("");
   const [disponibles, setDisponibles] = useState<Pedido[]>([]);
   const [mias, setMias] = useState<Pedido[]>([]);
   const [errores, setErrores] = useState<Record<string, string>>({});
@@ -58,10 +60,10 @@ export default function RepartidorPage() {
         setRidPropio(rep.rid);
         setAutorizado(true);
       } else {
-        await signOut(auth);
         setUser(null);
         setAutorizado(false);
         setRidPropio(null);
+        setNombreRest("");
         setError(
           membresias === null
             ? "No se pudo verificar tu cuenta. Intenta de nuevo."
@@ -92,6 +94,25 @@ export default function RepartidorPage() {
     };
   }, [autorizado, user, ridPropio]);
 
+  useEffect(() => {
+    if (!ridPropio) return;
+    let vigente = true;
+    getDoc(doc(db, "restaurantes", ridPropio))
+      .then((s) => {
+        if (vigente) {
+          setNombreRest(
+            s.exists() ? String(s.data().nombre || ridPropio) : ridPropio
+          );
+        }
+      })
+      .catch(() => {
+        if (vigente) setNombreRest(ridPropio);
+      });
+    return () => {
+      vigente = false;
+    };
+  }, [ridPropio]);
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -101,16 +122,14 @@ export default function RepartidorPage() {
       const membresias = await consultarMembresias(cred.user.uid);
       const rep = membresias?.find((m) => m.rol === "repartidor");
       if (!rep) {
-        await signOut(auth);
         setError(
           membresias === null
             ? "No se pudo verificar tu cuenta. Intenta de nuevo."
-            : "Esta cuenta no es de repartidor"
+            : "Esta cuenta no es de repartidor. Usa el panel de administración."
         );
         return;
       }
       if (rep.activo === false) {
-        await signOut(auth);
         setError("Esta cuenta está desactivada");
         return;
       }
@@ -174,7 +193,7 @@ export default function RepartidorPage() {
               <span className="text-3xl">🛵</span>
             </div>
             <h1 className="text-xl font-bold text-gray-800">Acceso Repartidores</h1>
-            <p className="text-xs text-gray-500 mt-1">Domicilios de La Bóveda del Real</p>
+            <p className="text-xs text-gray-500 mt-1">Domicilios de tu restaurante</p>
           </div>
           <form onSubmit={handleLogin} className="space-y-4">
             <input
@@ -217,6 +236,9 @@ export default function RepartidorPage() {
             <span className="text-xl">🛵</span>
             <div>
               <p className="font-bold text-gray-800 leading-tight">Mis Domicilios</p>
+              <p className="text-xs font-bold text-blue-800">
+                🏪 {nombreRest || ridPropio}
+              </p>
               <p className="text-xs text-gray-500">
                 {user.displayName || user.email}
               </p>
@@ -256,6 +278,9 @@ export default function RepartidorPage() {
                       🏠 Domicilio
                     </span>
                   </div>
+                  <p className="text-xs font-bold text-blue-800 mb-1">
+                    🏪 {nombreRest || ridPropio}
+                  </p>
                   {p.infoCliente && (
                     <p className="text-sm text-gray-600">
                       {p.infoCliente.nombre || "Cliente"} · {p.infoCliente.telefono}
@@ -316,6 +341,9 @@ export default function RepartidorPage() {
                       {p.estado === "EN_CAMINO" ? "EN CAMINO" : p.estado}
                     </span>
                   </div>
+                  <p className="text-xs font-bold text-blue-800 mb-1">
+                    🏪 {nombreRest || ridPropio}
+                  </p>
                   {p.infoCliente && (
                     <p className="text-sm text-gray-600">
                       {p.infoCliente.nombre || "Cliente"} · {p.infoCliente.telefono}

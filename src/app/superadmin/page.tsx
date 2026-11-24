@@ -5,10 +5,10 @@ import {
   onAuthStateChanged, signInWithEmailAndPassword, signOut, User,
 } from "firebase/auth";
 import {
-  collection, onSnapshot, orderBy, query, updateDoc,
+  collection, doc, onSnapshot, updateDoc,
 } from "firebase/firestore";
 import { auth, db } from "@/lib/firebase";
-import { consultarRol, usuarioRolRef } from "@/lib/roles";
+import { consultarRol } from "@/lib/roles";
 import type { RolUsuario, UsuarioRol } from "@/types";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -33,11 +33,13 @@ const ROL_BADGE: Record<RolUsuario, string> = {
   repartidor: "bg-blue-100 text-blue-700",
 };
 
+type Cuenta = UsuarioRol & { rid: string; nombreRestaurante: string };
+
 export default function SuperadminPage() {
   const [user, setUser] = useState<User | null>(null);
   const [autorizado, setAutorizado] = useState(false);
   const [verificando, setVerificando] = useState(true);
-  const [usuarios, setUsuarios] = useState<UsuarioRol[]>([]);
+  const [usuarios, setUsuarios] = useState<Cuenta[]>([]);
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -67,6 +69,7 @@ export default function SuperadminPage() {
   const [accionCargando, setAccionCargando] = useState<string | null>(null);
   const [qrRest, setQrRest] = useState<RegistroRestaurante | null>(null);
   const qrCanvasRef = useRef<HTMLCanvasElement | null>(null);
+  const unsubsUsuarios = useRef<Array<() => void>>([]);
   const [borrarRest, setBorrarRest] = useState<RegistroRestaurante | null>(null);
   const [confirmSlug, setConfirmSlug] = useState("");
   const [borrando, setBorrando] = useState(false);
@@ -100,7 +103,6 @@ export default function SuperadminPage() {
         setAutorizado(true);
         setError("");
       } else {
-        await signOut(auth);
         setUser(null);
         setAutorizado(false);
         setError(
@@ -118,16 +120,52 @@ export default function SuperadminPage() {
 
   useEffect(() => {
     if (!autorizado) return;
-    const q = query(
-      collection(db, "restaurantes", "restaurante1", "usuarios"),
-      orderBy("creado", "desc")
-    );
-    const unsub = onSnapshot(q, (snap) => {
+    const porRestaurante = new Map<string, Cuenta[]>();
+    const pintar = () => {
       setUsuarios(
-        snap.docs.map((d) => ({ uid: d.id, ...d.data() }) as UsuarioRol)
+        Array.from(porRestaurante.values())
+          .flat()
+          .sort((a, b) => {
+            if (a.rol !== b.rol) return a.rol.localeCompare(b.rol);
+            return (a.nombre || a.email || "").localeCompare(
+              b.nombre || b.email || ""
+            );
+          })
       );
+    };
+    const unsubRest = escucharRestaurantes((regs) => {
+      unsubsUsuarios.current.forEach((u) => u());
+      unsubsUsuarios.current = [];
+      porRestaurante.clear();
+      regs.forEach((r) => {
+        const unsub = onSnapshot(
+          collection(db, "restaurantes", r.id, "usuarios"),
+          (snap) => {
+            porRestaurante.set(
+              r.id,
+              snap.docs.map(
+                (d) =>
+                  ({
+                    uid: d.id,
+                    rid: r.id,
+                    nombreRestaurante: r.nombre,
+                    ...d.data(),
+                  } as Cuenta)
+              )
+            );
+            pintar();
+          },
+          (e) => console.error("Error escuchando cuentas:", e)
+        );
+        unsubsUsuarios.current.push(unsub);
+      });
+      if (regs.length === 0) pintar();
     });
-    return () => unsub();
+    return () => {
+      unsubRest();
+      unsubsUsuarios.current.forEach((u) => u());
+      unsubsUsuarios.current = [];
+    };
   }, [autorizado]);
 
   useEffect(() => {
@@ -149,7 +187,6 @@ export default function SuperadminPage() {
       }
       const rol = r.usuario;
       if (!rol || rol.rol !== "superadmin" || rol.activo === false) {
-        await signOut(auth);
         setError(
           !rol
             ? "Esta cuenta no tiene rol asignado. Contacta al superadmin."
@@ -212,12 +249,14 @@ export default function SuperadminPage() {
     setNuevoRol("repartidor");
   };
 
-  const alternarActivo = async (u: UsuarioRol) => {
+  const alternarActivo = async (u: Cuenta) => {
     if (u.uid === user?.uid) return;
-    await updateDoc(usuarioRolRef(u.uid), { activo: u.activo === false });
+    await updateDoc(doc(db, "restaurantes", u.rid, "usuarios", u.uid), {
+      activo: u.activo === false,
+    });
   };
 
-  const eliminarCuenta = async (u: UsuarioRol) => {
+  const eliminarCuenta = async (u: Cuenta) => {
     if (!user || eliminando) return;
     const confirmar = window.confirm(
       `¿Eliminar la cuenta de ${u.email}? Se borrará de Firebase y ya no podrá iniciar sesión.`
@@ -234,7 +273,7 @@ export default function SuperadminPage() {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ uid: u.uid }),
+        body: JSON.stringify({ uid: u.uid, rid: u.rid }),
       });
       const data = (await res.json().catch(() => ({}))) as { error?: string };
       if (!res.ok) {
@@ -666,8 +705,22 @@ export default function SuperadminPage() {
                             {r.activo === false ? "Inactivo" : "Activo"}
                           </span>
                         </p>
-                        <p className="text-xs text-gray-500 truncate font-mono">
-                          /{r.slug} · {r.duenoEmail || "sin dueño asignado"}
+                        <p className="text-xs text-gray-500 truncate">
+                          <span className="font-mono">/{r.slug}</span> ·{" "}
+                          {(() => {
+                            const dueno = usuarios.find(
+                              (u) =>
+                                u.rid === r.id &&
+                                u.rol === "dueno" &&
+                                u.activo !== false
+                            );
+                            if (dueno) {
+                              return `👤 ${dueno.nombre || dueno.email} (${dueno.email})`;
+                            }
+                            return r.duenoEmail
+                              ? `👤 ${r.duenoEmail}`
+                              : "sin dueño asignado";
+                          })()}
                         </p>
                       </div>
                       <div className="flex flex-wrap items-center gap-2">
@@ -904,7 +957,7 @@ export default function SuperadminPage() {
         <div className="bg-white rounded-xl border border-gray-200 p-5 shadow-sm">
           <h2 className="font-bold text-gray-800 mb-1">Crear cuenta</h2>
           <p className="text-xs text-gray-500 mb-4">
-            Cuentas de dueño, repartidor u otro superadmin. El usuario inicia sesión con su correo y contraseña.
+            Cuentas de repartidor u otro superadmin. El dueño se asigna desde la pestaña Restaurantes.
           </p>
           <form onSubmit={crearUsuario} className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <input
@@ -950,7 +1003,6 @@ export default function SuperadminPage() {
               style={{ color: "#1f2937" }}
             >
               <option value="repartidor">🛵 Repartidor</option>
-              <option value="dueno">🏪 Dueño</option>
               <option value="superadmin">👑 Superadmin</option>
             </select>
             {nuevoRol !== "superadmin" && (
@@ -999,7 +1051,10 @@ export default function SuperadminPage() {
               </p>
             ) : (
               usuarios.map((u) => (
-                <div key={u.uid} className="px-5 py-3 flex flex-wrap items-center gap-3">
+                <div
+                  key={`${u.rid}:${u.uid}`}
+                  className="px-5 py-3 flex flex-wrap items-center gap-3"
+                >
                   <div className="min-w-0 flex-1">
                     <p className="font-bold text-sm text-gray-800 truncate">
                       {u.nombre || "Sin nombre"}
@@ -1008,9 +1063,14 @@ export default function SuperadminPage() {
                       )}
                     </p>
                     <p className="text-xs text-gray-500 truncate">{u.email}</p>
+                    <p className="text-xs text-gray-400 truncate">
+                      🏪 {u.nombreRestaurante || u.rid}
+                    </p>
                   </div>
                   <span className={`text-xs font-bold px-2 py-1 rounded-full ${ROL_BADGE[u.rol] || "bg-gray-100 text-gray-600"}`}>
-                    {ROL_LABELS[u.rol] || u.rol}
+                    {u.rol === "dueno"
+                      ? `🏪 Dueño de ${u.nombreRestaurante || u.rid}`
+                      : ROL_LABELS[u.rol] || u.rol}
                   </span>
                   <span
                     className={`text-xs font-bold px-2 py-1 rounded-full ${

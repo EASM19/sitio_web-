@@ -256,7 +256,8 @@ export async function POST(req: Request) {
       const password = typeof body?.password === "string" ? body.password : "";
       if (nombre.length < 2) return error("Escribe el nombre de la persona", 400);
       if (!email.includes("@") || email.length < 5) return error("Correo inválido", 400);
-      if (rol !== "superadmin" && rol !== "dueno" && rol !== "repartidor") {
+      // El dueño se asigna desde "Restaurantes → Dueño", no desde "Crear cuenta".
+      if (rol !== "superadmin" && rol !== "repartidor") {
         return error("Rol inválido", 400);
       }
       if (password.length < 6) {
@@ -349,25 +350,6 @@ export async function POST(req: Request) {
       if (rol !== "superadmin") {
         await desactivarOtrosRolesPorCorreo(db, rid, email);
       }
-      if (rol === "dueno") {
-        await db.runTransaction(async (t) => {
-          const refRegistro = db.doc(`restaurantes/${rid}`);
-          const snapRegistro = await t.get(refRegistro);
-          if (!snapRegistro.exists) return;
-          const anterior = snapRegistro.data()?.duenoUid as string | undefined;
-          if (anterior && anterior !== uid) {
-            const snapAnterior = await t.get(
-              db.doc(`restaurantes/${rid}/usuarios/${anterior}`)
-            );
-            if (snapAnterior.exists) {
-              t.update(db.doc(`restaurantes/${rid}/usuarios/${anterior}`), {
-                activo: false,
-              });
-            }
-          }
-          t.update(refRegistro, { duenoUid: uid, duenoEmail: email });
-        });
-      }
       return Response.json({ ok: true, uid, rid, creado, reparado, migrados });
     }
 
@@ -387,6 +369,16 @@ export async function POST(req: Request) {
         return error("Contraseña requerida (mín. 6 caracteres) para cuenta nueva", 400);
       }
       const { uid } = cuenta;
+      const migrados = await migrarRolPorCorreo(db, rid, email, uid);
+      // Si el superadmin escribió contraseña al (re)asignar, se actualiza:
+      // así se puede recuperar el acceso de un dueño que la olvidó.
+      if (password && password.length >= 6) {
+        await auth.updateUser(uid, {
+          password,
+          ...(nombre ? { displayName: nombre } : {}),
+        });
+      }
+      await desactivarOtrosRolesPorCorreo(db, rid, email);
 
       await db.runTransaction(async (t) => {
         const registro = await t.get(refRegistro);
@@ -416,7 +408,7 @@ export async function POST(req: Request) {
         );
         t.update(refRegistro, { duenoUid: uid, duenoEmail: email });
       });
-      return Response.json({ ok: true, uid });
+      return Response.json({ ok: true, uid, migrados });
     }
 
     if (accion === "eliminar") {
