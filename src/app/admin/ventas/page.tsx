@@ -128,6 +128,7 @@ export default function VentasPage() {
             <Link href="/admin/categorias" className="text-gray-500 hover:text-gray-700 font-medium">Categorías</Link>
             <Link href="/admin/ventas" className="text-amber-800 font-bold text-lg">Ventas</Link>
             <Link href="/admin/mesas" className="text-gray-500 hover:text-gray-700 font-medium">QR</Link>
+            <Link href="/admin/ajustes" className="text-gray-500 hover:text-gray-700 font-medium">⚙️ Ajustes</Link>
           </div>
           <button onClick={handleLogout} className="text-amber-800 hover:text-amber-900 font-medium">
             Cerrar sesión

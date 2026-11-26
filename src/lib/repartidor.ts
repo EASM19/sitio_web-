@@ -26,17 +26,21 @@ function mapearPedidos(
   );
 }
 
-export function escucharDomiciliosListos(
+// El repartidor ve el domicilio en cuanto el cocinero lo pone en PREPARANDO.
+// Se incluye LISTO para no perderlo si el admin avanza antes de que lo acepten.
+export function escucharDomiciliosDisponibles(
   cb: (pedidos: Pedido[]) => void,
   rid: string = RESTAURANT_ID
 ) {
-  const q = query(
-    pedidosRef(rid),
-    where("tipo", "==", "DOMICILIO"),
-    where("estado", "==", "LISTO")
-  );
+  const q = query(pedidosRef(rid), where("tipo", "==", "DOMICILIO"));
   return onSnapshot(q, (snap) => {
-    cb(mapearPedidos(snap).filter((p) => !p.repartidorId));
+    cb(
+      mapearPedidos(snap).filter(
+        (p) =>
+          (p.estado === "PREPARANDO" || p.estado === "LISTO") &&
+          !p.repartidorId
+      )
+    );
   });
 }
 
@@ -65,7 +69,9 @@ export async function aceptarPedido(
       if (!snap.exists()) throw new Error("Pedido no existe");
       const data = snap.data();
       if (data.tipo !== "DOMICILIO") throw new Error("Solo domicilio");
-      if (data.estado !== "LISTO") throw new Error("No disponible");
+      if (data.estado !== "PREPARANDO" && data.estado !== "LISTO") {
+        throw new Error("No disponible");
+      }
       if (data.repartidorId) throw new Error("Asignado");
       captura.numero = typeof data.numeroPedido === "number" ? data.numeroPedido : null;
       tx.update(ref, {

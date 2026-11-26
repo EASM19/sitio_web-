@@ -4,6 +4,45 @@ import { db } from "./firebase";
 
 export const RESTAURANTE_DEFECTO = "restaurante1";
 
+/** Imagen y redes propias de cada restaurante. Se guarda de forma opcional en
+ * el documento del restaurante; si no existe, se usan los valores históricos
+ * de La Bóveda para no alterar `restaurante1`. */
+export type ConfiguracionPublica = {
+  logo: string;
+  hero: string;
+  instagram: string;
+  facebook: string;
+  frase: string;
+};
+
+export const CONFIGURACION_PUBLICA_DEFECTO: ConfiguracionPublica = {
+  logo: "",
+  hero: "/menu/hero.jpg",
+  instagram: "https://www.instagram.com/labovedadelreal",
+  facebook: "https://www.facebook.com/share/1BzRuv79S6/?mibextid=wwXIfr",
+  frase: "Donde la historia y la comida se fusionan.",
+};
+
+export function resolverConfiguracionPublica(
+  raw: unknown
+): ConfiguracionPublica {
+  // Sin configuración guardada se conservan exactamente los valores de La
+  // Bóveda. Cuando el dueño guarda la suya, un campo vacío significa que no
+  // quiere mostrar ese elemento (no se rellena con datos de otro restaurante).
+  if (!raw || typeof raw !== "object") {
+    return { ...CONFIGURACION_PUBLICA_DEFECTO };
+  }
+  const c = raw as Partial<ConfiguracionPublica>;
+  const txt = (v: unknown) => (typeof v === "string" ? v.trim() : "");
+  return {
+    logo: txt(c.logo),
+    hero: txt(c.hero),
+    instagram: txt(c.instagram),
+    facebook: txt(c.facebook),
+    frase: txt(c.frase),
+  };
+}
+
 export type RegistroRestaurante = {
   id: string;
   nombre: string;
@@ -11,6 +50,7 @@ export type RegistroRestaurante = {
   activo: boolean;
   duenoUid?: string | null;
   duenoEmail?: string | null;
+  configuracion?: Partial<ConfiguracionPublica> | null;
 };
 
 export function generarSlug(nombre: string): string {

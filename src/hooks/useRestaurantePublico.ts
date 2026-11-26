@@ -5,8 +5,10 @@ import {
   collection, doc, getDoc, getDocs, query, where,
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
-import type { RegistroRestaurante } from "@/lib/restaurantes";
-import { RESTAURANTE_DEFECTO } from "@/lib/restaurantes";
+import type { ConfiguracionPublica, RegistroRestaurante } from "@/lib/restaurantes";
+import {
+  CONFIGURACION_PUBLICA_DEFECTO, RESTAURANTE_DEFECTO, resolverConfiguracionPublica,
+} from "@/lib/restaurantes";
 
 export type RestaurantePublico = {
   rid: string;
@@ -14,6 +16,7 @@ export type RestaurantePublico = {
   nombre: string;
   disponible: boolean;
   listo: boolean;
+  config: ConfiguracionPublica;
 };
 
 const NOMBRE_DEFECTO = "La Bóveda Del Real";
@@ -25,6 +28,9 @@ export function useRestaurantePublico(): RestaurantePublico {
   const [nombre, setNombre] = useState(NOMBRE_DEFECTO);
   const [disponible, setDisponible] = useState(false);
   const [listo, setListo] = useState(false);
+  const [config, setConfig] = useState<ConfiguracionPublica>(
+    CONFIGURACION_PUBLICA_DEFECTO
+  );
 
   useEffect(() => {
     const t = window.setTimeout(async () => {
@@ -39,6 +45,7 @@ export function useRestaurantePublico(): RestaurantePublico {
             setSlug(reg.slug);
             setNombre(reg.nombre || NOMBRE_DEFECTO);
             setDisponible(reg.activo !== false);
+            setConfig(resolverConfiguracionPublica(reg.configuracion));
             setListo(true);
             return;
           }
@@ -52,6 +59,7 @@ export function useRestaurantePublico(): RestaurantePublico {
             setSlug(reg.slug || param);
             setNombre(reg.nombre || NOMBRE_DEFECTO);
             setDisponible(reg.activo !== false);
+            setConfig(resolverConfiguracionPublica(reg.configuracion));
             setListo(true);
             return;
           }
@@ -67,6 +75,7 @@ export function useRestaurantePublico(): RestaurantePublico {
         setSlug(reg?.slug || "");
         setNombre(reg?.nombre || NOMBRE_DEFECTO);
         setDisponible(reg?.activo !== false);
+        setConfig(resolverConfiguracionPublica(reg?.configuracion));
         setListo(true);
       } catch {
         // Fallback so pena luz: mostrar el restaurante por defecto de modo optimista
@@ -79,5 +88,5 @@ export function useRestaurantePublico(): RestaurantePublico {
     return () => window.clearTimeout(t);
   }, []);
 
-  return { rid, slug, nombre, disponible, listo };
+  return { rid, slug, nombre, disponible, listo, config };
 }

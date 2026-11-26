@@ -148,7 +148,13 @@ export async function POST(req: Request) {
       .doc(`restaurantes/${RESTAURANT_ID}/usuarios/${decoded.uid}`)
       .get();
     const datosCaller = snapCaller.exists ? snapCaller.data() : null;
-    if (!datosCaller || datosCaller.rol !== "superadmin" || datosCaller.activo === false) {
+    const esSuperadmin =
+      Boolean(datosCaller) &&
+      datosCaller?.rol === "superadmin" &&
+      datosCaller?.activo !== false;
+    // La configuración visual también puede editarla el dueño de ese
+    // restaurante; el resto de las acciones siguen siendo solo superadmin.
+    if (!esSuperadmin && accion !== "actualizar-config") {
       return error("No autorizado", 403);
     }
 
@@ -234,6 +240,62 @@ export async function POST(req: Request) {
       const snap = await ref.get();
       if (!snap.exists) return error("Restaurante no encontrado", 404);
       await ref.update({ nombre });
+      return Response.json({ ok: true });
+    }
+
+    if (accion === "actualizar-config") {
+      const rid = str(body?.rid, 50);
+      if (!rid) return error("Datos incompletos", 400);
+      if (!esSuperadmin) {
+        const mem = await db
+          .doc(`restaurantes/${rid}/usuarios/${decoded.uid}`)
+          .get();
+        if (
+          !mem.exists ||
+          mem.data()?.rol !== "dueno" ||
+          mem.data()?.activo === false
+        ) {
+          return error("No autorizado", 403);
+        }
+      }
+      const ref = db.doc(`restaurantes/${rid}`);
+      const snap = await ref.get();
+      if (!snap.exists) return error("Restaurante no encontrado", 404);
+
+      const cfg = body?.configuracion;
+      if (!cfg || typeof cfg !== "object") return error("Datos incompletos", 400);
+      const raw = cfg as Record<string, unknown>;
+      const url = (v: unknown, max: number): string | null => {
+        const s = typeof v === "string" ? v.trim() : "";
+        if (!s) return "";
+        if (s.length > max) return null;
+        // Se aceptan rutas del sitio, https y data URLs de imagen comprimida.
+        if (/^(https:\/\/|data:image\/|\/)/i.test(s)) return s;
+        return null;
+      };
+      const logo = url(raw.logo, 1_200_000);
+      const hero = url(raw.hero, 1_200_000);
+      const instagram = url(raw.instagram, 300);
+      const facebook = url(raw.facebook, 300);
+      if (
+        logo === null ||
+        hero === null ||
+        instagram === null ||
+        facebook === null
+      ) {
+        return error("Usa enlaces https, imágenes o rutas del sitio válidas", 400);
+      }
+      await ref.update({
+        configuracion: {
+          logo,
+          hero,
+          instagram,
+          facebook,
+          frase: str(raw.frase, 160),
+        },
+        configuradoPor: decoded.uid,
+        configuradoEn: FieldValue.serverTimestamp(),
+      });
       return Response.json({ ok: true });
     }
 

@@ -302,11 +302,11 @@ export default function PedidosPage() {
         )
       );
     }
-    if (nuevoEstado === "LISTO" && pedido.tipo === "DOMICILIO") {
+    if (nuevoEstado === "PREPARANDO" && pedido.tipo === "DOMICILIO") {
       obtenerSuscripciones({ tipo: "repartidor" }, rid).then((subs) =>
         enviarNotificacionPush(
-          `🛵 Domicilio listo #${pedido.numeroPedido}`,
-          "Hay un domicilio listo para entregar",
+          `🛵 Domicilio en preparación #${pedido.numeroPedido}`,
+          "Ya puedes aceptarlo desde el panel de repartidor",
           "/repartidor",
           subs
         )
@@ -353,6 +353,7 @@ export default function PedidosPage() {
             <Link href="/admin/categorias" className="text-gray-500 hover:text-gray-700 font-medium">Categorías</Link>
             <Link href="/admin/ventas" className="text-gray-500 hover:text-gray-700 font-medium">Ventas</Link>
             <Link href="/admin/mesas" className="text-gray-500 hover:text-gray-700 font-medium">QR</Link>
+            <Link href="/admin/ajustes" className="text-gray-500 hover:text-gray-700 font-medium">⚙️ Ajustes</Link>
             {esSuperadmin && (
               <Link href="/superadmin" className="text-purple-700 hover:text-purple-900 font-medium">
                 👑 Superadmin
@@ -652,10 +653,25 @@ export default function PedidosPage() {
                                     </button>
                                   );
                                 }
-                                if (pedido.tipo === "DOMICILIO" && pedido.estado === "LISTO") {
+                                if (
+                                  pedido.tipo === "DOMICILIO" &&
+                                  pedido.estado === "LISTO" &&
+                                  !pedido.repartidorId
+                                ) {
                                   return (
                                     <span className="text-xs font-bold text-purple-700 bg-purple-50 border border-purple-200 px-3 py-1.5 rounded-lg whitespace-nowrap">
                                       🛵 Esperando repartidor
+                                    </span>
+                                  );
+                                }
+                                if (
+                                  pedido.tipo === "DOMICILIO" &&
+                                  pedido.estado === "LISTO" &&
+                                  pedido.repartidorId
+                                ) {
+                                  return (
+                                    <span className="text-xs font-bold text-purple-700 bg-purple-50 border border-purple-200 px-3 py-1.5 rounded-lg whitespace-nowrap">
+                                      🛵 Repartidor asignado
                                     </span>
                                   );
                                 }

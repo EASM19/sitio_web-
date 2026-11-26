@@ -30,7 +30,8 @@ const getEstadoColor = (estado: string) => {
 };
 
 export default function PedidoPage() {
-  const { rid, disponible, listo } = useRestaurantePublico();
+  const { rid, slug, disponible, listo } = useRestaurantePublico();
+  const urlMenu = `/pedido-casa?r=${encodeURIComponent(slug || rid)}`;
   const [numeroPedido, setNumeroPedido] = useState("");
   const [user, setUser] = useState<User | null>(null);
   const [authLoading, setAuthLoading] = useState(true);
@@ -168,7 +169,7 @@ export default function PedidoPage() {
             notificar(
               `🔔 Pedido #${p.numeroPedido}`,
               avisoEstado(p.estado, p.tipo),
-              `/pedido?pedido=${p.id}`
+              `/pedido?pedido=${p.id}&r=${rid}`
             );
           }
           estadosPrevios.current.set(p.id, p.estado);
@@ -222,7 +223,7 @@ export default function PedidoPage() {
               notificar(
                 `💬 Mensaje del restaurante`,
                 m.texto.slice(0, 120),
-                `/pedido?chat=${seleccionadoId}`
+                `/pedido?chat=${seleccionadoId}&r=${rid}`
               );
             }
           }
@@ -347,7 +348,7 @@ export default function PedidoPage() {
       <div className="max-w-md mx-auto pt-4 pb-8">
         <div className="sticky top-2 z-10 flex justify-center gap-2 mb-4">
           <a
-            href="/pedido-casa"
+            href={urlMenu}
             className="inline-flex items-center gap-2 bg-white shadow-md px-5 py-2.5 rounded-full text-sm font-bold text-amber-800 border border-amber-100 hover:bg-amber-50"
           >
             🍽️ Ir al menú

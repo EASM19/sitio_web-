@@ -16,6 +16,7 @@ import RelojHora from "@/components/RelojHora";
 import { MAX_NUM_PEDIDO_VALIDO } from "@/lib/pedidos";
 import { avisoEstado } from "@/lib/avisos";
 import { useRestaurantePublico } from "@/hooks/useRestaurantePublico";
+import { RESTAURANTE_DEFECTO } from "@/lib/restaurantes";
 import type { Producto, Categoria, DetallePedido, Mensaje } from "@/types";
 
 type TipoPedido = "MESA" | "PARA_LLEVAR" | "DOMICILIO";
@@ -43,7 +44,9 @@ function obtenerAnonId(): string {
 }
 
 export default function PedidoCasaPage() {
-  const { rid, nombre: nombreRestaurante, disponible, listo } = useRestaurantePublico();
+  const {
+    rid, slug, nombre: nombreRestaurante, disponible, listo, config,
+  } = useRestaurantePublico();
   const [productos, setProductos] = useState<Producto[]>([]);
   const [categorias, setCategorias] = useState<Categoria[]>([]);
   const [loading, setLoading] = useState(true);
@@ -81,6 +84,23 @@ export default function PedidoCasaPage() {
   const msgsExitoRef = useRef<Set<string> | null>(null);
   const [puedeRegresar, setPuedeRegresar] = useState(false);
 
+  const paramR = encodeURIComponent(slug || rid);
+  const urlPedido = `/pedido?r=${paramR}`;
+  const urlMenu = `/pedido-casa?r=${paramR}`;
+  const esDefecto = rid === RESTAURANTE_DEFECTO;
+  const logoSplash = config.logo || (esDefecto ? "/logo-menu.png" : "");
+  const logoMenu = config.logo || (esDefecto ? "/menu/logo.png" : "");
+  const hero = config.hero || (esDefecto ? "/menu/hero.jpg" : "");
+  const frase = config.frase || (esDefecto ? "Donde la historia y la comida se fusionan." : "");
+
+  const fijarUrlMenu = () => {
+    try {
+      window.history.replaceState(null, "", urlMenu);
+    } catch {
+      // historial no disponible
+    }
+  };
+
   useEffect(() => {
     const t = setTimeout(() => {
       try {
@@ -116,7 +136,7 @@ export default function PedidoCasaPage() {
           notificar(
             `🔔 Pedido #${d.data().numeroPedido}`,
             avisoEstado(est, d.data().tipo),
-            `/pedido?pedido=${pedidoCreadoId}`
+            `/pedido?pedido=${pedidoCreadoId}&r=${rid}`
           );
           estadoExitoRef.current = est;
         }
@@ -144,7 +164,7 @@ export default function PedidoCasaPage() {
               notificar(
                 "💬 Mensaje del restaurante",
                 m.texto.slice(0, 120),
-                `/pedido?chat=${pedidoCreadoId}`
+                `/pedido?chat=${pedidoCreadoId}&r=${rid}`
               );
             }
           }
@@ -499,11 +519,15 @@ export default function PedidoCasaPage() {
           className="relative"
           style={{ height: "min(96vh, 701px)", aspectRatio: "470 / 701", maxWidth: "100vw" }}
         >
-          <img
-            src="/logo-menu.png"
-            alt="La Bóveda del Real"
-            className="absolute inset-0 w-full h-full object-cover animate-pulse"
-          />
+          {listo && logoSplash ? (
+            <img
+              src={logoSplash}
+              alt={nombreRestaurante}
+              className="absolute inset-0 w-full h-full object-cover animate-pulse"
+            />
+          ) : (
+            <div className="absolute inset-0 bg-[#2b1d12] animate-pulse" />
+          )}
           <div className="absolute left-0 right-0 flex justify-center" style={{ top: "66%" }}>
             <span
               className="text-sm sm:text-base font-bold tracking-[0.35em] animate-pulse"
@@ -585,13 +609,14 @@ export default function PedidoCasaPage() {
           <p className="text-gray-600 mb-1">Pedido <span className="font-bold">#{numeroPedido}</span></p>
           <p className="text-green-600 font-medium mb-6">Estado: Recibido</p>
           <a
-            href="/pedido"
+            href={urlPedido}
             className="block w-full bg-amber-800 text-white py-3 rounded-xl font-bold shadow mb-3"
           >
             Ver estado del pedido
           </a>
           <button
             onClick={() => {
+              fijarUrlMenu();
               marcarRegresable();
               setExito(false);
               setCarrito(new Map());
@@ -639,6 +664,7 @@ export default function PedidoCasaPage() {
           <button
             onClick={() => {
               sessionStorage.removeItem("irCheckout");
+              fijarUrlMenu();
               marcarRegresable();
               setVista("menu");
               setError("");
@@ -649,7 +675,7 @@ export default function PedidoCasaPage() {
           </button>
           <div className="border-t mt-4 pt-4">
             <p className="text-gray-400 text-xs mb-2">¿Solo quieres consultar un pedido?</p>
-            <a href="/pedido" className="text-amber-800 font-bold text-sm">Consultar pedido sin cuenta</a>
+            <a href={urlPedido} className="text-amber-800 font-bold text-sm">Consultar pedido sin cuenta</a>
           </div>
         </div>
       </div>
@@ -666,7 +692,7 @@ export default function PedidoCasaPage() {
           <div className="flex items-center gap-2">
             {puedeRegresar && (
               <a
-                href="/pedido"
+                href={urlPedido}
                 onClick={() => {
                   try {
                     sessionStorage.removeItem("puede_regresar");
@@ -713,7 +739,8 @@ export default function PedidoCasaPage() {
             <div className="flex items-center justify-between mb-4">
               <button
                 onClick={() => {
-                  marcarRegresable();
+                  fijarUrlMenu();
+              marcarRegresable();
                   setVista("menu");
                 }}
                 className="text-amber-800 font-bold"
@@ -880,37 +907,49 @@ export default function PedidoCasaPage() {
           <div className="space-y-6">
             <section className="-mx-4 -mt-4 mb-2 relative overflow-hidden">
               <div className="absolute inset-0">
-                <img src="/menu/hero.jpg" alt="" className="w-full h-full object-cover" />
+                {hero && <img src={hero} alt="" className="w-full h-full object-cover" />}
                 <div className="absolute inset-0 bg-black/55" />
               </div>
               <div className="relative px-6 py-10 text-center">
-                <img src="/menu/logo.png" alt="La Bóveda Del Real" className="w-40 sm:w-48 h-auto mx-auto mb-5 drop-shadow-2xl" />
-                <p className="font-serif text-lg sm:text-xl text-[#f0e2c4]">
-                  Donde la historia y la comida se fusionan.
-                </p>
-                <p className="font-serif text-base sm:text-lg text-[#f0e2c4]/90 mt-5 mb-2">
-                  ¡Síguenos en redes!
-                </p>
-                <div className="flex items-center justify-center gap-5">
-                  <a
-                    href="https://www.instagram.com/labovedadelreal"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    aria-label="Instagram"
-                    className="hover:opacity-80 transition-opacity"
-                  >
-                    <img src="/menu/instagram.png" alt="Instagram" width={44} height={44} />
-                  </a>
-                  <a
-                    href="https://www.facebook.com/share/1BzRuv79S6/?mibextid=wwXIfr"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    aria-label="Facebook"
-                    className="hover:opacity-80 transition-opacity"
-                  >
-                    <img src="/menu/facebook.png" alt="Facebook" width={44} height={44} />
-                  </a>
-                </div>
+                {logoMenu ? (
+                  <img src={logoMenu} alt={nombreRestaurante} className="w-40 sm:w-48 h-auto mx-auto mb-5 drop-shadow-2xl" />
+                ) : (
+                  <p className="text-2xl font-bold text-[#f0e2c4] mb-5">{nombreRestaurante}</p>
+                )}
+                {frase && (
+                  <p className="font-serif text-lg sm:text-xl text-[#f0e2c4]">{frase}</p>
+                )}
+                {(config.instagram || config.facebook) && (
+                  <>
+                    <p className="font-serif text-base sm:text-lg text-[#f0e2c4]/90 mt-5 mb-2">
+                      ¡Síguenos en redes!
+                    </p>
+                    <div className="flex items-center justify-center gap-5">
+                      {config.instagram && (
+                        <a
+                          href={config.instagram}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          aria-label="Instagram"
+                          className="hover:opacity-80 transition-opacity"
+                        >
+                          <img src="/menu/instagram.png" alt="Instagram" width={44} height={44} />
+                        </a>
+                      )}
+                      {config.facebook && (
+                        <a
+                          href={config.facebook}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          aria-label="Facebook"
+                          className="hover:opacity-80 transition-opacity"
+                        >
+                          <img src="/menu/facebook.png" alt="Facebook" width={44} height={44} />
+                        </a>
+                      )}
+                    </div>
+                  </>
+                )}
               </div>
             </section>
             {categorias.map((cat) => {

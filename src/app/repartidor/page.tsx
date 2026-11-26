@@ -8,7 +8,7 @@ import { auth, db } from "@/lib/firebase";
 import { doc, getDoc } from "firebase/firestore";
 import { consultarMembresias } from "@/lib/roles";
 import {
-  aceptarPedido, cambiarEstadoRepartidor, escucharDomiciliosListos, escucharMisEntregas,
+  aceptarPedido, cambiarEstadoRepartidor, escucharDomiciliosDisponibles, escucharMisEntregas,
 } from "@/lib/repartidor";
 import { suscribirsePush } from "@/lib/push";
 import { pedirPermisoNotificaciones } from "@/lib/notif";
@@ -80,7 +80,7 @@ export default function RepartidorPage() {
     pedirPermisoNotificaciones();
     suscribirsePush("repartidor", user.uid, ridPropio);
 
-    const unsubDisp = escucharDomiciliosListos((lista) => {
+    const unsubDisp = escucharDomiciliosDisponibles((lista) => {
       lista.sort((a, b) => a.fechaCreacion.getTime() - b.fechaCreacion.getTime());
       setDisponibles(lista);
     }, ridPropio);
@@ -262,7 +262,7 @@ export default function RepartidorPage() {
             </span>
           </h2>
           <p className="text-xs text-gray-500 mb-3">
-            Domicilios listos en el restaurante. El primero en aceptar se lo lleva.
+            Domicilios en preparación. Al aceptar, el pedido desaparece de los demás repartidores.
           </p>
           <div className="space-y-3">
             {disponibles.length === 0 ? (
@@ -274,8 +274,12 @@ export default function RepartidorPage() {
                 <div key={p.id} className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
                   <div className="flex justify-between items-start mb-2">
                     <span className="font-bold text-lg text-gray-800">#{p.numeroPedido}</span>
-                    <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-100">
-                      🏠 Domicilio
+                    <span className={`text-xs font-bold px-2 py-0.5 rounded-full border ${
+                      p.estado === "LISTO"
+                        ? "bg-green-50 text-green-700 border-green-100"
+                        : "bg-yellow-50 text-yellow-700 border-yellow-100"
+                    }`}>
+                      🏠 {p.estado === "LISTO" ? "Listo" : "Preparando"}
                     </span>
                   </div>
                   <p className="text-xs font-bold text-blue-800 mb-1">
